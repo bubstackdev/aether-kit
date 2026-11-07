@@ -2811,6 +2811,73 @@
       "revision": "4c1fae8201cc9ecb52845abfa9fe94fbae78ef02",
       "task": "depth-estimation",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "3ce1dc129b1119e0db39bb0310fee627e25a0577a9fab86119ff8a37a836a9b3",
+                  "size": 3905
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "1c2142c6d2c3557350d39c195fd5d7b083783b452126614f85a0cc66ade1dee7",
+                  "size": 1597
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "78446e29c48900cda82620a8df183cca61f0a595e05a49d0401a5fd604dd1870",
+                  "size": 11355
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "00b5ac0e586fb2b4ed1ddaf77620a57a114ea9bbca4300d5f1d272c69f1cc961",
+                  "size": 980
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "fd23dddfcbce543301fda13952c3c314910851b1a6468d7f8dda0162a44b3938",
+                  "size": 973
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "fe9ccedb5cf56f4fc8b9394c1e2038a7e7007c0771ebbeda87abb4da7bd2bcd8",
+                  "size": 720
+                },
+                {
+                  "path": "depth_anything_3_small.aimodel/main.hash",
+                  "sha256": "f8dd868a7026055f8ce57532576f5926ef45fe95ac37126732829c9bb4251090",
+                  "size": 32
+                },
+                {
+                  "path": "depth_anything_3_small.aimodel/main.mlirb",
+                  "sha256": "1aa7b0c9a6bc80e15e93bae9ccadc4f4921538b92fddb086a0c48f7414557a04",
+                  "size": 61193449
+                },
+                {
+                  "path": "depth_anything_3_small.aimodel/metadata.json",
+                  "sha256": "f3f408528a29bccb66baac1f79cd49c3ada3b9fee3f2d759b7f9623473bf168e",
+                  "size": 403
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "4da9e5478d5c4bb828185dff10b35e999aa1353c8bc5e81d13a59b7aaf0437d7",
+                  "size": 6799
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "351a7e297e50f98dedcab4716d31ad2b038a9222a5cb76494b08fce016138b14",
+                  "size": 489
+                }
+              ],
+              "repo": "aether-models/aether-kit-depth-anything-3-small",
+              "revision": "43390fd4d887ae396897d4dee5dba632b50f3c2d",
+              "subtree": ""
+            }
+          },
+          "driver": "depth-estimator@1"
+        },
         "macos": {
           "assets": {
             "main": {
@@ -2885,6 +2952,73 @@
       "revision": "e57fcca86be721911c0e8163f7af99529e997014",
       "task": "object-detection",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "1fef554fb4a16440fac908b45ccbec28c5110f7ff8fbefd138612e15d7d1120d",
+                  "size": 4655
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "bdda41b3cbfbb95257646bf74cebdc223f36ed8b38de5b3005156b0d25dbe48f",
+                  "size": 1582
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088",
+                  "size": 11371
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "30567b763608872f8e0ba872272d0bbdf09b0539c6ee369df69f763a8a911de9",
+                  "size": 718
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "390c0eea0bb546dba26a7450961468c11fe4299601e9508fd75ddb94c74f5600",
+                  "size": 920
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "48bd6b75091ddd93224385a3ab01a26fc5af8ae5330aa1a50c936ef396f01d64",
+                  "size": 675
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "300851b10d2673c25cfd0015e0e166ac80e18af23f1395662e0640ebd972da93",
+                  "size": 5045
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "64e0cd2e7eb089346954eaf831da3a28bb05db5c296f7bd5b1373861d5978b40",
+                  "size": 669
+                },
+                {
+                  "path": "yolox_s.aimodel/main.hash",
+                  "sha256": "f74df33ec5c71e522e084fac92f4bec44acac169b3ac5172f7de51611aede9e6",
+                  "size": 32
+                },
+                {
+                  "path": "yolox_s.aimodel/main.mlirb",
+                  "sha256": "dfd7efb937020aec1872fa6f45e45b8679c68889fe6b62b97b48c6886933dbf0",
+                  "size": 35987987
+                },
+                {
+                  "path": "yolox_s.aimodel/metadata.json",
+                  "sha256": "cff208f277aa0b3fbaa64fb7f517d6ab4d5c9962805e51a4c3d8915fd4215e89",
+                  "size": 516
+                }
+              ],
+              "repo": "aether-models/aether-kit-yolox-s",
+              "revision": "1ff820664752da5a86ec59757bb5bd0044b3ca2a",
+              "subtree": ""
+            }
+          },
+          "driver": "detector-dense@1"
+        },
         "macos": {
           "assets": {
             "main": {
@@ -2959,6 +3093,73 @@
       "revision": "49e797b1b7089d3d53153bf31d658b142f3d3474",
       "task": "object-detection",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "e946b771e99eed0f2853c8346064bf7c8e6fbf3e5d40dcdbdb37ce833356a742",
+                  "size": 4425
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "c74668f43005e813f60ee1ec6eaf1a89a9b0a8f3db7cb7e939cde2a631644bf0",
+                  "size": 1587
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca",
+                  "size": 11345
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "fc1732ad01d34a68cef83572dcbb8b75d7fa22d9bc52ed52a5c3b8ca66da926c",
+                  "size": 1060
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "8bdb8c5e0c68deca9922f514923e9700aab885eb7da9533d5fc86e35591dbd2e",
+                  "size": 955
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "10db698f7d05018ad561e40c3a2ed60f87f9de78f5afb32b4b63861c34999216",
+                  "size": 690
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "bc6db4aa8ef33802b2c5731975712817337a6089bcf68719001d360ea377d558",
+                  "size": 8764
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "2b7c20b36b8d9f2af3ab8476f9e41a06e7a8e151dde10a1a23af3732ff5f004c",
+                  "size": 489
+                },
+                {
+                  "path": "rf_detr_nano.aimodel/main.hash",
+                  "sha256": "c816e3ed431ba1f1e5186f159cc4b326d517b52ef1ceb1646528587ab22533b5",
+                  "size": 32
+                },
+                {
+                  "path": "rf_detr_nano.aimodel/main.mlirb",
+                  "sha256": "6070fa5662d1a0f2ed01ff85493ccb897072d58a4401e1b51a1fa09bcd2cfdd3",
+                  "size": 108212301
+                },
+                {
+                  "path": "rf_detr_nano.aimodel/metadata.json",
+                  "sha256": "6be8921aa2b75a2d66da7fcce437996f30ba28c33afa84bcca9c96984401905b",
+                  "size": 400
+                }
+              ],
+              "repo": "aether-models/aether-kit-rf-detr-nano",
+              "revision": "383f4c4e266bde2bef6ec1e7f2dc501118f7f50e",
+              "subtree": ""
+            }
+          },
+          "driver": "detector-detr@1"
+        },
         "macos": {
           "assets": {
             "main": {
@@ -3033,6 +3234,73 @@
       "revision": "b7408d29a18f9ed982295efe979f2e848d9aecf7",
       "task": "instance-segmentation",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "0b5235ffa84dc3547e3fd97fa53899d950668a09d4cb5cea0408db68e98cecf3",
+                  "size": 4706
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "844c175dbce6b52b7dfa174049f6cbb8090ce872033e4172abc4f671ab4f233b",
+                  "size": 1591
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "8cabf52c61130fc97a7e5da5e3685ccf44841c0c53d6f881189369b136603cca",
+                  "size": 11345
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "efb066472a1857db6e3f565359dc227ad0eeea2702c03768906b52a85297dff5",
+                  "size": 1051
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "7c2cde156f6fbbfdd0c38e89970a6aed891fc3a69ef678b3e5b5ef5464bbba6f",
+                  "size": 1003
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "ac53fac5b4a83a50ab1471f1646d6846490d85d501f997df497ad55616a9bbe5",
+                  "size": 702
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "ccd7ecfed51e6d40c7decb2331114bcda8d2ba4ab1e42bdc5d3688b90986bc77",
+                  "size": 8844
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "dd0a5056519acd9a70c98e92c0b21fabaacdd6a94dc7ef3fa392a5217bf1914a",
+                  "size": 489
+                },
+                {
+                  "path": "rf_detr_seg_nano.aimodel/main.hash",
+                  "sha256": "a99d69c577a9ea095dbcafd39cce19dcbe062d8f3a52489597f157bf5b86744d",
+                  "size": 32
+                },
+                {
+                  "path": "rf_detr_seg_nano.aimodel/main.mlirb",
+                  "sha256": "5e9bd24fafe46218bbdea07cc52d87c92a8a7ed4946b6fe4e09d388e5ca90633",
+                  "size": 122781822
+                },
+                {
+                  "path": "rf_detr_seg_nano.aimodel/metadata.json",
+                  "sha256": "aa6c1bf60a2059938710fa4b652cb3a6252979a2cafe70a3c537d9f817668259",
+                  "size": 437
+                }
+              ],
+              "repo": "aether-models/aether-kit-rf-detr-seg-nano",
+              "revision": "1c2aba91a08bf8726777df288884138682e000cb",
+              "subtree": ""
+            }
+          },
+          "driver": "detector-detr@1"
+        },
         "macos": {
           "assets": {
             "main": {
@@ -3107,6 +3375,93 @@
       "revision": "d50169656d89f09b76c392aaa9a5c81b585d8384",
       "task": "text-embedding",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "de9017de33e500055f47eb0cd433087cd2a5a2690762f221d3bad4f2a42cfeb2",
+                  "size": 5249
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "28446d91d6c90c5d4f669078d1aafd121c1112feaf7c1de374ef0979ed495efe",
+                  "size": 1655
+                },
+                {
+                  "path": "GEMMA-PROHIBITED-USE-POLICY.txt",
+                  "sha256": "01a9797485e71fcc5413aa196a1be56f8b181d6d0df1fa7ee1ede27ee78f7b0b",
+                  "size": 4061
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "62f47747a70f6876f860202b4b287fa243936a1848517ec82010e8689816d21d",
+                  "size": 9144
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "80d6f964d375677e517d4123eb3bdd3478d184446674883b0d7917bd474aade1",
+                  "size": 1425
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "c086f2d2625d0ec592a8a81e04914875dcf7fc6825eabcb24dcd9dd7d9d2e427",
+                  "size": 1357
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "c4953b6f2d989e6892a6450d5066ba4687089317bbbfc7bc1346507cffc9e5c2",
+                  "size": 1098
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/main.hash",
+                  "sha256": "7e862ad9f99fd2f128ff23acbd5f885573a7d7a4517a0c32b53817f2e51f5624",
+                  "size": 32
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/main.mlirb",
+                  "sha256": "53f0baf671f985d1a555f273a7d6e3a18c26ed143f5537d81ab328a6c0cd045b",
+                  "size": 647579874
+                },
+                {
+                  "path": "embeddinggemma_300m.aimodel/metadata.json",
+                  "sha256": "e649b534f6cb8a52d83d217e2784028b17495fd4f937874826ec2c6f318ea767",
+                  "size": 483
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "f8678460ae5b714f658c129e466072654260af0fc9cc2183a00f09c7a9e3d4aa",
+                  "size": 4618
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "5a8c9a61615debdb966990008523921df6799e317630afa6563c548a0592c08f",
+                  "size": 490
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+                  "size": 662
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "6852f8d561078cc0cebe70ca03c5bfdd0d60a45f9d2e0e1e4cc05b68e9ec329e",
+                  "size": 33385008
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "9076840490613047bc9115963ee96b7702018b0d26ba644240bf856efda93118",
+                  "size": 1155346
+                }
+              ],
+              "repo": "aether-models/aether-kit-embeddinggemma-300m",
+              "revision": "462d7f9087f735cb57eaa4679229e4dfcc211796",
+              "subtree": ""
+            }
+          },
+          "driver": "text-embedder@1"
+        },
         "macos": {
           "assets": {
             "main": {
@@ -3201,6 +3556,113 @@
       "revision": "1efefba78d652dafd8cdc9df5fac2cd4ee1e6cf6",
       "task": "image-text-embedding",
       "variants": {
+        "ios": {
+          "assets": {
+            "main": {
+              "files": [
+                {
+                  "path": ".aether/aether.json",
+                  "sha256": "bc856e7a232602ce4774798079050ff5fd7318ca4477d8163b5724856e7494ed",
+                  "size": 7683
+                },
+                {
+                  "path": ".gitattributes",
+                  "sha256": "a2bde3a0718f6a7db92e6a01ba731aaa6a899f887ad0afa3ce0d75f4c90881e5",
+                  "size": 1666
+                },
+                {
+                  "path": "LICENSE",
+                  "sha256": "987e63b32f6c89ff5160e429458a872ff048e6860b590a3912e938f9da8f14db",
+                  "size": 1064
+                },
+                {
+                  "path": "NOTICE",
+                  "sha256": "65fb3e46dcdcc7b630ef96ece0da2fb177e7a5d348c57091fe345c0d2d5def18",
+                  "size": 1129
+                },
+                {
+                  "path": "README.md",
+                  "sha256": "ae045dc8fc978ef9a972b3442286128da3cc00f67e997254c8e77824cde83fca",
+                  "size": 1300
+                },
+                {
+                  "path": "SHA256SUMS",
+                  "sha256": "233956bd6632d7de1aeaf8414e7656a3c976bc8287d9a3138fab90b662ebdabd",
+                  "size": 1482
+                },
+                {
+                  "path": "clip_vit_b32_image.aimodel/main.hash",
+                  "sha256": "d1c0b0f0323349a4bd9c48460bc7681a560c8ebb14bc00aa800f165a645f9f79",
+                  "size": 32
+                },
+                {
+                  "path": "clip_vit_b32_image.aimodel/main.mlirb",
+                  "sha256": "d1e96135d26898b55cad462a2da4e75ea41149b4f79ca608cb01a648d24ea4e8",
+                  "size": 175768383
+                },
+                {
+                  "path": "clip_vit_b32_image.aimodel/metadata.json",
+                  "sha256": "be18860a32f3c74e9faec571fe89a8cc705b123ee5b52a3f4a43d8e2a878459d",
+                  "size": 350
+                },
+                {
+                  "path": "clip_vit_b32_text.aimodel/main.hash",
+                  "sha256": "5107534982347924da3ed4aded6564ac8c17be238e8b37021520bc2a650ed8f9",
+                  "size": 32
+                },
+                {
+                  "path": "clip_vit_b32_text.aimodel/main.mlirb",
+                  "sha256": "69a0127b96cac208d3ef71fdf0b6e832997621008abd2ab64cc1d8b87b0d4e01",
+                  "size": 127030587
+                },
+                {
+                  "path": "clip_vit_b32_text.aimodel/metadata.json",
+                  "sha256": "6a4f126ad607f3aea64335f49a3f1cd8f126d9c6c0775ecd2c77691c4c2e7511",
+                  "size": 367
+                },
+                {
+                  "path": "export-report.json",
+                  "sha256": "1730e2280967bf6099f2ca4f1886362d1dec6135b74dfe08aaf55ee9ccdb1dbd",
+                  "size": 4799
+                },
+                {
+                  "path": "forge-log.jsonl",
+                  "sha256": "eb48bef227383a335a136c1ff4aba92a8720223b7d25eec4ab46847b0c39d4d3",
+                  "size": 664
+                },
+                {
+                  "path": "tokenizer/merges.txt",
+                  "sha256": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+                  "size": 524657
+                },
+                {
+                  "path": "tokenizer/special_tokens_map.json",
+                  "sha256": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+                  "size": 389
+                },
+                {
+                  "path": "tokenizer/tokenizer.json",
+                  "sha256": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+                  "size": 2224041
+                },
+                {
+                  "path": "tokenizer/tokenizer_config.json",
+                  "sha256": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad",
+                  "size": 592
+                },
+                {
+                  "path": "tokenizer/vocab.json",
+                  "sha256": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363",
+                  "size": 862328
+                }
+              ],
+              "repo": "aether-models/aether-kit-clip-vit-b32",
+              "revision": "be0c479c4a7a5519f4c2853a2f5d2c6abc1e4812",
+              "subtree": ""
+            }
+          },
+          "driver": "clip-joint@1"
+        },
         "macos": {
           "assets": {
             "main": {

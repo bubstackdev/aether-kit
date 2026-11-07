@@ -112,6 +112,15 @@ M4 (AetherVision and AetherEmbeddings, docs/M4.md), after the 0.1.0 tag.
     the mask rules `nonPad`, `throughFirstEos` and `none` (`noMask`) beside `realTokens`, the default.
   - Gate `ImageTextEncoderGateTests` against transformers' `CLIPModel` in float32 on the CPU.
   - Catalog: `clip-vit-b32` (macOS), `aether-models/aether-kit-clip-vit-b32`, MIT.
+- **iOS variants for the M4 models:** `depth-anything-3-small`, `embeddinggemma-300m`, `clip-vit-b32`, `yolox-s`,
+  `rf-detr-nano` and `rf-detr-seg-nano` now resolve on iOS (were `unsupportedDevice`), with the same drivers. They
+  passed the Mac gate bars on an iPhone Duo (`iPhone19,4`, `h19p`; docs/DEVICE.md). Each `ios` variant is the macOS
+  export's files unchanged (JIT `.aimodel` packages, nothing per architecture) plus a manifest with
+  `variant.platform: ios`. That manifest is `.aether/aether.json` on the repo's `ios` branch, which the variant's main
+  asset pins: DA3 `43390fd4`, EmbeddingGemma `462d7f90`, CLIP `be0c479c`, YOLOX-S `1ff82066`, RF-DETR nano
+  `383f4c4e`, seg-nano `1c2aba91`. The macOS pins are unchanged. `Forge/ios_manifest.py` derives the manifest from the
+  published export, in the form the device gate ran. Covered by `CatalogTests` and the hermetic iOS load tests
+  (`VisionIOSVariantTests`, `TextEmbedderIOSVariantTests`); no driver changed.
 
 - **Parity resize filters for the detectors:** `preprocess.image.resize.filter` gains `pillowBilinear` (Pillow's
   `Image.resize(BILINEAR)`, bit-exact on 8-bit output) and `torchBilinear` (torch's float32
