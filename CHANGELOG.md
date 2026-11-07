@@ -2,6 +2,11 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
+## 0.0.7-atelier.2 — 2026-11-07
+
+- Record the rebuilt H3 profile (`e32d9409…`) on h17c: 28 complete neutral-object renders cover first-only and first+last for Standard Full/Quick five/ten seconds in all three shapes, and Large Full five seconds in both orientations. Six exact canvas-scoped FL2VA entries retain the 18/24 GiB bars, 256 MiB margin and 64 GiB floor for extended modes. Last-only uses the measured single-keyframe shape. Other profiles/devices and unmeasured modes gain no coverage.
+- CPU regressions exercise all offered modes and anchors, refusal of unmeasured combinations/smaller hosts, and exact correspondence between bundled reservations and passing native evidence. Model assets and the frozen API are unchanged.
+
 ## 0.0.7 — 2026-11-04
 
 Seventh experimental developer preview: H3's 704×704 square canvas and canvas-scoped measured identity, for Atelier. The frozen API is unchanged. See the [release notes](docs/release-notes/0.0.7.md).

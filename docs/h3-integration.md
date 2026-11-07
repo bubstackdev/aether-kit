@@ -945,3 +945,16 @@ This qualifies last-frame and first+last conditioning at 960×544 under the 0.0.
 - **The user chose the new presentation.** The first render sent for review had a probe bug: each keyframe label was tokenized as the whole prompt (610 conditioning rows instead of 567; fixed, and a render now refuses rows that differ from its dump). The user confirmed the choice on the corrected render, which this paragraph describes (2026-11-02). Record: [A/B](evidence/h3-fl2va-ab-2026-11-02.json).
 
 **Audio level.** The new render's audio is 4 dB quieter (RMS −46 against −42 dBFS). The final stack's audio decoders, body and heads are byte-identical to 0.0.4's. A replay of the qualified T2VA capture on the final stack reproduces all 457 boundary hashes, with audio at −53.21 / −53.11 dBFS RMS, exactly as in the 0.0.4 audit ([record](evidence/h3-t2va-identity-0.0.5-2026-11-02.json)). So T2VA, and every graph FL2VA shares with it, is unchanged; the FL2VA difference is what the clip conditions on.
+
+
+## Atelier recovery profile qualification (0.0.7-atelier.2)
+
+The rebuilt profile `h3.profile/2:e32d9409a0c4f08f8fbdd32076e6626f8db707fad441f9a0743bdb93ce4cab0b` has independent h17c measurements. Twenty-eight complete native renders cover first-only and first+last at every offered canvas/recipe/length; last-only has the single-keyframe shape. These are FL2VA measurements, not a new trajectory or visual-quality claim.
+
+| Region | Recipes | Maximum packed frames | Canvases | Admission worst case | Bar |
+| --- | --- | --- | --- | --- | --- |
+| Standard five seconds | turbo8 / turbo4 | 124 | 960×544, 544×960, 704×704 | 13.509 / 13.505 GiB | 18 GiB |
+| Standard ten seconds | turbo8 / turbo4 | 243 | 960×544, 544×960, 704×704 | 22.910 / 22.892 GiB | 24 GiB |
+| Large five seconds | turbo8 | 124 | 1280×704, 704×1280 | 22.041 GiB | 24 GiB |
+
+The six `docs/evidence/h3-atelier-recovery-*-2026-11-06.json` records contain the actual completion times (November 6–7), input hashes and controller pins. Entries use each task's maximum resident stage peaks, carried operation state and the existing 256 MiB stage margin. Extended entries require at least 64 GiB physical memory. No Large Quick, Large ten-second, text-only or other-device coverage is inferred. Assets and pack identities are unchanged.
