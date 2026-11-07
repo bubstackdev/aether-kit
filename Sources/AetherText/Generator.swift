@@ -98,6 +98,8 @@ public actor Generator {
     public static let maxSnapshots = 3
     /// One request at a time, in arrival order (after the GPU grant).
     private nonisolated let gate = SerialGate()
+    /// How many requests wait for the running one's turn to end (tests observe a request reaching the queue).
+    nonisolated var waitingRequests: Int { gate.waiting }
     /// The vocabulary indexed for JSON constraints, built on the first structured request (63 ms for Qwen3 in 0.0.x).
     private var jsonVocabulary: JSONVocabulary?
 
