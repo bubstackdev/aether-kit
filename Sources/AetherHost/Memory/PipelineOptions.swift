@@ -19,6 +19,10 @@ public struct PipelineOptions: Sendable {
     /// What phases are measured with. Tests pass a fixed probe, so what they plan never depends on whatever else the
     /// process has allocated.
     public var probe: GPUMemoryProbe
+    /// When set, a generation that would have to load graphs is refused with ``AetherError/memoryPressure`` while
+    /// this monitor reads critical; graphs already resident still run. Absent (the default): no pressure check, as
+    /// for pipelines outside ``ModelHost`` before. The image pipelines that honour it say so.
+    public var pressure: MemoryPressureMonitor? = nil
 
     public init(
         cachePolicy: GraphOptions.CachePolicy = .default, cache: GraphOptions.Cache = .default, memory: MemoryBudget? = nil,

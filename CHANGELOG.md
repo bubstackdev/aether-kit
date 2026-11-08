@@ -11,6 +11,18 @@
   generation had to load, and the highest Metal allocation the probe read. A handler that throws stops the generation
   between graph calls and releases its graphs, which gives a host its own checks at these boundaries. `generate(_:)`
   is unchanged and renders the same image. The change is additive; the `AetherImage` API baseline records it.
+- **Krea 2 prompt preparation:** `Krea2Pipeline.prepare(prompt:)` renders a prompt as `generate` does, on the CPU
+  with no graph loaded and no filter call. It returns a `Krea2PreparedPrompt`: the ids the text encoder receives, the
+  rendered count before truncation, the conditioning rows, whether the rendering was cut, and the export's
+  `maxTokens`. A host that must not render a cut prompt can preflight it. A prompt `prepare` refuses, `generate`
+  refuses too.
+- **Krea 2 residency controls:** `setRetention(_:)` chooses `ImageRetention.keepLoaded` (the default, as before) or
+  `.releaseAfterEachGeneration`. `releaseIfIdle()` releases every graph only while no generation is running or
+  waiting: it never waits and never interrupts one, and returns `false` otherwise. `residentBytes` is the measured
+  (Metal-inclusive) footprint the kept graphs hold.
+- **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
+  `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
+  while the monitor reads critical, and graphs already resident still run.
 - **Bundle identity and verification** for bundles opened from any folder: `InstalledBundle.contentIdentity()` is
   a location-free SHA-256 over the driver, the variant, every declared file (path, size, SHA-256) and the manifest's
   `contentDigest`. The store root, folder, repo and revision don't enter it, so a restored copy keeps its identity

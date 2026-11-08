@@ -119,6 +119,14 @@ public struct ImageGenerationMetrics: Sendable, Hashable, Codable {
     public init() {}
 }
 
+/// What an image pipeline does with its graphs after a generation.
+public enum ImageRetention: Sendable, Hashable {
+    /// Keep what the residency plan keeps (everything, when it fits the budget): the next generation starts warm.
+    case keepLoaded
+    /// Release every graph after each generation; the next one loads them again.
+    case releaseAfterEachGeneration
+}
+
 /// A generated image with its metrics.
 public struct ImageGeneration: Sendable {
     public let image: GeneratedImage
