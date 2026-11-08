@@ -23,6 +23,18 @@
 - **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
   `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
   while the monitor reads critical, and graphs already resident still run.
+- **Bundle identity and verification** for bundles opened from any folder: `InstalledBundle.contentIdentity()` is
+  a location-free SHA-256 over the driver, the variant, every declared file (path, size, SHA-256) and the manifest's
+  `contentDigest`. The store root, folder, repo and revision don't enter it, so a restored copy keeps its identity
+  and a changed file or manifest gets a new one. `contentIdentity(capability:)` binds it to one capability of the
+  bundle. `verify(progress:)` reads every declared file against its size and SHA-256 with progress and cancellation,
+  as an install does, then decodes the manifest. Additive; the `AetherCore` API baseline records it.
+- **Compiled-cache status:** `CompiledCache.status(of:manifest:device:roles:cache:)` asks Core AI's compile cache
+  (`AIModelCache.model(for:options:)`) whether each graph already has a compiled copy for this device, using the
+  specialization options a load from the manifest uses. It compiles nothing (the lookup's own cost on a large model is
+  not yet measured), and returns each graph's
+  declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
+  `AetherRuntime` API baseline records it.
 
 ## 0.1.0 — 2026-11-07
 
