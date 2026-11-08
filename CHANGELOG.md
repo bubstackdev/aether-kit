@@ -16,6 +16,13 @@
   rendered count before truncation, the conditioning rows, whether the rendering was cut, and the export's
   `maxTokens`. A host that must not render a cut prompt can preflight it. A prompt `prepare` refuses, `generate`
   refuses too.
+- **Krea 2 residency controls:** `setRetention(_:)` chooses `ImageRetention.keepLoaded` (the default, as before) or
+  `.releaseAfterEachGeneration`. `releaseIfIdle()` releases every graph only while no generation is running or
+  waiting: it never waits and never interrupts one, and returns `false` otherwise. `residentBytes` is the measured
+  (Metal-inclusive) footprint the kept graphs hold.
+- **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
+  `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
+  while the monitor reads critical, and graphs already resident still run.
 
 ## 0.1.0 — 2026-11-07
 

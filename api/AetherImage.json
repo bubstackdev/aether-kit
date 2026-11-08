@@ -4182,6 +4182,236 @@
    {
     "children": [
      {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageRetention",
+          "printedName": "AetherImage.ImageRetention",
+          "usr": "s:11AetherImage0B9RetentionO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ImageRetention",
+            "printedName": "AetherImage.ImageRetention",
+            "usr": "s:11AetherImage0B9RetentionO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherImage.ImageRetention.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherImage.ImageRetention.Type) -> AetherImage.ImageRetention"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage0B9RetentionO10keepLoadedyA2CmF",
+      "moduleName": "AetherImage",
+      "name": "keepLoaded",
+      "printedName": "keepLoaded",
+      "usr": "s:11AetherImage0B9RetentionO10keepLoadedyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageRetention",
+          "printedName": "AetherImage.ImageRetention",
+          "usr": "s:11AetherImage0B9RetentionO"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ImageRetention",
+            "printedName": "AetherImage.ImageRetention",
+            "usr": "s:11AetherImage0B9RetentionO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherImage.ImageRetention.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherImage.ImageRetention.Type) -> AetherImage.ImageRetention"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage0B9RetentionO26releaseAfterEachGenerationyA2CmF",
+      "moduleName": "AetherImage",
+      "name": "releaseAfterEachGeneration",
+      "printedName": "releaseAfterEachGeneration",
+      "usr": "s:11AetherImage0B9RetentionO26releaseAfterEachGenerationyA2CmF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ImageRetention",
+        "printedName": "AetherImage.ImageRetention",
+        "usr": "s:11AetherImage0B9RetentionO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ImageRetention",
+        "printedName": "AetherImage.ImageRetention",
+        "usr": "s:11AetherImage0B9RetentionO"
+       }
+      ],
+      "declAttributes": [
+       "Implements",
+       "Semantics"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage0B9RetentionO21__derived_enum_equalsySbAC_ACtFZ",
+      "moduleName": "AetherImage",
+      "name": "__derived_enum_equals",
+      "printedName": "__derived_enum_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherImage0B9RetentionO21__derived_enum_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage0B9RetentionO4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherImage",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherImage0B9RetentionO4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage0B9RetentionO9hashValueSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage0B9RetentionO9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage0B9RetentionO9hashValueSivp",
+      "moduleName": "AetherImage",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherImage0B9RetentionO9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage0B9RetentionO",
+    "moduleName": "AetherImage",
+    "name": "ImageRetention",
+    "printedName": "ImageRetention",
+    "usr": "s:11AetherImage0B9RetentionO"
+   },
+   {
+    "children": [
+     {
       "accessors": [
        {
         "accessorKind": "get",
@@ -5124,6 +5354,53 @@
       "usr": "s:11AetherImage13Krea2PipelineC7options0A4Host0D7OptionsVvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageRetention",
+          "printedName": "AetherImage.ImageRetention",
+          "usr": "s:11AetherImage0B9RetentionO"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13Krea2PipelineC9retentionAA0B9RetentionOvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13Krea2PipelineC9retentionAA0B9RetentionOvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ImageRetention",
+        "printedName": "AetherImage.ImageRetention",
+        "usr": "s:11AetherImage0B9RetentionO"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "SetterAccess",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13Krea2PipelineC9retentionAA0B9RetentionOvp",
+      "moduleName": "AetherImage",
+      "name": "retention",
+      "printedName": "retention",
+      "usr": "s:11AetherImage13Krea2PipelineC9retentionAA0B9RetentionOvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -5380,6 +5657,87 @@
       "name": "residentRoles",
       "printedName": "residentRoles",
       "usr": "s:11AetherImage13Krea2PipelineC13residentRolesSaySSGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13Krea2PipelineC13residentBytess5Int64Vvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13Krea2PipelineC13residentBytess5Int64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13Krea2PipelineC13residentBytess5Int64Vvp",
+      "moduleName": "AetherImage",
+      "name": "residentBytes",
+      "printedName": "residentBytes",
+      "usr": "s:11AetherImage13Krea2PipelineC13residentBytess5Int64Vvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ImageRetention",
+        "printedName": "AetherImage.ImageRetention",
+        "usr": "s:11AetherImage0B9RetentionO"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC12setRetentionyyAA0bF0OF",
+      "moduleName": "AetherImage",
+      "name": "setRetention",
+      "printedName": "setRetention(_:)",
+      "usr": "s:11AetherImage13Krea2PipelineC12setRetentionyyAA0bF0OF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "DiscardableResult"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC13releaseIfIdleSbyF",
+      "moduleName": "AetherImage",
+      "name": "releaseIfIdle",
+      "printedName": "releaseIfIdle()",
+      "usr": "s:11AetherImage13Krea2PipelineC13releaseIfIdleSbyF"
      },
      {
       "accessors": [
