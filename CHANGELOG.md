@@ -35,6 +35,11 @@
   not yet measured), and returns each graph's
   declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
   `AetherRuntime` API baseline records it.
+- **Krea 2 conditioning reuse:** `Krea2Pipeline.encode(prompt:job:)` runs the text encoder alone (after the filter's
+  prompt review) and returns a `Krea2Conditioning`, which the host owns. `generate(_:reusing:observing:)` renders from it
+  at any seed and size without loading or running the text encoder, pixel for pixel what `generate(_:)` renders. It is
+  refused for another export's conditioning or another prompt. An encode plans memory against the last generation's
+  canvas, so the denoisers that generation kept stay loaded. Additive; the `AetherImage` API baseline records it.
 
 ## 0.1.0 — 2026-11-07
 

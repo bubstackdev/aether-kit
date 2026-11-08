@@ -5564,6 +5564,78 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "ImageGeneration",
+        "printedName": "AetherImage.ImageGeneration",
+        "usr": "s:11AetherImage0B10GenerationV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageRequest",
+          "printedName": "AetherImage.ImageRequest",
+          "usr": "s:11AetherImage0B7RequestV"
+         }
+        ],
+        "kind": "TypeNameAlias",
+        "name": "Request",
+        "printedName": "AetherImage.Krea2Pipeline.Request"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             }
+            ],
+            "kind": "TypeNameAlias",
+            "name": "Void",
+            "printedName": "Swift.Void"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "ImageProgress",
+            "printedName": "AetherImage.ImageProgress",
+            "usr": "s:11AetherImage0B8ProgressO"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherImage.ImageProgress) throws -> Swift.Void"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "((AetherImage.ImageProgress) throws -> Swift.Void)?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC8generate_7reusing9observingAA0B10GenerationVAA0B7RequestV_AA0C12ConditioningVyAA0B8ProgressOYbKcSgtYaKF",
+      "moduleName": "AetherImage",
+      "name": "generate",
+      "printedName": "generate(_:reusing:observing:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC8generate_7reusing9observingAA0B10GenerationVAA0B7RequestV_AA0C12ConditioningVyAA0B8ProgressOYbKcSgtYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Krea2PreparedPrompt",
         "printedName": "AetherImage.Krea2PreparedPrompt",
         "usr": "s:11AetherImage19Krea2PreparedPromptV"
@@ -5587,6 +5659,46 @@
       "printedName": "prepare(prompt:)",
       "throwing": true,
       "usr": "s:11AetherImage13Krea2PipelineC7prepare6promptAA0C14PreparedPromptVSS_tKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC6encode6prompt3jobAA0C12ConditioningVSS_0A4Host6GPUJobCSgtYaKF",
+      "moduleName": "AetherImage",
+      "name": "encode",
+      "printedName": "encode(prompt:job:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC6encode6prompt3jobAA0C12ConditioningVSS_0A4Host6GPUJobCSgtYaKF"
      },
      {
       "children": [
@@ -6232,6 +6344,381 @@
     "name": "Krea2PreparedPrompt",
     "printedName": "Krea2PreparedPrompt",
     "usr": "s:11AetherImage19Krea2PreparedPromptV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV6promptSSvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV6promptSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV6promptSSvp",
+      "moduleName": "AetherImage",
+      "name": "prompt",
+      "printedName": "prompt",
+      "usr": "s:11AetherImage17Krea2ConditioningV6promptSSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV4rowsSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV4rowsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV4rowsSivp",
+      "moduleName": "AetherImage",
+      "name": "rows",
+      "printedName": "rows",
+      "usr": "s:11AetherImage17Krea2ConditioningV4rowsSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV7columnsSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV7columnsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV7columnsSivp",
+      "moduleName": "AetherImage",
+      "name": "columns",
+      "printedName": "columns",
+      "usr": "s:11AetherImage17Krea2ConditioningV7columnsSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV9truncatedSbvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV9truncatedSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV9truncatedSbvp",
+      "moduleName": "AetherImage",
+      "name": "truncated",
+      "printedName": "truncated",
+      "usr": "s:11AetherImage17Krea2ConditioningV9truncatedSbvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV9byteCountSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV9byteCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV9byteCountSivp",
+      "moduleName": "AetherImage",
+      "name": "byteCount",
+      "printedName": "byteCount",
+      "usr": "s:11AetherImage17Krea2ConditioningV9byteCountSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherImage",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherImage17Krea2ConditioningV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherImage",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherImage17Krea2ConditioningV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage17Krea2ConditioningV9hashValueSivg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage17Krea2ConditioningV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage17Krea2ConditioningV9hashValueSivp",
+      "moduleName": "AetherImage",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherImage17Krea2ConditioningV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage17Krea2ConditioningV",
+    "moduleName": "AetherImage",
+    "name": "Krea2Conditioning",
+    "printedName": "Krea2Conditioning",
+    "usr": "s:11AetherImage17Krea2ConditioningV"
    },
    {
     "children": [
