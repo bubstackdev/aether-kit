@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- **Krea 2 progress and metrics** for hosts: `Krea2Pipeline.generate(_:observing:)` reports
+  `ImageProgress` in order (conditioning ready with its row count, denoisers ready, each step with a copy of its packed
+  latents, decoded) and returns an `ImageGeneration`: the image and its `ImageGenerationMetrics`. The metrics cover the
+  wait for the GPU and the pipeline, both filter reviews, each phase, each step, the shapes, the graph roles the
+  generation had to load, and the highest Metal allocation the probe read. A handler that throws stops the generation
+  between graph calls and releases its graphs, which gives a host its own checks at these boundaries. `generate(_:)`
+  is unchanged and renders the same image. The change is additive; the `AetherImage` API baseline records it.
+
 ## 0.1.0 — 2026-11-07
 
 A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues at the `0.0.7` tag and on

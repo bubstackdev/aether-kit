@@ -141,6 +141,15 @@ public actor Krea2Pipeline {
     /// Generates one image, reviewed by the content filter before and after. Krea exports have no default size: pass
     /// `width` and `height` (positive multiples of `latent.pixelsPerToken`, at most `latent.maxImageTokens` tokens).
     public func generate(_ request: Request) async throws -> GeneratedImage {
+        try await generate(request, observing: nil).image
+    }
+
+    /// Generates one image as ``generate(_:)`` does, reporting each phase and step to `onProgress` (see
+    /// ``ImageProgress``; a handler that throws stops the generation), and returns it with its metrics.
+    public func generate(
+        _ request: Request, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
+    ) async throws -> ImageGeneration {
+        let meter = ImageGenerationMeter(probe: options.probe)
         try Task.checkCancellation()
         // Validate the request, then the filter's view of the prompt, before waiting for a turn or the GPU.
         guard let size = request.size(default: latent.defaultSize) else {
@@ -150,12 +159,17 @@ public actor Krea2Pipeline {
         let table = try FlowMatchSchedule(schedule, steps: request.steps, imageTokens: grid.rows * grid.columns)
         let prompt = try Prompt(rendered: try encodePrompt(request.prompt), rule: krea2.prompt,
                                 rows: krea2.conditioning.rowRange ?? 1...1)
+        _ = meter.lap()
         try await filter.requireAllowed(prompt: request.prompt)
+        meter.lap(into: \.promptReviewSeconds)
         try Task.checkCancellation()
 
-        let image = try await render(prompt, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job)
+        let image = try await render(prompt, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job,
+                                     meter: meter, onProgress: onProgress)
+        _ = meter.lap()
         try await filter.requireAllowed(image: image, prompt: request.prompt)
-        return image
+        meter.lap(into: \.imageReviewSeconds)
+        return ImageGeneration(image: image, metrics: meter.finish())
     }
 
     /// The text encoder's conditioning rows for `prompt` (`[rows, taps · width]` row-major; the gate's text check).
@@ -182,7 +196,8 @@ public actor Krea2Pipeline {
 
     private func render(
         _ prompt: Prompt, seed: UInt64, schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int),
-        size: (width: Int, height: Int), job: GPUJob?
+        size: (width: Int, height: Int), job: GPUJob?, meter: ImageGenerationMeter,
+        onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: job)
@@ -190,9 +205,18 @@ public actor Krea2Pipeline {
         return try await gate.withTurn {
             // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
+            meter.lap(into: \.waitSeconds)
+            let residentAtStart = Set(admission.residentRoles)
             let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
+            let used = [wiring.text.role] + wiring.segments.map(\.role) + [wiring.decoder.role]
+            meter.update {
+                $0.conditioningRows = prompt.conditioningRows
+                $0.imageTokens = grid.rows * grid.columns
+                $0.loadedRoles = Set(used).subtracting(residentAtStart).sorted()
+            }
             do {
-                let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size)
+                let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size,
+                                          meter: meter, onProgress: onProgress)
                 admission.finish()
                 return image
             } catch {
@@ -207,7 +231,8 @@ public actor Krea2Pipeline {
     /// phase), nothing else keeps them alive into the next phase.
     private func run(
         _ residency: GraphResidency, prompt: Prompt, seed: UInt64, schedule: FlowMatchSchedule,
-        grid: (rows: Int, columns: Int), size: (width: Int, height: Int)
+        grid: (rows: Int, columns: Int), size: (width: Int, height: Int), meter: ImageGenerationMeter,
+        onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
         let arena = TensorArena()
 
@@ -216,13 +241,15 @@ public actor Krea2Pipeline {
         let conditioning = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: arena)
         residency.sample()
         residency.endPhase(.perPrompt)
+        meter.lap(into: \.conditioningSeconds)
+        try onProgress?(.conditioningReady(rows: prompt.conditioningRows))
         try Task.checkCancellation()
 
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
         try await residency.beginPhase(.perStep)
         let latents = try await denoise(
             conditioning: conditioning, textRows: prompt.conditioningRows, seed: seed, schedule: schedule, grid: grid,
-            residency: residency, arena: arena)
+            residency: residency, arena: arena, meter: meter, onProgress: onProgress)
         residency.endPhase(.perStep)
         try Task.checkCancellation()
 
@@ -230,6 +257,8 @@ public actor Krea2Pipeline {
         try await residency.beginPhase(.perImage)
         let image = try await decode(latents, grid: grid, size: size, residency: residency, arena: arena)
         residency.endPhase(.perImage)
+        meter.lap(into: \.decodeSeconds)
+        try onProgress?(.decoded)
         // A cancellation during the decoder's call: don't report success for a request the caller has given up on.
         try Task.checkCancellation()
         return image
@@ -237,7 +266,8 @@ public actor Krea2Pipeline {
 
     private func denoise(
         conditioning: TensorBuffer, textRows: Int, seed: UInt64, schedule: FlowMatchSchedule,
-        grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena
+        grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena, meter: ImageGenerationMeter,
+        onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> [Float] {
         let tokens = grid.rows * grid.columns, count = tokens * latent.channels
         let dims = Dimensions(textRows: textRows, imageTokens: tokens)
@@ -278,6 +308,8 @@ public actor Krea2Pipeline {
         // Host buffers reused across steps: the velocity is read into `v`, and each update goes into `next` in one
         // validating pass before the two swap.
         var v = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
+        meter.lap(into: \.denoiserPreparationSeconds)
+        try onProgress?(.denoisersReady)
         for step in 0..<schedule.steps {
             try latents.withUnsafeBufferPointer { x throws(AetherError) in
                 try sample.write(Float16.self, count: count) { Float16(x[$0]) }
@@ -293,6 +325,12 @@ public actor Krea2Pipeline {
             }
             try velocity.readFloats(0..<count, into: &v)
             try schedule.advance(step: step, latents: &latents, velocity: v, scratch: &next)
+            let seconds = meter.lap()
+            meter.update { $0.stepSeconds.append(seconds); $0.samplingSeconds += seconds }
+            if let onProgress {
+                try onProgress(.step(step, of: schedule.steps, latents: ImageLatents(
+                    rows: grid.rows, columns: grid.columns, channels: latent.channels, values: latents)))
+            }
         }
         return latents
     }
