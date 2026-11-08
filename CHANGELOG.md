@@ -11,6 +11,18 @@
   generation had to load, and the highest Metal allocation the probe read. A handler that throws stops the generation
   between graph calls and releases its graphs, which gives a host its own checks at these boundaries. `generate(_:)`
   is unchanged and renders the same image. The change is additive; the `AetherImage` API baseline records it.
+- **Bundle identity and verification** for bundles opened from any folder: `InstalledBundle.contentIdentity()` is
+  a location-free SHA-256 over the driver, the variant, every declared file (path, size, SHA-256) and the manifest's
+  `contentDigest`. The store root, folder, repo and revision don't enter it, so a restored copy keeps its identity
+  and a changed file or manifest gets a new one. `contentIdentity(capability:)` binds it to one capability of the
+  bundle. `verify(progress:)` reads every declared file against its size and SHA-256 with progress and cancellation,
+  as an install does, then decodes the manifest. Additive; the `AetherCore` API baseline records it.
+- **Compiled-cache status:** `CompiledCache.status(of:manifest:device:roles:cache:)` asks Core AI's compile cache
+  (`AIModelCache.model(for:options:)`) whether each graph already has a compiled copy for this device, using the
+  specialization options a load from the manifest uses. It compiles nothing (the lookup's own cost on a large model is
+  not yet measured), and returns each graph's
+  declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
+  `AetherRuntime` API baseline records it.
 
 ## 0.1.0 — 2026-11-07
 

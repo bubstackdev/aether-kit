@@ -110605,6 +110605,482 @@
         "children": [
          {
           "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvs",
+        "moduleName": "AetherCore",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvp",
+      "moduleName": "AetherCore",
+      "name": "completedBytes",
+      "printedName": "completedBytes",
+      "usr": "s:10AetherCore26BundleVerificationProgressV14completedBytess5Int64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvs",
+        "moduleName": "AetherCore",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvp",
+      "moduleName": "AetherCore",
+      "name": "totalBytes",
+      "printedName": "totalBytes",
+      "usr": "s:10AetherCore26BundleVerificationProgressV10totalBytess5Int64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.String?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV4fileSSSgvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV4fileSSSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.String?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV4fileSSSgvs",
+        "moduleName": "AetherCore",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV4fileSSSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.String?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV4fileSSSgvp",
+      "moduleName": "AetherCore",
+      "name": "file",
+      "printedName": "file",
+      "usr": "s:10AetherCore26BundleVerificationProgressV4fileSSSgvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "BundleVerificationProgress",
+        "printedName": "AetherCore.BundleVerificationProgress",
+        "usr": "s:10AetherCore26BundleVerificationProgressV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.String?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV14completedBytes05totalG04fileACs5Int64V_AHSSSgtcfc",
+      "moduleName": "AetherCore",
+      "name": "init",
+      "printedName": "init(completedBytes:totalBytes:file:)",
+      "usr": "s:10AetherCore26BundleVerificationProgressV14completedBytes05totalG04fileACs5Int64V_AHSSSgtcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Double",
+          "printedName": "Swift.Double",
+          "usr": "s:Sd"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV17fractionCompletedSdvg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV17fractionCompletedSdvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Double",
+        "printedName": "Swift.Double",
+        "usr": "s:Sd"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV17fractionCompletedSdvp",
+      "moduleName": "AetherCore",
+      "name": "fractionCompleted",
+      "printedName": "fractionCompleted",
+      "usr": "s:10AetherCore26BundleVerificationProgressV17fractionCompletedSdvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "BundleVerificationProgress",
+        "printedName": "AetherCore.BundleVerificationProgress",
+        "usr": "s:10AetherCore26BundleVerificationProgressV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "BundleVerificationProgress",
+        "printedName": "AetherCore.BundleVerificationProgress",
+        "usr": "s:10AetherCore26BundleVerificationProgressV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherCore",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:10AetherCore26BundleVerificationProgressV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherCore",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:10AetherCore26BundleVerificationProgressV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherCore26BundleVerificationProgressV9hashValueSivg",
+        "moduleName": "AetherCore",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherCore26BundleVerificationProgressV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherCore26BundleVerificationProgressV9hashValueSivp",
+      "moduleName": "AetherCore",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:10AetherCore26BundleVerificationProgressV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherCore26BundleVerificationProgressV",
+    "moduleName": "AetherCore",
+    "name": "BundleVerificationProgress",
+    "printedName": "BundleVerificationProgress",
+    "usr": "s:10AetherCore26BundleVerificationProgressV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
           "name": "Int",
           "printedName": "Swift.Int",
           "usr": "s:Si"
@@ -112528,6 +113004,105 @@
       "name": "hashValue",
       "printedName": "hashValue",
       "usr": "s:10AetherCore15InstalledBundleV9hashValueSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV15contentIdentitySSyAA0A5ErrorOYKF",
+      "moduleName": "AetherCore",
+      "name": "contentIdentity",
+      "printedName": "contentIdentity()",
+      "throwing": true,
+      "usr": "s:10AetherCore15InstalledBundleV15contentIdentitySSyAA0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV15contentIdentity10capabilityS2S_tAA0A5ErrorOYKF",
+      "moduleName": "AetherCore",
+      "name": "contentIdentity",
+      "printedName": "contentIdentity(capability:)",
+      "throwing": true,
+      "usr": "s:10AetherCore15InstalledBundleV15contentIdentity10capabilityS2S_tAA0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             }
+            ],
+            "kind": "TypeNameAlias",
+            "name": "Void",
+            "printedName": "Swift.Void"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "BundleVerificationProgress",
+            "printedName": "AetherCore.BundleVerificationProgress",
+            "usr": "s:10AetherCore26BundleVerificationProgressV"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherCore.BundleVerificationProgress) -> Swift.Void"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "((AetherCore.BundleVerificationProgress) -> Swift.Void)?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s10AetherCore15InstalledBundleV6verify8progressyyAA0D20VerificationProgressVcSg_tKF",
+      "moduleName": "AetherCore",
+      "name": "verify",
+      "printedName": "verify(progress:)",
+      "throwing": true,
+      "usr": "s:10AetherCore15InstalledBundleV6verify8progressyyAA0D20VerificationProgressVcSg_tKF"
      }
     ],
     "conformances": [
