@@ -7886,6 +7886,103 @@
       "usr": "s:10AetherHost15PipelineOptionsV5probe0A7Runtime14GPUMemoryProbeVvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureMonitor",
+            "printedName": "AetherHost.MemoryPressureMonitor",
+            "usr": "s:10AetherHost21MemoryPressureMonitorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.MemoryPressureMonitor?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "MemoryPressureMonitor",
+            "printedName": "AetherHost.MemoryPressureMonitor",
+            "usr": "s:10AetherHost21MemoryPressureMonitorC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherHost.MemoryPressureMonitor?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvs",
+        "moduleName": "AetherHost",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "MemoryPressureMonitor",
+          "printedName": "AetherHost.MemoryPressureMonitor",
+          "usr": "s:10AetherHost21MemoryPressureMonitorC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.MemoryPressureMonitor?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvp",
+      "moduleName": "AetherHost",
+      "name": "pressure",
+      "printedName": "pressure",
+      "usr": "s:10AetherHost15PipelineOptionsV8pressureAA21MemoryPressureMonitorCSgvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",

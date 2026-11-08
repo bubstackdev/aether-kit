@@ -70,6 +70,10 @@ public actor Krea2Pipeline {
     private let admission: ResidentAdmission
     /// One request at a time, in arrival order (after the GPU grant).
     private let gate = SerialGate()
+    /// Generations running or waiting (for the GPU or their turn).
+    private var pending = 0
+    /// What happens to the graphs after each generation (default ``ImageRetention/keepLoaded``).
+    public private(set) var retention: ImageRetention = .keepLoaded
 
     /// Opens an installed bundle with the app's content filter; graphs load on the first generation.
     public init(
@@ -149,6 +153,8 @@ public actor Krea2Pipeline {
     public func generate(
         _ request: Request, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> ImageGeneration {
+        pending += 1
+        defer { pending -= 1 }
         let meter = ImageGenerationMeter(probe: options.probe)
         try Task.checkCancellation()
         // Validate the request, then the filter's view of the prompt, before waiting for a turn or the GPU.
@@ -204,6 +210,24 @@ public actor Krea2Pipeline {
     /// Roles currently loaded (for tests and diagnostics).
     public var residentRoles: [String] { admission.residentRoles }
 
+    /// What the graphs kept between generations hold, measured on the pipeline's probe (Metal allocations, so Core AI's
+    /// memory is counted): the last generation's plan of what stays loaded. 0 when nothing is.
+    public var residentBytes: Int64 { admission.residentBytes }
+
+    /// Sets what happens to the graphs after each generation. A generation already running applies the new choice
+    /// when it ends.
+    public func setRetention(_ retention: ImageRetention) { self.retention = retention }
+
+    /// Releases every graph now, but only while no generation is running or waiting: it never waits and never
+    /// interrupts one. Returns `false`, changing nothing, while a generation is in progress (it keeps its graphs; call
+    /// again later, or use ``unload()`` to wait for it). The bundle stays open, unlike ``unload()``.
+    @discardableResult
+    public func releaseIfIdle() -> Bool {
+        guard pending == 0 else { return false }
+        admission.release()
+        return true
+    }
+
     // MARK: - The generation
 
     private func render(
@@ -219,8 +243,12 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let residentAtStart = Set(admission.residentRoles)
-            let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
             let used = [wiring.text.role] + wiring.segments.map(\.role) + [wiring.decoder.role]
+            // Under critical pressure, run only on graphs already resident: loading is what pressure can't afford.
+            if let pressure = options.pressure, !Set(used).isSubset(of: residentAtStart), await pressure.level == .critical {
+                throw AetherError.memoryPressure
+            }
+            let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
             meter.update {
                 $0.conditioningRows = prompt.conditioningRows
                 $0.imageTokens = grid.rows * grid.columns
@@ -230,6 +258,7 @@ public actor Krea2Pipeline {
                 let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size,
                                           meter: meter, onProgress: onProgress)
                 admission.finish()
+                if retention == .releaseAfterEachGeneration { admission.release() }
                 return image
             } catch {
                 admission.release()
