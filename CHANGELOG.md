@@ -11,6 +11,11 @@
   generation had to load, and the highest Metal allocation the probe read. A handler that throws stops the generation
   between graph calls and releases its graphs, which gives a host its own checks at these boundaries. `generate(_:)`
   is unchanged and renders the same image. The change is additive; the `AetherImage` API baseline records it.
+- **Krea 2 prompt preparation:** `Krea2Pipeline.prepare(prompt:)` renders a prompt as `generate` does, on the CPU
+  with no graph loaded and no filter call. It returns a `Krea2PreparedPrompt`: the ids the text encoder receives, the
+  rendered count before truncation, the conditioning rows, whether the rendering was cut, and the export's
+  `maxTokens`. A host that must not render a cut prompt can preflight it. A prompt `prepare` refuses, `generate`
+  refuses too.
 
 ## 0.1.0 — 2026-11-07
 
