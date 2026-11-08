@@ -172,6 +172,18 @@ public actor Krea2Pipeline {
         return ImageGeneration(image: image, metrics: meter.finish())
     }
 
+    /// How the pipeline would render `prompt`, on the CPU: no graph loads and the content filter isn't consulted. A
+    /// prompt this throws for is refused by ``generate(_:)`` too (a negative id, or conditioning rows outside the
+    /// export's range). Hosts that must not render a cut prompt check ``Krea2PreparedPrompt/truncated`` first:
+    /// ``generate(_:)`` keeps the first `maxTokens − keepTrailingTokens` ids and the last `keepTrailingTokens`.
+    public nonisolated func prepare(prompt: String) throws -> Krea2PreparedPrompt {
+        let rendered = try encodePrompt(prompt)
+        let prepared = try Prompt(rendered: rendered, rule: krea2.prompt, rows: krea2.conditioning.rowRange ?? 1...1)
+        return Krea2PreparedPrompt(
+            tokenIDs: prepared.ids, renderedTokenCount: rendered.count, conditioningRows: prepared.conditioningRows,
+            truncated: prepared.truncated, maximumTokens: krea2.prompt.maxTokens)
+    }
+
     /// The text encoder's conditioning rows for `prompt` (`[rows, taps · width]` row-major; the gate's text check).
     /// Loads the text encoder for the call and releases it; nothing is measured and the filter isn't consulted.
     func conditioningRows(for prompt: String) async throws -> [Float] {
@@ -378,6 +390,20 @@ public actor Krea2Pipeline {
         try await text.run(&bindings)
         return rows
     }
+}
+
+/// A prompt as ``Krea2Pipeline`` renders it (``Krea2Pipeline/prepare(prompt:)``): `systemPrefix + prompt + suffix`,
+/// tokenized without added specials, then bounded by the export's `maxTokens`.
+public struct Krea2PreparedPrompt: Sendable, Hashable {
+    /// The ids the text encoder receives (after any truncation).
+    public let tokenIDs: [Int32]
+    /// The rendered ids before truncation.
+    public let renderedTokenCount: Int
+    /// The conditioning rows the denoisers take: the ids after the dropped prefix.
+    public let conditioningRows: Int
+    /// The rendering was longer than ``maximumTokens`` and was cut (its tail kept).
+    public let truncated: Bool
+    public let maximumTokens: Int
 }
 
 // MARK: - Host pieces
