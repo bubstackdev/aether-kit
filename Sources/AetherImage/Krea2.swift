@@ -74,6 +74,10 @@ public actor Krea2Pipeline {
     private var pending = 0
     /// What happens to the graphs after each generation (default ``ImageRetention/keepLoaded``).
     public private(set) var retention: ImageRetention = .keepLoaded
+    /// The export a ``Krea2Conditioning`` must come from: the manifest's ``Manifest/contentDigest``.
+    nonisolated let export: String
+    /// The canvas of the last generation, so an ``encode(prompt:job:)`` plans against the residency it would keep.
+    private var lastProfile: String?
 
     /// Opens an installed bundle with the app's content filter; graphs load on the first generation.
     public init(
@@ -132,6 +136,7 @@ public actor Krea2Pipeline {
         self.options = options
         self.encodePrompt = encodePrompt
         self.load = load
+        export = manifest.contentDigest
         admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
     }
 
@@ -153,6 +158,31 @@ public actor Krea2Pipeline {
     public func generate(
         _ request: Request, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> ImageGeneration {
+        try await generate(request, source: nil, observing: onProgress)
+    }
+
+    /// Generates one image from conditioning ``encode(prompt:job:)`` made, without loading or running the text
+    /// encoder: the image a ``generate(_:observing:)`` of the same request renders, pixel for pixel. `request.prompt`
+    /// must be the conditioning's prompt; the filter reviews it again, then the image, as for any generation. The
+    /// conditioning must come from this export (``Krea2Conditioning`` from another bundle or export is refused with
+    /// `invalidParameters`). ``ImageProgress/conditioningReady(rows:)`` is still reported, first, and the metrics'
+    /// `conditioningSeconds` is the time to bind it.
+    public func generate(
+        _ request: Request, reusing conditioning: Krea2Conditioning,
+        observing onProgress: (@Sendable (ImageProgress) throws -> Void)? = nil
+    ) async throws -> ImageGeneration {
+        guard conditioning.export == export else {
+            throw AetherError.generation(.invalidParameters("the Krea 2 conditioning was encoded by another export"))
+        }
+        guard conditioning.prompt == request.prompt else {
+            throw AetherError.generation(.invalidParameters("the request's prompt is not the conditioning's"))
+        }
+        return try await generate(request, source: conditioning, observing: onProgress)
+    }
+
+    private func generate(
+        _ request: Request, source reused: Krea2Conditioning?, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
+    ) async throws -> ImageGeneration {
         pending += 1
         defer { pending -= 1 }
         let meter = ImageGenerationMeter(probe: options.probe)
@@ -163,14 +193,18 @@ public actor Krea2Pipeline {
         }
         let grid = try latent.tokenGrid(width: size.width, height: size.height)
         let table = try FlowMatchSchedule(schedule, steps: request.steps, imageTokens: grid.rows * grid.columns)
-        let prompt = try Prompt(rendered: try encodePrompt(request.prompt), rule: krea2.prompt,
-                                rows: krea2.conditioning.rowRange ?? 1...1)
+        let source: ConditioningSource = if let reused {
+            .reused(reused)
+        } else {
+            .encode(try Prompt(rendered: try encodePrompt(request.prompt), rule: krea2.prompt,
+                               rows: krea2.conditioning.rowRange ?? 1...1))
+        }
         _ = meter.lap()
         try await filter.requireAllowed(prompt: request.prompt)
         meter.lap(into: \.promptReviewSeconds)
         try Task.checkCancellation()
 
-        let image = try await render(prompt, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job,
+        let image = try await render(source, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job,
                                      meter: meter, onProgress: onProgress)
         _ = meter.lap()
         try await filter.requireAllowed(image: image, prompt: request.prompt)
@@ -188,6 +222,45 @@ public actor Krea2Pipeline {
         return Krea2PreparedPrompt(
             tokenIDs: prepared.ids, renderedTokenCount: rendered.count, conditioningRows: prepared.conditioningRows,
             truncated: prepared.truncated, maximumTokens: krea2.prompt.maxTokens)
+    }
+
+    /// Runs the text encoder on `prompt` alone and returns its conditioning, for ``generate(_:reusing:observing:)``:
+    /// a prompt rendered at several seeds or sizes encodes once. The filter reviews the prompt first, as a generation
+    /// does. Waits for the GPU (`job`'s priority) and this pipeline's turn, and plans memory against the canvas of the
+    /// last generation (so its kept denoisers stay); the text encoder then stays loaded or is released as for a
+    /// generation (``setRetention(_:)``). Refusals, pressure and cancellation are a generation's.
+    public func encode(prompt text: String, job: GPUJob? = nil) async throws -> Krea2Conditioning {
+        pending += 1
+        defer { pending -= 1 }
+        try Task.checkCancellation()
+        let prompt = try Prompt(rendered: try encodePrompt(text), rule: krea2.prompt, rows: krea2.conditioning.rowRange ?? 1...1)
+        try await filter.requireAllowed(prompt: text)
+        try Task.checkCancellation()
+        let grant = try await options.gpu.admit(job: job)
+        defer { grant.release() }
+        return try await gate.withTurn {
+            if let pressure = options.pressure, !admission.residentRoles.contains(wiring.text.role),
+               await pressure.level == .critical {
+                throw AetherError.memoryPressure
+            }
+            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: prompt.conditioningRows)
+            do {
+                try await residency.beginPhase(.perPrompt)
+                let rows = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: TensorArena())
+                residency.sample()
+                residency.endPhase(.perPrompt)
+                try Task.checkCancellation()
+                let conditioning = Krea2Conditioning(
+                    prompt: text, rows: prompt.conditioningRows, columns: krea2.conditioning.columns,
+                    truncated: prompt.truncated, export: export, scalarType: rows.scalarType, bytes: try rows.readBytes())
+                admission.finish()
+                if retention == .releaseAfterEachGeneration { admission.release() }
+                return conditioning
+            } catch {
+                admission.release()
+                throw error
+            }
+        }
     }
 
     /// The text encoder's conditioning rows for `prompt` (`[rows, taps · width]` row-major; the gate's text check).
@@ -231,7 +304,7 @@ public actor Krea2Pipeline {
     // MARK: - The generation
 
     private func render(
-        _ prompt: Prompt, seed: UInt64, schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int),
+        _ source: ConditioningSource, seed: UInt64, schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int),
         size: (width: Int, height: Int), job: GPUJob?, meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
@@ -243,19 +316,21 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let residentAtStart = Set(admission.residentRoles)
-            let used = [wiring.text.role] + wiring.segments.map(\.role) + [wiring.decoder.role]
+            let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
             // Under critical pressure, run only on graphs already resident: loading is what pressure can't afford.
             if let pressure = options.pressure, !Set(used).isSubset(of: residentAtStart), await pressure.level == .critical {
                 throw AetherError.memoryPressure
             }
-            let residency = try admission.begin(profile: "\(size.width)x\(size.height)", shape: prompt.conditioningRows)
+            let profile = "\(size.width)x\(size.height)"
+            let residency = try admission.begin(profile: profile, shape: source.rows)
+            lastProfile = profile
             meter.update {
-                $0.conditioningRows = prompt.conditioningRows
+                $0.conditioningRows = source.rows
                 $0.imageTokens = grid.rows * grid.columns
                 $0.loadedRoles = Set(used).subtracting(residentAtStart).sorted()
             }
             do {
-                let image = try await run(residency, prompt: prompt, seed: seed, schedule: schedule, grid: grid, size: size,
+                let image = try await run(residency, source: source, seed: seed, schedule: schedule, grid: grid, size: size,
                                           meter: meter, onProgress: onProgress)
                 admission.finish()
                 if retention == .releaseAfterEachGeneration { admission.release() }
@@ -271,25 +346,32 @@ public actor Krea2Pipeline {
     /// only by those functions' locals and the residency: when ``GraphResidency/endPhase(_:)`` releases them (per
     /// phase), nothing else keeps them alive into the next phase.
     private func run(
-        _ residency: GraphResidency, prompt: Prompt, seed: UInt64, schedule: FlowMatchSchedule,
+        _ residency: GraphResidency, source: ConditioningSource, seed: UInt64, schedule: FlowMatchSchedule,
         grid: (rows: Int, columns: Int), size: (width: Int, height: Int), meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
         let arena = TensorArena()
 
-        // Prompt: the conditioning rows outlive the text encoder (it may be released before the denoisers load).
-        try await residency.beginPhase(.perPrompt)
-        let conditioning = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: arena)
-        residency.sample()
-        residency.endPhase(.perPrompt)
+        // Prompt: the conditioning rows outlive the text encoder (it may be released before the denoisers load). Reused
+        // conditioning skips the phase: the text encoder neither loads nor runs.
+        let conditioning: Conditioning
+        switch source {
+        case .encode(let prompt):
+            try await residency.beginPhase(.perPrompt)
+            conditioning = .buffer(try await encode(prompt, with: try await residency.graph(wiring.text.role), in: arena))
+            residency.sample()
+            residency.endPhase(.perPrompt)
+        case .reused(let value):
+            conditioning = .reused(value)
+        }
         meter.lap(into: \.conditioningSeconds)
-        try onProgress?(.conditioningReady(rows: prompt.conditioningRows))
+        try onProgress?(.conditioningReady(rows: source.rows))
         try Task.checkCancellation()
 
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
         try await residency.beginPhase(.perStep)
         let latents = try await denoise(
-            conditioning: conditioning, textRows: prompt.conditioningRows, seed: seed, schedule: schedule, grid: grid,
+            conditioning: conditioning, textRows: source.rows, seed: seed, schedule: schedule, grid: grid,
             residency: residency, arena: arena, meter: meter, onProgress: onProgress)
         residency.endPhase(.perStep)
         try Task.checkCancellation()
@@ -306,7 +388,7 @@ public actor Krea2Pipeline {
     }
 
     private func denoise(
-        conditioning: TensorBuffer, textRows: Int, seed: UInt64, schedule: FlowMatchSchedule,
+        conditioning source: Conditioning, textRows: Int, seed: UInt64, schedule: FlowMatchSchedule,
         grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena, meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> [Float] {
@@ -323,6 +405,22 @@ public actor Krea2Pipeline {
                 field: "latent.channels", expected: "denoiser latents [\(tokens), \(latent.channels)]", found: "\(sample.shape)")
         }
         try imageRotary.write(Krea2Rotary.image(rows: grid.rows, columns: grid.columns, rotary: krea2.rotary))
+        let conditioning: TensorBuffer
+        switch source {
+        case .buffer(let buffer):
+            conditioning = buffer
+        case .reused(let value):
+            conditioning = try first.makeBuffer(
+                for: wiring.conditioning, role: .input, dimensions: [value.rows], in: arena)
+            guard conditioning.scalarType == value.scalarType, conditioning.shape == [value.rows, value.columns],
+                  conditioning.storageByteCount == value.bytes.count else {
+                throw AetherError.manifestMismatch(
+                    field: "graphs.\(wiring.segments[0].role).inputs.conditioning",
+                    expected: "\(value.scalarType) [\(value.rows), \(value.columns)] (the text encoder's output)",
+                    found: "\(conditioning.scalarType) \(conditioning.shape)")
+            }
+            try conditioning.writeBytes(value.bytes)
+        }
         var outputs: [String: TensorBuffer] = [:]
         for (segment, graph) in zip(wiring.segments, graphs) {
             for output in segment.outputs {
@@ -435,9 +533,51 @@ public struct Krea2PreparedPrompt: Sendable, Hashable {
     public let maximumTokens: Int
 }
 
+/// A prompt's conditioning from ``Krea2Pipeline/encode(prompt:job:)``: the text encoder's output rows, owned by the
+/// host, for ``Krea2Pipeline/generate(_:reusing:observing:)`` at any seed and size without the text encoder. Valid
+/// only for the export that encoded it (another bundle's pipeline refuses it) and only with its own prompt.
+public struct Krea2Conditioning: Sendable, Hashable {
+    /// The prompt it was encoded from, as the host wrote it.
+    public let prompt: String
+    /// The conditioning rows (the denoisers' text length) and their width.
+    public let rows: Int
+    public let columns: Int
+    /// The rendering was longer than `maxTokens` and was cut (``Krea2PreparedPrompt/truncated``).
+    public let truncated: Bool
+    /// The export it belongs to (``Manifest/contentDigest``).
+    let export: String
+    let scalarType: ScalarType
+    /// The text encoder's output, byte for byte, so a reuse renders what an encode would.
+    let bytes: [UInt8]
+
+    /// The bytes the conditioning holds.
+    public var byteCount: Int { bytes.count }
+}
+
 // MARK: - Host pieces
 
 extension Krea2Pipeline {
+    /// Where a generation's conditioning comes from: the text encoder now, or an earlier ``encode(prompt:job:)``.
+    enum ConditioningSource: Sendable {
+        case encode(Prompt)
+        case reused(Krea2Conditioning)
+
+        var rows: Int {
+            switch self {
+            case .encode(let prompt): prompt.conditioningRows
+            case .reused(let value): value.rows
+            }
+        }
+
+        var reused: Bool { if case .reused = self { true } else { false } }
+    }
+
+    /// The conditioning the first segment binds: the text encoder's output buffer, or reused bytes to copy in.
+    enum Conditioning {
+        case buffer(TensorBuffer)
+        case reused(Krea2Conditioning)
+    }
+
     /// The text encoder's input: the rendered ids, unpadded. A rendering longer than `maxTokens` keeps its first
     /// `maxTokens − keepTrailingTokens` ids and its last `keepTrailingTokens`.
     struct Prompt: Sendable, Hashable {
@@ -489,8 +629,8 @@ extension Krea2Pipeline {
         var text: (role: String, tokens: String, positions: String, conditioning: String)
         var segments: [Segment]
         var decoder: (role: String, latents: String, image: String)
-        /// The first segment's names for the host-fed inputs.
-        var latents: String, sigma: String, imageRotary: String
+        /// The first segment's names for the host-fed inputs, and for its conditioning input.
+        var latents: String, sigma: String, imageRotary: String, conditioning: String
         /// `role.name` of the last segment's velocity.
         var velocity: String
 
@@ -551,6 +691,7 @@ extension Krea2Pipeline {
             latents = first.inputs["latents"]!.name
             sigma = first.inputs["sigma"]!.name
             imageRotary = first.inputs["imageRotary"]!.name
+            conditioning = first.inputs["conditioning"]!.name
             velocity = segments.last!.outputs.first { $0.role == "velocity" }!.ref
         }
     }

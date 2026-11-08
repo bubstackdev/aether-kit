@@ -64,7 +64,8 @@ public struct ImageRequest: Sendable, Hashable {
 /// pipeline releases its graphs (as for any failure). Use it for the host's own checks at these boundaries (a memory
 /// budget, say); keep it fast, since it runs on the generation's path.
 public enum ImageProgress: Sendable, Hashable {
-    /// The text encoder has run (`rows`: the conditioning rows the denoisers take).
+    /// The conditioning is ready: the text encoder has run, or reused conditioning is bound (`rows`: the conditioning
+    /// rows the denoisers take).
     case conditioningReady(rows: Int)
     /// Every denoiser graph is loaded for this generation's shapes.
     case denoisersReady
@@ -99,7 +100,8 @@ public struct ImageGenerationMetrics: Sendable, Hashable, Codable {
     /// The content filter's review of the prompt, then of the image.
     public var promptReviewSeconds: Double = 0
     public var imageReviewSeconds: Double = 0
-    /// The text encoder's phase, including loading it when it wasn't resident.
+    /// The text encoder's phase, including loading it when it wasn't resident (binding reused conditioning, when
+    /// there is some).
     public var conditioningSeconds: Double = 0
     /// Loading the denoiser graphs (zero when they were resident) and preparing the step inputs.
     public var denoiserPreparationSeconds: Double = 0
