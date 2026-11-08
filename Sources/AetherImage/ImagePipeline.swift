@@ -57,6 +57,124 @@ public struct ImageRequest: Sendable, Hashable {
     }
 }
 
+/// Progress through one image generation, reported in order: the prompt's conditioning, the denoiser graphs ready,
+/// each step, the decoded image. The content filter's reviews come before the first and after the last.
+///
+/// A handler that throws stops the generation with its error between graph calls, as cancellation does, and the
+/// pipeline releases its graphs (as for any failure). Use it for the host's own checks at these boundaries (a memory
+/// budget, say); keep it fast, since it runs on the generation's path.
+public enum ImageProgress: Sendable, Hashable {
+    /// The text encoder has run (`rows`: the conditioning rows the denoisers take).
+    case conditioningReady(rows: Int)
+    /// Every denoiser graph is loaded for this generation's shapes.
+    case denoisersReady
+    /// Step `index` (0-based) of `total` has updated the latents.
+    case step(Int, of: Int, latents: ImageLatents)
+    /// The decoder has produced the image; the filter's review of it follows.
+    case decoded
+}
+
+/// A step's latents, copied for the handler: `rows · columns` packed tokens in raster order, each `channels` values
+/// (`values[(row · columns + column) · channels + channel]`). For previews; changing them changes nothing.
+public struct ImageLatents: Sendable, Hashable {
+    public let rows: Int
+    public let columns: Int
+    public let channels: Int
+    public let values: [Float]
+
+    public init(rows: Int, columns: Int, channels: Int, values: [Float]) {
+        self.rows = rows
+        self.columns = columns
+        self.channels = channels
+        self.values = values
+    }
+}
+
+/// Where one generation's time and memory went. Seconds are wall-clock on the continuous clock.
+public struct ImageGenerationMetrics: Sendable, Hashable, Codable {
+    /// The whole call, from the request to the reviewed image, including the waits below.
+    public var totalSeconds: Double = 0
+    /// Waiting for the GPU grant and for this pipeline's earlier requests.
+    public var waitSeconds: Double = 0
+    /// The content filter's review of the prompt, then of the image.
+    public var promptReviewSeconds: Double = 0
+    public var imageReviewSeconds: Double = 0
+    /// The text encoder's phase, including loading it when it wasn't resident.
+    public var conditioningSeconds: Double = 0
+    /// Loading the denoiser graphs (zero when they were resident) and preparing the step inputs.
+    public var denoiserPreparationSeconds: Double = 0
+    /// Every step, then each step's own time. A graph's first call at a new shape is slower than later ones.
+    public var samplingSeconds: Double = 0
+    public var stepSeconds: [Double] = []
+    /// The decoder's phase, including loading it when it wasn't resident.
+    public var decodeSeconds: Double = 0
+    public var conditioningRows: Int = 0
+    public var imageTokens: Int = 0
+    /// The graph roles this generation loaded because they weren't resident when it began, sorted.
+    public var loadedRoles: [String] = []
+    /// The highest Metal allocation the pipeline's probe read during the generation (the whole process's, so it
+    /// includes other allocators').
+    public var peakAllocatedBytes: Int64 = 0
+
+    public init() {}
+}
+
+/// A generated image with its metrics.
+public struct ImageGeneration: Sendable {
+    public let image: GeneratedImage
+    public let metrics: ImageGenerationMetrics
+
+    public init(image: GeneratedImage, metrics: ImageGenerationMetrics) {
+        self.image = image
+        self.metrics = metrics
+    }
+}
+
+/// Times one generation's phases and samples the probe at each boundary (the pipeline's actor owns it).
+final class ImageGenerationMeter {
+    private let clock = ContinuousClock()
+    private let started: ContinuousClock.Instant
+    private var mark: ContinuousClock.Instant
+    private let probe: GPUMemoryProbe
+    private(set) var metrics = ImageGenerationMetrics()
+
+    init(probe: GPUMemoryProbe) {
+        self.probe = probe
+        started = clock.now
+        mark = started
+        sample()
+    }
+
+    /// The seconds since the last lap, starting the next one.
+    func lap() -> Double {
+        let now = clock.now
+        defer { mark = now }
+        sample()
+        return Self.seconds(now - mark)
+    }
+
+    /// Ends the lap and stores its seconds in `field`.
+    func lap(into field: WritableKeyPath<ImageGenerationMetrics, Double>) {
+        let seconds = lap()
+        metrics[keyPath: field] = seconds
+    }
+
+    func sample() { metrics.peakAllocatedBytes = max(metrics.peakAllocatedBytes, probe.allocatedBytes()) }
+
+    func update(_ change: (inout ImageGenerationMetrics) -> Void) { change(&metrics) }
+
+    /// The metrics with the total set.
+    func finish() -> ImageGenerationMetrics {
+        metrics.totalSeconds = Self.seconds(clock.now - started)
+        sample()
+        return metrics
+    }
+
+    static func seconds(_ duration: Duration) -> Double {
+        Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
+    }
+}
+
 extension PipelineOptions {
     /// An image pipeline's admission (absent `memory`: ``MemoryBudget/imageGeneration``).
     func admission(
