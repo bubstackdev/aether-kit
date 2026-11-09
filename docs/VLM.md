@@ -1,6 +1,8 @@
-# VLM: the Qwen3-VL driver (plan)
+# VLM: the Qwen3-VL driver
 
-Status: **plan, revised 2026-11-09** for Qwen3-VL **4B** and several images per turn. It supersedes the 2B-only draft
+Status: **slices V1–V4 implemented, 2026-11-09; G4 passed on the 4B export** (8 cases on 8 synthetic pictures, 7
+token-exact and 1 near-tie flip, see §6). V5 (G5 retention and memory) and the FoundationModels attachments follow. The
+plan below was revised 2026-11-09 for Qwen3-VL **4B** and several images per turn. It supersedes the 2B-only draft
 of 2026-11-06 (one image per context, one rope shift). The driver serves any Qwen3-VL export of `Forge/qwen3vl/`
 (2B, 4B, 8B and their fine-tunes): sizes come from the graph descriptors, never from the model name. The export half of
 M4g ([M4.md](M4.md)) merged as PR #135 for 2B; this plan changes its decoder contract (§3) and adds the 4B export.
@@ -177,7 +179,7 @@ factor); below `minPixels` multiply by β = √(min/HW) and ceil; an aspect rati
 | KV per token (fp16) | **147,456 B** (36·2·8·128·2): 144 MiB per 1k tokens, 576 MiB at 4,096 | 114,688 B |
 | Decoder statics (fp16) | 80 MiB at N = 4,096 | 32 MiB at N = 2,048 |
 | Tower buffers | 12 MiB patches + 10 MiB outputs | the same + 8 MiB |
-| Metal at first image request | to measure (0.0.x: 8.57 GiB of Metal for a 4B model, INTEGRATION.md) | |
+| Metal at first image request | measured (G4 run): 15.2 GiB after load, 17.3 GiB after one picture, 20.5 GiB after a three-picture turn (process-wide `currentAllocatedSize`, capacity 4,096; 0.0.x: 8.57 GiB of Metal for a 4B model, INTEGRATION.md). G5 breaks it down by phase | |
 
 Both graphs stay resident for the engine's lifetime on macOS. A reply takes one `GPUAdmission` grant (DESIGN §10);
 `bindImages` runs inside `Generator.prepare`, so the encodes are inside it by construction.
@@ -203,6 +205,15 @@ states), not a runtime one.
 0.0.7 fed its tower fp16 pixels and its decoder host-computed positions; ours feeds f32 patches and synthesizes the
 positions in the graph. The pictures are chosen so the preprocessing is the identity in both, which leaves only the
 pixel precision and the graphs' arithmetic to differ.
+
+**G4 result (2026-11-09, 4B abliterated export, default 4,096 slots and 16 images, context capacity 4,096).** All 8
+pictures' patch rows equal 0.0.7's at fp16. Every case renders 0.0.7's prompt ids. Greedy replies: 7 of 8 cases
+token-exact (single pictures, a three-frame turn, text-only); the two-picture case flips at token 59, where the
+reference's own top-1 − top-2 margin is 0.0000 and our token is in its top five. Decode cost per step, with the 80 MiB
+of image statics bound on every step: 26.3–36.7 ms/token (27–30 ms on the cases past 20 tokens; text-only 26.3 ms),
+against 0.0.7's 20.3–23.3 ms/token on the same cases. Prefill: 0.45 s text-only, 0.58–1.00 s for one picture, 1.23 s
+for two and 2.85 s for three, against 0.0.7's 0.26–0.82 s time to first token. The run doesn't separate the statics' share
+of the step; a 2,048-slot export would measure it.
 
 ## 7. From 0.0.7: port, and what changes
 
@@ -232,11 +243,12 @@ V1–V4 are one PR for 0.2.0 (the describer is its blocker); V5 and the Foundati
 ## 9. Open questions for the owner
 
 1. **Slots and images:** 4,096 slots and 16 images for the 4B export (80 MiB of fp16 statics bound per step), or
-   fewer (2,048 slots: 4 full-size pictures or 8 frames at 448 tokens)? It's an export parameter; G5 measures the
-   per-step cost.
+   fewer (2,048 slots: 4 full-size pictures or 8 frames at 448 tokens)? It's an export parameter. **Decided for now:**
+   keep 4,096 and 16; G4 measured 27–30 ms per decode step at those defaults (§6).
 2. **Picture size:** 0.0.7 snapped every picture to one of five grids around 450–490 tokens. The new driver keeps the
    picture's aspect, up to 512 tokens a picture. A consumer that wants 0.0.7's sizes can resize first; should the kit
-   offer 0.0.7's snapping as an opt-in preprocess mode?
+   offer 0.0.7's snapping as an opt-in preprocess mode? **Decided:** no opt-in.
 3. **G4's bar:** strict token equality with the near-tie rule (as planned), or also every-row logits cosine ≥ 0.995
-   against 0.0.7?
-4. **Hosting:** the 4B abliterated export stays local (no catalog entry), as the 0.0.x describer did?
+   against 0.0.7? **Decided:** token equality with the near-tie rule, as planned.
+4. **Hosting:** the 4B abliterated export stays local (no catalog entry), as the 0.0.x describer did? **Decided:**
+   it stays local.
