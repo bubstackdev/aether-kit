@@ -157,7 +157,9 @@ struct Krea2RefineTests {
     }
 
     @Test func anExportWithoutTheEncoderHasNoRefine() async throws {
-        let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls())
+        var plain = try Krea2Tests.manifest()
+        plain.graphs["vaeEncoder"] = nil
+        let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls(), manifest: plain)
         #expect(!pipeline.supportsRefine)
         await #expect(throws: AetherError.self) { _ = try await pipeline.encode(image: Self.picture) }
         #expect(loads.log.isEmpty)

@@ -33,7 +33,7 @@ struct GenerativeManifestTests {
         #expect(latent.packing == .patch2x2ChannelMajor && latent.noise == .init())
         #expect(manifest.graphs.mapValues(\.residency) == [
             "textEncoder": .perPrompt, "denoiser0": .perStep, "denoiser1": .perStep, "denoiser2": .perStep,
-            "denoiser3": .perStep, "vaeDecoder": .perImage,
+            "denoiser3": .perStep, "vaeDecoder": .perImage, "vaeEncoder": .perPrompt,
         ])
         #expect((manifest.provenance?.mergedAdapter?.sha256.hasPrefix("a6712629") ?? false) == (variant == "realism"))
         // The canonical encoding round-trips.
@@ -116,7 +116,7 @@ struct GenerativeManifestTests {
         // Measured: with the reshape hint the segments' carries are non-finite on the GPU; the text encoder keeps it.
         #expect(manifest.graphs.mapValues { $0.expectFrequentReshapes } == [
             "textEncoder": true, "denoiser0": false, "denoiser1": false, "denoiser2": false, "denoiser3": false,
-            "vaeDecoder": false,
+            "vaeDecoder": false, "vaeEncoder": false,
         ])
         try DriverContract.krea2.validate(manifest)
     }

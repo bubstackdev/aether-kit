@@ -800,3 +800,49 @@ class VAEDecoderGraph(nn.Module):
         g = torch.Generator().manual_seed(3)
         h, w = torch.export.Dim("rows", min=2, max=128), torch.export.Dim("columns", min=2, max=128)
         return (torch.randn(rows, columns, LATENT_CHANNELS, generator=g).half(),), ({0: h, 1: w},)
+
+
+class Unreachable(nn.Module):
+    """Stands in for a submodule the single-frame graph never calls; calling it is an export bug."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self.name = name
+
+    def forward(self, *args, **kwargs):
+        raise RuntimeError(f"{self.name} is unreachable for one frame without a feature cache")
+
+
+class VAEEncoderGraph(nn.Module):
+    """Refine's head, the inverse of the decoder's tail: the single-frame encoder, quant conv, the posterior's mode,
+    `(mean - latents_mean) / latents_std`, then 2x2 patches packed channel-major (`c * 4 + 2 * dy + dx`, the
+    pipeline's `_pack_latents` order) as `[rows, columns, 64]` float32. Input: `[3, 16 * rows, 16 * columns]` on
+    [-1, 1]. With no feature cache, each causal conv sees zeros before the frame, as `vae.encode` does for frame 0."""
+
+    def __init__(self, vae, half_storage: bool = True) -> None:
+        super().__init__()
+        cfg = vae.config
+        self.channels = cfg.z_dim
+        self.register_buffer("mean", torch.tensor(cfg.latents_mean, dtype=torch.float32).view(-1, 1, 1))
+        self.register_buffer("std", torch.tensor(cfg.latents_std, dtype=torch.float32).view(-1, 1, 1))
+        encoder = copy.deepcopy(vae.encoder)
+        for module in encoder.modules():
+            # A downsample3d resample's time conv runs only with a feature cache (from the second frame chunk on);
+            # one frame without a cache never reaches it, and its stride-2 temporal kernel has no 2-D form.
+            if getattr(module, "mode", None) == "downsample3d" and hasattr(module, "time_conv"):
+                module.time_conv = Unreachable("time_conv")
+        self.encoder = single_frame(encoder, half_storage)
+        self.quant_conv = single_frame(nn.ModuleList([copy.deepcopy(vae.quant_conv)]), half_storage)[0]
+
+    def forward(self, image):
+        moments = self.quant_conv(self.encoder(image.float()[None, :, None]))
+        mode = moments[0, : self.channels, 0]                             # DiagonalGaussianDistribution.mode()
+        z = (mode - self.mean) / self.std
+        return F.pixel_unshuffle(z[None], 2)[0].permute(1, 2, 0)
+
+    @staticmethod
+    def example(rows: int = 4, columns: int = 6):
+        g = torch.Generator().manual_seed(4)
+        h, w = torch.export.Dim("rows", min=2, max=128), torch.export.Dim("columns", min=2, max=128)
+        image = (torch.rand(3, PIXELS_PER_TOKEN * rows, PIXELS_PER_TOKEN * columns, generator=g) * 2 - 1).half()
+        return (image,), ({1: PIXELS_PER_TOKEN * h, 2: PIXELS_PER_TOKEN * w},)

@@ -21,6 +21,11 @@ Records (all float32 `.npy` unless noted) in `--output`:
     step{s}.npz                    latents_in, timestep, cond [8, 6144], image_{1,2,3} [N, 6144], text_{1,2,3}
                                    [T, 6144] (outputs of blocks 6/13/20), velocity [N, 64], latents_out
     image.npy                      [3, H, W] decoded in [-1, 1]; image.png
+  refine (unless --no-refine): `image.npy` encoded by the source VAE, then the remaining steps from a start step:
+    encoder_latents.npy            [N, 64] `vae.encode(image).latent_dist.mode()`, normalized, packed (`_pack_latents`)
+    refine_noise.npy               [N, 64] Kit's seeded noise for the refine seed
+    refine_start.npy               [N, 64] `(1 - sigma) * x0 + sigma * noise` at the start step's sigma
+    refine_image.npy               [3, H, W] the refined decode in [-1, 1]; refine_image.png
 """
 
 from __future__ import annotations
@@ -74,6 +79,52 @@ def stream_float32(transformer, adapter) -> None:
         block.register_forward_hook(restore)
 
 
+def refine_reference(pipe, transformer, vae, prompt_embeds, prompt_mask, decoded: np.ndarray, rows: int, columns: int,
+                     args) -> dict:
+    """Image-to-image from `image.npy`: the source VAE's posterior mode, normalized (the inverse of the decode tail's
+    `x * std + mean`) and packed by `_pack_latents`; `(1 - sigma) * x0 + sigma * noise` at the start step's sigma
+    (flow matching); then the pipeline's own transformer and scheduler steps from there, and the pipeline's decode."""
+    from diffusers.pipelines.krea2.pipeline_krea2 import retrieve_timesteps
+
+    seed = args.seed + 1 if args.refine_seed is None else args.refine_seed
+    tokens = rows * columns
+    z_dim = vae.config.z_dim
+    mean = torch.tensor(vae.config.latents_mean).view(1, z_dim, 1, 1)
+    std = torch.tensor(vae.config.latents_std).view(1, z_dim, 1, 1)
+    picture = torch.from_numpy(decoded).float()
+    mode = vae.encode(picture[None, :, None]).latent_dist.mode()[:, :, 0]
+    x0 = pipe._pack_latents((mode - mean) / std, 1, z_dim, 2 * rows, 2 * columns)[0].float()          # [N, 64]
+    noise = torch.from_numpy(kg.seeded_noise(seed, tokens * kg.LATENT_CHANNELS)).reshape(tokens, kg.LATENT_CHANNELS)
+    sigmas = np.linspace(1.0, 1 / args.steps, args.steps)
+    timesteps, _ = retrieve_timesteps(pipe.scheduler, args.steps, torch.device("cpu"), sigmas=sigmas, mu=kg.MU)
+    sigma = float(pipe.scheduler.sigmas[args.refine_step])
+    kit_sigma = kg.schedule(args.steps)[0][args.refine_step]
+    if abs(sigma - kit_sigma) > 1e-6:
+        raise SystemExit(f"the pipeline's sigma at step {args.refine_step} is {sigma}, Kit's schedule {kit_sigma}")
+    latents = ((1 - sigma) * x0 + sigma * noise)[None]
+    np.save(args.output / "encoder_latents.npy", x0.numpy())
+    np.save(args.output / "refine_noise.npy", noise.numpy())
+    np.save(args.output / "refine_start.npy", latents[0].numpy())
+    pipe.scheduler.set_begin_index(args.refine_step)
+    position_ids = pipe.prepare_position_ids(prompt_embeds.shape[1], rows, columns, torch.device("cpu"))
+    for i in range(args.refine_step, args.steps):
+        t = timesteps[i]
+        timestep = (t / pipe.scheduler.config.num_train_timesteps).expand(1).to(latents.dtype)
+        velocity = transformer(hidden_states=latents, encoder_hidden_states=prompt_embeds, timestep=timestep,
+                               position_ids=position_ids, encoder_attention_mask=prompt_mask, return_dict=False)[0]
+        latents = pipe.scheduler.step(velocity, t, latents, return_dict=False)[0]
+    unpacked = pipe._unpack_latents(latents, rows * kg.PIXELS_PER_TOKEN, columns * kg.PIXELS_PER_TOKEN)
+    picture = vae.decode(unpacked * std[..., None] + mean[..., None], return_dict=False)[0][:, :, 0]
+    picture = pipe.image_processor.postprocess(picture, output_type="pt")[0].float()
+    np.save(args.output / "refine_image.npy", (picture * 2 - 1).numpy())
+    from PIL import Image
+    Image.fromarray((picture.permute(1, 2, 0).numpy() * 255).round().astype(np.uint8)).save(
+        args.output / "refine_image.png")
+    print(f"[reference] refine from step {args.refine_step} (sigma {sigma:.4f}), seed {seed}", file=sys.stderr, flush=True)
+    return {"source": "image.npy", "startStep": args.refine_step, "startSigma": sigma, "seed": seed,
+            "steps": args.steps, "start": "(1 - sigma) * x0 + sigma * noise", "encoder": "posterior mode"}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", choices=("vanilla", "realism"), required=True)
@@ -84,8 +135,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--size", type=int, default=SIZE)
     parser.add_argument("--steps", type=int, default=kg.STEPS)
+    parser.add_argument("--refine-step", type=int, default=kg.STEPS - 1,
+                        help="the step a refine of image.npy starts from (default the last: sigma about 0.31)")
+    parser.add_argument("--refine-seed", type=int, help="the refine noise's seed (default seed + 1)")
+    parser.add_argument("--no-refine", action="store_true")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
+    if not args.no_refine and not 1 <= args.refine_step < args.steps:
+        parser.error("--refine-step must be in 1 ..< steps (step 0 would ignore the picture)")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     args.output.mkdir(parents=True)
@@ -189,10 +246,17 @@ def main() -> None:
     sigmas = pipe.scheduler.sigmas.float().tolist()
     for s, record in enumerate(steps):
         np.savez(args.output / f"step{s}.npz", **record)
+    main_timesteps = [float(s["timestep"][0]) for s in steps]
     decoded = (image[0].float() * 2 - 1).numpy()           # postprocess is x / 2 + 0.5 of the clamped decode
     np.save(args.output / "image.npy", decoded)
     from PIL import Image
     Image.fromarray((image[0].permute(1, 2, 0).numpy() * 255).round().astype(np.uint8)).save(args.output / "image.png")
+
+    refine = None
+    if not args.no_refine:
+        t0 = time.monotonic()
+        refine = refine_reference(pipe, transformer, vae, prompt_embeds, prompt_mask, decoded, rows, columns, args)
+        timings["refine"] = round(time.monotonic() - t0, 1)
 
     kit_sigmas, kit_timesteps = kg.schedule(args.steps)
     record = {
@@ -202,7 +266,7 @@ def main() -> None:
         "prompt": args.prompt, "seed": args.seed, "noise": "splitmix64BoxMuller packedToken float32",
         "height": args.size, "width": args.size, "steps": args.steps, "guidance": 0.0, "mu": kg.MU,
         "imageTokens": tokens, "textRows": text_rows, "renderedTokens": len(real_ids),
-        "sigmas": sigmas, "timesteps": [float(s["timestep"][0]) for s in steps],
+        "sigmas": sigmas, "timesteps": main_timesteps, "refine": refine,
         "kitSigmas": kit_sigmas, "kitTimesteps": kit_timesteps,
         "kitSigmaMaxAbsDiff": max(abs(a - b) for a, b in zip(sigmas, kit_sigmas)),
         "precision": "float32 CPU; transformer stored bf16, widened per block (exact weights)",

@@ -4,6 +4,8 @@
     uv sync --frozen --project Forge
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant vanilla --output <new bundle dir>
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --output <new bundle dir>
+    Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --only vaeEncoder \
+        --base-bundle <existing bundle> --output <new bundle dir>
 
 `vanilla` is the pinned checkpoint; `realism` merges the realism LoKr (`realism_engine_krea2_v3.1.safetensors`,
 sha256 a6712629...) into the transformer in float32 before export. Nothing is downloaded: the snapshot must be in the
@@ -11,7 +13,7 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
 
     OUTPUT/
       .aether/aether.json               the Aether manifest (MANIFEST.md §5.5–5.6; driver `krea2@1`)
-      krea2_turbo[_realism]-{text,denoiser0..3,vae}.aimodel
+      krea2_turbo[_realism]-{text,denoiser0..3,vae,vae-encoder}.aimodel
       tokenizer/                        the checkpoint's tokenizer files, unchanged
       LICENSE.pdf, KREA-2-LICENSE.txt, KREA-2-USE-POLICY.txt, NOTICE
       SHA256SUMS                        every bundle file except itself
@@ -19,6 +21,11 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
       forge-log.jsonl                   one event per stage
 
 The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
+
+`--base-bundle` adds the graphs named by `--only` to a complete earlier export without converting the others again:
+the new bundle hard-links (or, across volumes, copies) every graph, tokenizer and license file of the base, exports
+the named graphs, and writes a new manifest, NOTICE and SHA256SUMS over the union. The base's export report is kept
+as `base-export-report.json`. The base is only read, and the result is a new export with its own manifest digest.
 
 Conversion runs on the CPU; parity is the separate gate `check_krea2.py` (GPU) against `reference_krea2.py`.
 """
@@ -31,6 +38,7 @@ import gc
 import hashlib
 import importlib.metadata
 import json
+import os
 import platform
 import resource
 import shutil
@@ -76,9 +84,11 @@ VARIANTS = {
     "vanilla": {"id": "krea-2-turbo", "name": "krea2_turbo", "title": "Krea 2 Turbo"},
     "realism": {"id": "krea-2-turbo-realism", "name": "krea2_turbo_realism", "title": "Krea 2 Turbo Realism"},
 }
-ROLES = ("textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder")
-ASSET_SUFFIX = {"textEncoder": "text", "vaeDecoder": "vae", **{f"denoiser{i}": f"denoiser{i}" for i in range(4)}}
-FUNCTIONS = {"textEncoder": "encode", "vaeDecoder": "decode", **{f"denoiser{i}": "segment" for i in range(4)}}
+ROLES = ("textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder", "vaeEncoder")
+ASSET_SUFFIX = {"textEncoder": "text", "vaeDecoder": "vae", "vaeEncoder": "vae-encoder",
+                **{f"denoiser{i}": f"denoiser{i}" for i in range(4)}}
+FUNCTIONS = {"textEncoder": "encode", "vaeDecoder": "decode", "vaeEncoder": "encode",
+             **{f"denoiser{i}": "segment" for i in range(4)}}
 NOTICE_LINE = ("Krea 2 is licensed under the Krea 2 Community License Agreement. For more information, visit "
                "https://krea.ai/krea-2-licensing.")
 
@@ -185,13 +195,17 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         "vaeDecoder": {"file": graph_file("vaeDecoder"), "function": "decode",
                        "inputs": {"latents": "latents"}, "outputs": {"image": "image"},
                        "compute": "gpu", "expectFrequentReshapes": False, "residency": "perImage"},
+        # Refine's encoder: pixels [3, 16 * rows, 16 * columns] on [-1, 1] -> packed latents [rows, columns, 64].
+        "vaeEncoder": {"file": graph_file("vaeEncoder"), "function": "encode",
+                       "inputs": {"pixels": "image"}, "outputs": {"latents": "latents"},
+                       "compute": "gpu", "expectFrequentReshapes": False, "residency": "perPrompt"},
     }
     for i in (1, 2, 3):
         outputs = {"velocity": "velocity"} if i == 3 else {"carryImage": f"image_{i + 1}", "carryText": f"text_{i + 1}"}
         graphs[f"denoiser{i}"] = {"file": graph_file(f"denoiser{i}"), "function": "segment",
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
                                   "expectFrequentReshapes": False, "residency": "perStep"}
-    order = ["textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"]
+    order = [role for role in ROLES if role in asset_names]
     return {
         "schema": 1,
         "id": v["id"],
@@ -229,7 +243,9 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         },
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
-                                     "vaeDecoder": "fp16 weights, fp32 compute"}},
+                                     "vaeDecoder": "fp16 weights, fp32 compute",
+                                     **({"vaeEncoder": "fp16 weights, fp32 compute"}
+                                        if "vaeEncoder" in asset_names else {})}},
         "license": "LicenseRef-Krea-2-Community-License-1.0",
         "x-license": {"files": ["LICENSE.pdf", "KREA-2-LICENSE.txt", "KREA-2-USE-POLICY.txt", "NOTICE"],
                       "modified": True, "commercialRevenueCapUSD": 1_000_000,
@@ -260,15 +276,16 @@ def sample_manifest(variant: str) -> dict:
     return manifest(variant, files, asset_names, report)
 
 
-def notice(variant: str) -> str:
+def notice(variant: str, roles=ROLES) -> str:
     v = VARIANTS[variant]
+    vae = "VAE decoder and encoder" if "vaeEncoder" in roles else "VAE decoder"
     lines = [
         f"{v['title']} (Aether-Kit Core AI export)",
         "",
         NOTICE_LINE,
         "",
         f"This bundle is a modified version of the Krea Model {REPO} at revision {REVISION}: its weights were",
-        "converted to fp16 and re-expressed as Core AI graphs (text encoder, four denoiser segments, VAE decoder) by",
+        f"converted to fp16 and re-expressed as Core AI graphs (text encoder, four denoiser segments, {vae}) by",
         "Aether-Kit's Forge exporter. The text encoder keeps only the layers Krea 2 reads.",
     ]
     if variant == "realism":
@@ -299,7 +316,10 @@ def main() -> None:
     parser.add_argument("--adapter", type=Path, default=FORGE_INPUTS / ADAPTER_FILE)
     parser.add_argument("--license-dir", type=Path, default=FORGE_INPUTS, help="KREA-2-LICENSE.txt and use policy")
     parser.add_argument("--adapter-multiplier", type=float, default=1.0)
-    parser.add_argument("--only", nargs="*", choices=ROLES, help="export a subset (probes; not a bundle)")
+    parser.add_argument("--only", nargs="*", choices=ROLES,
+                        help="export a subset (probes; a bundle only with --base-bundle)")
+    parser.add_argument("--base-bundle", type=Path,
+                        help="a complete earlier export to add the --only graphs to (read only; linked, not changed)")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
@@ -310,6 +330,16 @@ def main() -> None:
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     roles = args.only or list(ROLES)
+    base = None
+    if args.base_bundle is not None:
+        if not args.only:
+            parser.error("--base-bundle needs --only (the graphs to add)")
+        base = json.loads((args.base_bundle / MANIFEST_PATH).read_text())
+        if base["id"] != VARIANTS[args.variant]["id"]:
+            raise SystemExit(f"the base bundle is {base['id']}, not {VARIANTS[args.variant]['id']}")
+        clash = set(roles) & set(base["graphs"])
+        if clash:
+            raise SystemExit(f"the base bundle already has {sorted(clash)}")
     started = time.monotonic()
     args.output.mkdir(parents=True)
     log = Log(args.output / "forge-log.jsonl")
@@ -394,6 +424,17 @@ def main() -> None:
         gc.collect()
         save()
 
+    if "vaeEncoder" in roles:
+        log.start("export-vaeEncoder")
+        module = kg.VAEEncoderGraph(kg.load_vae(checkpoint)).eval()
+        example, dynamic = module.example()
+        report["conversion"]["vaeEncoder"] = convert(module, example, dynamic, ["image"], ["latents"], "encode",
+                                                     args.output / asset_names["vaeEncoder"])
+        report["stages"]["export-vaeEncoder"] = log.done("export-vaeEncoder")
+        del module
+        gc.collect()
+        save()
+
     if "vaeDecoder" in roles:
         log.start("export-vaeDecoder")
         module = kg.VAEDecoderGraph(kg.load_vae(checkpoint)).eval()
@@ -405,32 +446,59 @@ def main() -> None:
         gc.collect()
         save()
 
-    if set(roles) != set(ROLES):
+    if base is not None:
+        # Every role the base exported plus the new ones; the base's graphs, tokenizer and licenses are linked in.
+        present = [role for role in ROLES if role in base["graphs"] or role in roles]
+        asset_names = {role: asset_names[role] for role in present}
+        log.start("link-base")
+        keep = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl", "NOTICE"}
+        for source in tree_files(args.base_bundle):
+            relative = str(source.relative_to(args.base_bundle))
+            if relative in keep:
+                continue
+            target = args.output / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                os.link(source, target)
+            except OSError:
+                shutil.copy2(source, target)
+        shutil.copyfile(args.base_bundle / "export-report.json", args.output / "base-export-report.json")
+        base_report = json.loads((args.base_bundle / "export-report.json").read_text())
+        report["base"] = {"bundle": str(args.base_bundle), "manifestSHA256": sha256(args.base_bundle / MANIFEST_PATH),
+                          "exportedAt": base_report.get("exportedAt"), "added": roles}
+        if "adapter" in base_report:
+            report["adapter"] = base_report["adapter"]
+        report["stages"]["link-base"] = log.done("link-base")
+        roles = present
+        save()
+    elif set(roles) != set(ROLES):
         save()
         print(json.dumps({"partial": roles, "conversion": report["conversion"], "peakRSSGB": report["peakRSSGB"]}))
         return
 
     log.start("package")
-    (args.output / "tokenizer").mkdir()
+    (args.output / "tokenizer").mkdir(exist_ok=True)
     for name in TOKENIZER_FILES:
-        shutil.copyfile(checkpoint.root / "tokenizer" / name, args.output / "tokenizer" / name)
+        if not (args.output / "tokenizer" / name).exists():
+            shutil.copyfile(checkpoint.root / "tokenizer" / name, args.output / "tokenizer" / name)
     license_pdf = checkpoint.root / "LICENSE.pdf"
     if args.allow_unpinned and not license_pdf.exists():
         license_pdf = args.license_dir / "KREA-2-LICENSE.pdf"
-    shutil.copyfile(license_pdf, args.output / "LICENSE.pdf")
-    shutil.copyfile(args.license_dir / "KREA-2-LICENSE.txt", args.output / "KREA-2-LICENSE.txt")
-    shutil.copyfile(args.license_dir / "krea-2-use-policy.txt", args.output / "KREA-2-USE-POLICY.txt")
+    for source, name in ((license_pdf, "LICENSE.pdf"), (args.license_dir / "KREA-2-LICENSE.txt", "KREA-2-LICENSE.txt"),
+                         (args.license_dir / "krea-2-use-policy.txt", "KREA-2-USE-POLICY.txt")):
+        (args.output / name).unlink(missing_ok=True)      # a linked base copy: replace, never write through it
+        shutil.copyfile(source, args.output / name)
     if sha256(args.output / "LICENSE.pdf") != sha256(args.license_dir / "KREA-2-LICENSE.pdf"):
         raise SystemExit("the snapshot's LICENSE.pdf differs from forge-inputs' KREA-2-LICENSE.pdf")
-    (args.output / "NOTICE").write_text(notice(args.variant))
-    skip = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
+    (args.output / "NOTICE").write_text(notice(args.variant, roles))
+    skip = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl", "base-export-report.json"}
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": sha256(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in skip}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
     report["assetBytes"] = {role: tree_bytes(args.output / name) for role, name in asset_names.items()}
     report["stages"]["package"] = log.done("package")
     save()
-    (args.output / ".aether").mkdir()
+    (args.output / ".aether").mkdir(exist_ok=True)
     (args.output / MANIFEST_PATH).write_text(json.dumps(manifest(args.variant, files, asset_names, report), indent=2)
                                              + "\n")
     report["aetherJSONSHA256"] = sha256(args.output / MANIFEST_PATH)

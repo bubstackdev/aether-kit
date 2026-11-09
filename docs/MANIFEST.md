@@ -516,13 +516,15 @@ and products display "Powered by Stability AI". The manifest records this in `li
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
-| `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
+| `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `vaeEncoder` (`encode`: `pixels` `[3, 16·rows, 16·columns]` on [-1, 1] → `latents` `[rows, columns, 64]`, normalized and packed as the decoder reads them; refine; an optional graph role, checked against its contract when present); `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
 
 Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism; the
 driver reads the bindings once at load and refuses a chain that runs forward or a host-fed carry. Segment carries stay
 float32; the latents the first segment and the decoder read are fp16 (rounded from the host's float32 latents). A
-future `vision` graph and `encodeWithImages` function (reference images) and a VAE encoder (refine) are reserved for
-`krea2@1` and absent from the first export. The driver is macOS-only in 0.1.0 (refused on iOS before loading).
+future `vision` graph and `encodeWithImages` function (reference images) are reserved for `krea2@1` and absent from
+the exports. The optional `vaeEncoder` (refine) is the source VAE's posterior mode, `(mode − latents_mean) /
+latents_std`, packed 2×2 channel-major (`c·4 + 2·dy + dx`); a refine starts at `(1 − σ)·x0 + σ·noise` at its start
+step's sigma and runs the remaining steps. The driver is macOS-only in 0.1.0 (refused on iOS before loading).
 
 ### 5.6 `krea2` (normative since G3)
 
