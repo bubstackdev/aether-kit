@@ -73,6 +73,37 @@ public struct FlowMatchSchedule: Sendable, Hashable {
         self.mu = mu
     }
 
+    private init(sigmas: [Float], timesteps: [Float], mu: Double?) {
+        self.sigmas = sigmas
+        self.timesteps = timesteps
+        self.mu = mu
+    }
+
+    /// This schedule with its last step starting at `sigma` instead (an off-grid image-to-image start; every earlier
+    /// step unchanged), its timestep `σ · T / T` as the others'. `sigma` must be finite, in (0, 1), and below the
+    /// previous step's sigma (when there is one).
+    public func replacingLastSigma(_ sigma: Float, trainTimesteps: Int = 1000) throws(AetherError) -> FlowMatchSchedule {
+        let last = steps - 1
+        guard steps >= 1, sigma.isFinite, sigma > 0, sigma < 1, last == 0 || sigma < sigmas[last - 1], trainTimesteps > 0 else {
+            throw .generation(.invalidParameters("an off-grid last sigma must be in (0, 1) and below the step before it"))
+        }
+        var sigmas = self.sigmas, timesteps = self.timesteps
+        let t = Float(trainTimesteps)
+        sigmas[last] = sigma
+        timesteps[last] = sigma * t / t
+        return FlowMatchSchedule(sigmas: sigmas, timesteps: timesteps, mu: mu)
+    }
+
+    /// The flow-matching start of an image-to-image run at `step`: `(1 − σ) · x0 + σ · noise` per element, each product
+    /// rounded before the add (0.0.x's `refineStart`). `step` must be at least 1 (step 0 is pure noise).
+    public func refineStart(x0: [Float], noise: [Float], step: Int) throws(AetherError) -> [Float] {
+        guard step >= 1, step < steps, x0.count == noise.count else {
+            throw .generation(.invalidParameters("a refine starts at a step from 1 to \(steps - 1), with as much noise as latents"))
+        }
+        let sigma = sigmas[step]
+        return zip(x0, noise).map { roundedProduct(1 - sigma, $0) + roundedProduct(sigma, $1) }
+    }
+
     /// One Euler step in place: `latents[i] += (σ[step+1] − σ[step]) · velocity[i]`. On any failure (a step out of
     /// range, mismatched counts, a non-finite input or result) `latents` is unchanged.
     public func advance(
