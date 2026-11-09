@@ -454,7 +454,8 @@ def main() -> None:
         keep = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl", "NOTICE"}
         for source in tree_files(args.base_bundle):
             relative = str(source.relative_to(args.base_bundle))
-            if relative in keep:
+            # The base's own check reports describe the base, not this bundle: check_krea2.py writes new ones.
+            if relative in keep or relative.startswith("check-report"):
                 continue
             target = args.output / relative
             target.parent.mkdir(parents=True, exist_ok=True)
