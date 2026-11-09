@@ -44,6 +44,11 @@
           "path": "krea2_turbo_realism-vae.aimodel/weights.bin",
           "bytes": 1,
           "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "krea2_turbo_realism-vision.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
         }
       ]
     }
@@ -51,7 +56,6 @@
   "graphs": {
     "textEncoder": {
       "file": "main:krea2_turbo_realism-text.aimodel",
-      "function": "encode",
       "inputs": {
         "tokens": "input_ids",
         "positions": "position_ids"
@@ -61,7 +65,19 @@
       },
       "compute": "gpu",
       "expectFrequentReshapes": true,
-      "residency": "perPrompt"
+      "residency": "perPrompt",
+      "functions": {
+        "step": "encode",
+        "references": "encodeWithImages"
+      },
+      "inputsByFunction": {
+        "references": {
+          "tokens": "input_ids",
+          "ropePositions": "rope_positions",
+          "imageEmbeds": "image_embeds",
+          "deepstackEmbeds": "deepstack_embeds"
+        }
+      }
     },
     "denoiser0": {
       "file": "main:krea2_turbo_realism-denoiser0.aimodel",
@@ -206,6 +222,21 @@
       "compute": "gpu",
       "expectFrequentReshapes": false,
       "residency": "perPrompt"
+    },
+    "vision": {
+      "file": "main:krea2_turbo_realism-vision.aimodel",
+      "function": "encode",
+      "inputs": {
+        "patches": "patches",
+        "grid": "grid"
+      },
+      "outputs": {
+        "imageEmbeds": "image_embeds",
+        "deepstackEmbeds": "deepstack_embeds"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perPrompt"
     }
   },
   "tokenizer": {
@@ -298,6 +329,38 @@
     "contentFilter": {
       "required": true,
       "reason": "Krea 2 Community License §4.2; the app supplies the filter"
+    },
+    "references": {
+      "maxImages": 4,
+      "maxSide": 384,
+      "maxImageTokens": 576,
+      "label": "Picture {n}: ",
+      "tokens": {
+        "pad": 151655,
+        "start": 151652,
+        "end": 151653
+      },
+      "extensionBase": 151936,
+      "rows": "1...1116",
+      "positions": "mrope",
+      "deepstackLevels": 3,
+      "vision": "vision",
+      "function": "references",
+      "preprocess": {
+        "fit": "longSideRounded",
+        "maxSide": 384,
+        "factor": 32,
+        "minPixels": 65536,
+        "maxPixels": 16777216,
+        "maxAspect": 200,
+        "filter": "keysBicubic-0.5-antialias",
+        "mean": 127.5,
+        "std": 127.5,
+        "patch": 16,
+        "temporalPatch": 2,
+        "merge": 2,
+        "order": "mergeWindow C,T,py,px"
+      }
     }
   },
   "precision": {
@@ -306,7 +369,9 @@
     "components": {
       "denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
       "vaeDecoder": "fp16 weights, fp32 compute",
-      "vaeEncoder": "fp16 weights, fp32 compute"
+      "vaeEncoder": "fp16 weights, fp32 compute",
+      "vision": "fp16 weights, fp32 compute",
+      "textEncoder": "encode and encodeWithImages share the fp16 weights"
     }
   },
   "license": "LicenseRef-Krea-2-Community-License-1.0",

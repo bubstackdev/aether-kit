@@ -17,6 +17,11 @@ Bars (FLUX.2's template):
   source VAE's latents, cosine >= 0.999; then closed loop from the graph's latents (Kit's seeded refine noise, exact;
   `(1 - sigma) * x0 + sigma * noise` on the host; the remaining steps; graph VAE): SSIM >= 0.94 against
   `refine_image.npy`. A bundle or reference without them skips the refine checks and says so.
+- references, when the reference was made with `--references` (and the bundle has `vision`): per case, Kit's host
+  prompt (`reference_prompt`: ids, extension ids, M-RoPE) exactly; the vision graph per image against the oracle's
+  merged tokens and DeepStack, cosine >= 0.999; `encodeWithImages` fed the graph's own vision outputs against the
+  oracle conditioning, mean row cosine >= 0.999 and worst row >= 0.99 (the 0.0.x bars). The closed loop then runs from
+  the chosen case's graph conditioning, and the teacher-forced steps from its oracle conditioning.
 One gate: exits nonzero when any bar fails. Refuses to start while the M2 Swift gates run (xctest).
 """
 
@@ -38,6 +43,7 @@ sys.path.insert(0, str(HERE))
 import krea2_graphs as kg  # noqa: E402
 
 COSINE_BAR = 0.999
+REFERENCE_WORST_ROW_BAR = 0.99
 PSNR_BAR = 35.0
 SSIM_BAR = 0.94
 
@@ -119,6 +125,67 @@ def wait_for_m2_gates(wait: bool) -> None:
         time.sleep(30)
 
 
+def reference_checks(args, manifest, files, tokenizer, references, record, timings) -> np.ndarray:
+    """Every recorded case through Kit's host prompt, the vision graph and `encodeWithImages`; returns the chosen
+    case's graph conditioning."""
+    block = manifest["krea2"]["references"]
+    text_graph = manifest["graphs"]["textEncoder"]
+    vision = Graph(files["vision"], manifest["graphs"]["vision"]["function"])
+    text = Graph(files["textEncoder"], text_graph["functions"][block["function"]])
+    timings["loadVision"], timings["loadReferenceText"] = vision.load_seconds, text.load_seconds
+    capacity, slots = kg.REFERENCE_PATCH_CAPACITY, kg.REFERENCE_MAX_IMAGE_TOKENS
+    chosen = None
+    for cid, case in references["cases"].items():
+        d = args.reference / "cases" / cid
+        grids = [tuple(g) for g in json.loads((d / "grids.json").read_text())]
+        prompt = kg.reference_prompt(tokenizer, case["prompt"], grids)
+        host = (prompt["ids"] == np.load(d / "ids.npy").tolist()
+                and prompt["graphIds"] == np.load(d / "graph_ids.npy").tolist()
+                and np.array_equal(np.array(prompt["rope"], dtype=np.int32), np.load(d / "rope.npy")))
+        record(f"references.{cid}.host.exact", float(host), 1.0, host, rows=case["rows"])
+        patches, oracle_image = np.load(d / "patches.npy"), np.load(d / "image_embeds.npy")
+        oracle_deep = np.load(d / "deepstack_embeds.npy")
+        width = oracle_image.shape[1]
+        image = np.zeros((slots, width), dtype=np.float32)
+        deep = np.zeros((oracle_deep.shape[0], slots, width), dtype=np.float32)
+        start, slot = 0, 0
+        t0 = time.monotonic()
+        for t, h, w in grids:
+            n = t * h * w
+            feed = np.zeros((capacity, patches.shape[1]), dtype=np.float16)
+            feed[:n] = patches[start:start + n]
+            out = vision(patches=feed, grid=np.array([h, w], dtype=np.int32))
+            k = n // 4
+            image[slot:slot + k] = out["image_embeds"][:k]
+            deep[:, slot:slot + k] = out["deepstack_embeds"][:, :k]
+            start, slot = start + n, slot + k
+        timings[f"vision.{cid}"] = round(time.monotonic() - t0, 2)
+        record(f"references.{cid}.vision.cosine", round(cosine(image[:slot], oracle_image), 6), COSINE_BAR,
+               rowCosineMin=round(float(row_cosines(image[:slot], oracle_image).min()), 6))
+        record(f"references.{cid}.deepstack.cosine", round(cosine(deep[:, :slot], oracle_deep), 6), COSINE_BAR)
+        feeds = dict(input_ids=np.array([prompt["graphIds"]], dtype=np.int32),
+                     rope_positions=np.array(prompt["rope"], dtype=np.int32), image_embeds=image,
+                     deepstack_embeds=deep)
+        t0 = time.monotonic()
+        got = text(**feeds)["text_embeds"].astype(np.float32)
+        timings[f"referenceText.{cid}"] = round(time.monotonic() - t0, 2)
+        want = np.load(d / "conditioning.npy")
+        if got.shape != want.shape:
+            raise SystemExit(f"{cid}: conditioning {got.shape} vs oracle {want.shape}")
+        rows = row_cosines(got, want)
+        image_rows = np.array(prompt["ids"][kg.DROP_ROWS:]) == kg.IMAGE_PAD_ID
+        record(f"references.{cid}.text.meanRowCosine", round(float(rows.mean()), 6), COSINE_BAR,
+               worstRow=round(float(rows.min()), 6), worstRowIndex=int(rows.argmin()),
+               worstImageRow=round(float(rows[image_rows].min()), 6), worstTextRow=round(float(rows[~image_rows].min()), 6),
+               cosine=round(cosine(got, want), 7), rows=int(rows.size))
+        record(f"references.{cid}.text.worstRowCosine", round(float(rows.min()), 6), REFERENCE_WORST_ROW_BAR)
+        if cid == references["case"]:
+            chosen = got.astype(np.float16)
+    vision.close()
+    text.close()
+    return chosen
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle", type=Path, required=True)
@@ -133,7 +200,7 @@ def main() -> None:
     ref = json.loads((args.reference / "reference.json").read_text())
     tokens = json.loads((args.reference / "tokens.json").read_text())
     files = {role: args.bundle / g["file"].split(":", 1)[1] for role, g in manifest["graphs"].items()}
-    functions = {role: g["function"] for role, g in manifest["graphs"].items()}
+    functions = {role: g.get("function") or g["functions"]["step"] for role, g in manifest["graphs"].items()}
     checks: list[dict] = []
 
     def record(name: str, value: float, bar: float, passed: bool | None = None, **extra) -> None:
@@ -144,7 +211,9 @@ def main() -> None:
     # Host recipe: tokens, noise, schedule (exact).
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.bundle / "tokenizer")
-    ids = kg.prompt_ids(tokenizer, ref["prompt"])
+    references = ref.get("references")
+    ids = (np.load(args.reference / "cases" / references["case"] / "ids.npy").tolist() if references
+           else kg.prompt_ids(tokenizer, ref["prompt"]))
     record("tokens.exact", float(ids == tokens["real"]), 1.0, ids == tokens["real"], count=len(ids))
     rows = columns = ref["height"] // kg.PIXELS_PER_TOKEN
     n = rows * columns
@@ -161,20 +230,30 @@ def main() -> None:
     timings = {}
 
     # Text encoder.
-    text = Graph(files["textEncoder"], functions["textEncoder"])
-    timings["loadText"] = text.load_seconds
-    length = len(ids)
-    t0 = time.monotonic()
-    out = text(input_ids=np.array([ids], dtype=np.int32), position_ids=np.arange(length, dtype=np.int32)[None])
-    timings["text"] = round(time.monotonic() - t0, 2)
-    text_embeds = out["text_embeds"]
     ref_text = np.load(args.reference / "text_embeds.npy")
-    text.close()
-    if text_embeds.shape != ref_text.shape:
-        raise SystemExit(f"text_embeds {text_embeds.shape} vs reference {ref_text.shape}")
-    per_row = row_cosines(text_embeds.astype(np.float32), ref_text)
-    record("text.rowCosineMin", round(float(per_row.min()), 6), COSINE_BAR, cosine=round(cosine(text_embeds, ref_text), 7),
-           rows=int(per_row.size), maxAbs=float(np.abs(ref_text).max()))
+    if references:
+        if "vision" not in files:
+            raise SystemExit("the reference has reference images but the bundle has no vision graph")
+        text_embeds = reference_checks(args, manifest, files, tokenizer, references, record, timings)
+        per_row = row_cosines(text_embeds.astype(np.float32), ref_text)
+        record("text.rowCosineMin", round(float(per_row.min()), 6), REFERENCE_WORST_ROW_BAR,
+               cosine=round(cosine(text_embeds, ref_text), 7), rows=int(per_row.size),
+               case=references["case"], note="the chosen case's graph conditioning, as the closed loop uses it")
+    else:
+        text = Graph(files["textEncoder"], functions["textEncoder"])
+        timings["loadText"] = text.load_seconds
+        length = len(ids)
+        t0 = time.monotonic()
+        out = text(input_ids=np.array([ids], dtype=np.int32), position_ids=np.arange(length, dtype=np.int32)[None])
+        timings["text"] = round(time.monotonic() - t0, 2)
+        text_embeds = out["text_embeds"]
+        text.close()
+        if text_embeds.shape != ref_text.shape:
+            raise SystemExit(f"text_embeds {text_embeds.shape} vs reference {ref_text.shape}")
+        per_row = row_cosines(text_embeds.astype(np.float32), ref_text)
+        record("text.rowCosineMin", round(float(per_row.min()), 6), COSINE_BAR,
+               cosine=round(cosine(text_embeds, ref_text), 7), rows=int(per_row.size),
+               maxAbs=float(np.abs(ref_text).max()))
 
     # Denoiser segments: teacher-forced per step and segment, then the closed loop.
     segments = [Graph(files[f"denoiser{i}"], "segment") for i in range(4)]
@@ -288,6 +367,13 @@ def main() -> None:
         "passed": all(c["passed"] for c in checks),
         "counts": {"checks": len(checks), "failed": sum(not c["passed"] for c in checks)},
         "minima": {"textRowCosine": next(c["value"] for c in checks if c["check"] == "text.rowCosineMin"),
+                   **({"referenceMeanRowCosine": min(c["value"] for c in checks if c["check"].endswith("meanRowCosine")),
+                       "referenceWorstRowCosine": min(c["value"] for c in checks
+                                                      if c["check"].endswith("worstRowCosine")),
+                       "referenceVisionCosine": min(c["value"] for c in checks if c["check"].endswith("vision.cosine")),
+                       "referenceDeepstackCosine": min(c["value"] for c in checks
+                                                       if c["check"].endswith("deepstack.cosine"))}
+                      if references else {}),
                    "teacherCosine": min(c["value"] for c in teacher_checks),
                    "teacherVelocityCosine": min(velocity),
                    "vaePSNRdB": next(c["value"] for c in checks if c["check"] == "vae.psnrDB"),

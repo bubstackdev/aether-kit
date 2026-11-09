@@ -32,10 +32,10 @@ struct CompiledCacheTests {
             return url.lastPathComponent.contains("denoiser")
         }
         #expect(status.entries.map(\.role)
-            == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder", "vaeEncoder"])
+            == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder", "vaeEncoder", "vision"])
         #expect(looked["krea2_turbo-text.aimodel"] == true && looked["krea2_turbo-denoiser0.aimodel"] == false)
         #expect(status.entries.allSatisfy { $0.sourceBytes == 10_000 })
-        #expect(!status.isComplete && status.uncompiledSourceBytes == 30_000)
+        #expect(!status.isComplete && status.uncompiledSourceBytes == 40_000)
     }
 
     @Test func aCompleteCacheNeedsNothingAndRolesNarrowTheCheck() throws {

@@ -29,6 +29,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import krea2_graphs as kg  # noqa: E402
 
 BAR = 0.99999
+# The pinned snapshot's tokenizer (files only, no weights): the reference prompt needs the real special tokens.
+TOKENIZER_DIR = kg.Path.home() / ".cache/huggingface/hub/models--krea--Krea-2-Turbo/snapshots" / \
+    "98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7/tokenizer"
 
 
 def metrics(expected, got) -> dict:
@@ -177,6 +180,96 @@ def check_vae_encoder(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> di
     return result
 
 
+def row_cosines(expected, got):
+    e, g = expected.double(), got.double()
+    return (e * g).sum(-1) / (e.norm(dim=-1) * g.norm(dim=-1) + 1e-30)
+
+
+def check_references(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
+    """Reference images: the host prompt and M-RoPE, the vision tower and `encodeWithImages`, against transformers'
+    Qwen3VLModel with pixels (random weights; the real tokenizer, for the special tokens)."""
+    from transformers import AutoTokenizer, Qwen3VLModel
+
+    tokenizer = AutoTokenizer.from_pretrained(str(TOKENIZER_DIR))
+    grids = [(1, 8, 12), (1, 6, 6)]
+    g = torch.Generator().manual_seed(7)
+    pixel_values = torch.randn(sum(t * h * w for t, h, w in grids), 1536, generator=g)
+    prompt = kg.reference_prompt(tokenizer, "the mug in Picture 1 on the table in Picture 2, soft light", grids)
+    ids = torch.tensor(prompt["ids"])[None]
+    model = Qwen3VLModel.from_pretrained(checkpoint.root / "text_encoder", torch_dtype=torch.float32).eval()
+    with torch.no_grad():
+        types = (ids == kg.IMAGE_PAD_ID).int()
+        thw = torch.tensor(grids)
+        rope_up = model.get_rope_index(ids, types, thw)[0][:, 0]
+        out = model(input_ids=ids, attention_mask=torch.ones_like(ids), pixel_values=pixel_values, image_grid_thw=thw,
+                    mm_token_type_ids=types, output_hidden_states=True)
+        upstream = torch.stack([out.hidden_states[i] for i in kg.TEXT_TAPS], dim=2)[0, kg.DROP_ROWS:].flatten(1)
+        features = model.get_image_features(pixel_values, thw)
+        image_up = torch.cat(features.pooler_output)
+        deep_up = torch.stack([torch.cat(level) for level in features.deepstack_features])
+    rope = torch.tensor(prompt["rope"], dtype=torch.int32)
+    result = {"ropeExact": bool(torch.equal(rope_up.to(torch.int32), rope)), "rows": len(prompt["ids"]) - kg.DROP_ROWS}
+    tower = kg.KreaVisionTower(model.visual, storage=torch.float32).eval()
+    width = image_up.shape[1]
+    embeds = torch.zeros(kg.REFERENCE_MAX_IMAGE_TOKENS, width)
+    deep = torch.zeros(deep_up.shape[0], kg.REFERENCE_MAX_IMAGE_TOKENS, width)
+    start, slot = 0, 0
+    with torch.no_grad():
+        for t, h, w in grids:
+            n = t * h * w
+            patches = torch.zeros(kg.REFERENCE_PATCH_CAPACITY, 1536)
+            patches[:n] = pixel_values[start:start + n]
+            image, levels = tower(patches, torch.tensor([h, w], dtype=torch.int32))
+            k = n // 4
+            embeds[slot:slot + k], deep[:, slot:slot + k] = image[:k], levels[:, :k]
+            start, slot = start + n, slot + k
+    result["vision"] = metrics(image_up, embeds[:slot])
+    result["deepstack"] = metrics(deep_up, deep[:, :slot])
+    base = kg.TextEncoderGraph.load(checkpoint, compute=torch.float32, strict=False)
+    graph = kg.ReferenceTextGraph(base).eval()
+    feed = (torch.tensor(prompt["graphIds"], dtype=torch.int32)[None], rope, embeds, deep)
+    with torch.no_grad():
+        got = graph(*feed).float()
+    result["text"] = metrics(upstream, got)
+    result["text"]["rowCosineMin"] = round(float(row_cosines(upstream, got).min()), 8)
+    del model
+    if convert_dir is not None:
+        convert_and_run(tower, (patches.half(), torch.tensor(grids[-1][1:], dtype=torch.int32)), ["patches", "grid"],
+                        ["image_embeds", "deepstack_embeds"], convert_dir / "vision.aimodel", (image, levels), run=True)
+        result["sharedWeights"] = convert_two_functions(base, graph, feed, convert_dir)
+    return result
+
+
+def convert_two_functions(base, graph, feed, convert_dir: Path) -> dict:
+    """The text asset with both functions (`encode`, `encodeWithImages`) against `encode` alone: whether the converter
+    stores the shared weights once."""
+    import coreai_torch as ct
+
+    sizes = {}
+    for name, functions in (("one", 1), ("two", 2)):
+        converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
+        ids, positions = torch.arange(3000, 3048, dtype=torch.int32)[None], torch.arange(48, dtype=torch.int32)[None]
+        with torch.no_grad():
+            ep = torch.export.export(base, (ids, positions), dynamic_shapes=kg.TextEncoderGraph.example()[1],
+                                     strict=False).run_decompositions(ct.get_decomp_table())
+        converter.add_exported_program(ep, input_names=["input_ids", "position_ids"], output_names=["text_embeds"],
+                                       state_names=[], entrypoint_name="encode")
+        if functions == 2:
+            with torch.no_grad():
+                ep = torch.export.export(graph, feed, dynamic_shapes=graph.example()[1],
+                                         strict=False).run_decompositions(ct.get_decomp_table())
+            converter.add_exported_program(ep, input_names=["input_ids", "rope_positions", "image_embeds",
+                                                            "deepstack_embeds"],
+                                           output_names=["text_embeds"], state_names=[],
+                                           entrypoint_name="encodeWithImages")
+        program = converter.to_coreai()
+        program.optimize()
+        path = convert_dir / f"text-{name}.aimodel"
+        program.save_asset(path)
+        sizes[name] = sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
+    return sizes
+
+
 def convert_and_run(module, example, inputs, outputs, path, expected, dynamic=None, run=True) -> None:
     import coreai_torch as ct
     import coreai.runtime as rt
@@ -226,9 +319,10 @@ def main() -> None:
         convert_dir = args.workdir / "converted"
         convert_dir.mkdir()
     report = {"denoiser": check_denoiser(checkpoint, convert_dir), "text": check_text(checkpoint, convert_dir),
-              "vae": check_vae(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
-    gated = [report["denoiser"], report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"]]
-    report["passed"] = all(v["cosine"] >= BAR for v in gated)
+              "vae": check_vae(checkpoint, convert_dir), "references": check_references(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
+    gated = [report["denoiser"], report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"],
+             report["references"]["vision"], report["references"]["deepstack"], report["references"]["text"]]
+    report["passed"] = all(v["cosine"] >= BAR for v in gated) and report["references"]["ropeExact"]
     print(json.dumps(report, indent=1))
     if not report["passed"]:
         raise SystemExit("graph self-test failed")
