@@ -395,14 +395,16 @@ class Decoder(nn.Module):
     """The Qwen3-VL text decoder on the `decoder-lm@1` contract with static image inputs (see the module doc).
 
     `dtype`: the residual stream and matmuls; `attention`: the SDPA arithmetic; `storage`: the weights' and KV
-    states' dtype. Norm statistics and rotary angles are float32 always; logits are float32."""
+    states' dtype; `head`: the tied head's matmul (float16 reads the stored float16 embedding as is; float32 computes
+    on a float32 copy of it, 4·vocab·H bytes more). Norm statistics and rotary angles are float32 always; logits are
+    float32."""
 
     def __init__(self, model, slots: int = IMAGE_SLOTS, images: int = MAX_IMAGES, dtype: torch.dtype = torch.float16,
                  attention: torch.dtype = torch.float32, storage: torch.dtype = torch.float16,
-                 statics: torch.dtype = torch.float16) -> None:
+                 statics: torch.dtype = torch.float16, head: torch.dtype = torch.float32) -> None:
         super().__init__()
         cfg = model.config.text_config
-        self.cfg, self.dtype, self.storage, self.static_dtype = cfg, dtype, storage, statics
+        self.cfg, self.dtype, self.storage, self.static_dtype, self.head_dtype = cfg, dtype, storage, statics, head
         self.vocab, self.hidden, self.slots, self.images = cfg.vocab_size, cfg.hidden_size, slots, images
         lm = model.model.language_model
         if not model.config.tie_word_embeddings:
@@ -448,7 +450,7 @@ class Decoder(nn.Module):
                 extra = F.embedding(slot + i * n, deepstack_embeds).to(self.dtype)[None]
                 x = x + torch.where(img, extra, torch.zeros_like(extra))
         hidden = rms_norm(x[:, -1:], self.norm, self.eps)
-        return F.linear(hidden.float(), self.embed.float())
+        return F.linear(hidden.to(self.head_dtype), self.embed.to(self.head_dtype)).float()
 
     def empty_state(self, capacity: int) -> tuple[torch.Tensor, torch.Tensor]:
         c = self.cfg

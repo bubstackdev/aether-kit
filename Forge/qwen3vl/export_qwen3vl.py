@@ -28,7 +28,8 @@ checkpoint's config. Conversion runs on the CPU (the float32 upstream build plus
 
 The graphs and their contracts are documented in qwen3vl_graphs.py. Precision (measured, see export-report.json and
 check_qwen3vl.py): float16-stored weights in both graphs; the tower computes in float32 (VISION_COMPUTE), the decoder's
-residual stream and matmuls in float16 with float32 attention, norm statistics, rotary and logits (DECODER_COMPUTE).
+residual stream, matmuls and tied head in float16 with float32 attention, norm statistics, rotary and logits
+(DECODER_COMPUTE, HEAD_COMPUTE).
 `--vision-compute` / `--decoder-compute` / `--weights` export the alternatives for the measurement. Reproducible as the
 EmbeddingGemma exporter is (seeded generated names, fixed creation date, deterministic Swift hashing), except the graphs'
 `main.mlirb`/`main.hash` weight-blob names (coreai-core seeds them per execution).
@@ -78,6 +79,10 @@ COMPUTE = "gpu"
 VISION_COMPUTE = "float32"
 DECODER_COMPUTE = "float16"
 DECODER_ATTENTION = "float32"
+# The tied head's matmul, float16 as 0.0.7's describer export: measured on 4B (DescriberGateTests, release), the same
+# greedy tokens as the float32 head, 6.7 ms less per decode step and 5.8 GiB less Metal after load. float32 adds a
+# float32 copy of the embedding (1.45 GiB at 4B) and its bandwidth to every step.
+HEAD_COMPUTE = "float16"
 WEIGHTS = "float16"
 # The tower's outputs and the decoder's image statics: the decoder casts its embeddings to its float16 residual stream,
 # so float16 statics lose nothing and halve what is bound on every step.
@@ -312,7 +317,8 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
     }
 
 
-def precision(vision: str, decoder: str, attention: str, weights: str, image: str = IMAGE_DTYPE) -> dict:
+def precision(vision: str, decoder: str, attention: str, weights: str, image: str = IMAGE_DTYPE,
+              head: str = HEAD_COMPUTE) -> dict:
     short = {"float16": "fp16", "float32": "fp32"}
     return {"weights": short[weights], "activations": f"vision {short[vision]}, decoder {short[decoder]}",
             "kv": "fp16" if weights == "float16" else "fp32", "logits": "fp32",
@@ -320,7 +326,8 @@ def precision(vision: str, decoder: str, attention: str, weights: str, image: st
                 "vision": (f"{short[weights]} weights, {short[vision]} compute; LayerNorm statistics, rotary and "
                            f"position resampling fp32; outputs {short[image]}"),
                 "decoder": (f"{short[weights]} weights and KV, {short[decoder]} residual stream and matmuls, "
-                            f"{short[attention]} attention; RMSNorm statistics, M-RoPE angles and the tied head fp32"),
+                            f"{short[attention]} attention, {short[head]} tied head; RMSNorm statistics and M-RoPE "
+                            "angles fp32"),
                 "io": (f"patches f32, grid i32; image/deepstack embeds {short[image]}; tokens, positions, "
                        "image_positions and rope shifts i32; logits f32")}}
 
@@ -408,6 +415,8 @@ def main() -> None:
     parser.add_argument("--vision-compute", choices=["float16", "float32"], default=VISION_COMPUTE)
     parser.add_argument("--decoder-compute", choices=["float16", "float32"], default=DECODER_COMPUTE)
     parser.add_argument("--decoder-attention", choices=["float16", "float32"], default=DECODER_ATTENTION)
+    parser.add_argument("--head-compute", choices=["float16", "float32"], default=HEAD_COMPUTE,
+                        help="the tied head's matmul (logits stay float32)")
     parser.add_argument("--weights", choices=["float16", "float32"], default=WEIGHTS)
     parser.add_argument("--image-dtype", choices=["float16", "float32"], default=IMAGE_DTYPE,
                         help="the tower's outputs and the decoder's image statics")
@@ -437,7 +446,8 @@ def main() -> None:
     torch.set_grad_enabled(False)
     weights = qg.DTYPES[args.weights]
     image_dtype = qg.DTYPES[args.image_dtype]
-    prec = precision(args.vision_compute, args.decoder_compute, args.decoder_attention, args.weights, args.image_dtype)
+    prec = precision(args.vision_compute, args.decoder_compute, args.decoder_attention, args.weights, args.image_dtype,
+                     args.head_compute)
     report = {
         "schema": 1, "id": names.id, "command": sys.argv, "pins": args.pins.name,
         "exportedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "creationDate": args.creation_date,
@@ -452,7 +462,7 @@ def main() -> None:
                    "verified": {}},
         "graphs": sorted(graphs), "precision": prec,
         "precisionArgs": {"vision": args.vision_compute, "decoder": args.decoder_compute,
-                          "attention": args.decoder_attention, "weights": args.weights},
+                          "attention": args.decoder_attention, "head": args.head_compute, "weights": args.weights},
         "patchCapacity": qg.PATCH_CAPACITY, "prefillMax": qg.PREFILL_MAX, "contextMax": qg.CONTEXT_MAX,
         "imageSlots": args.slots, "maxImages": args.images, "imageDType": args.image_dtype,
         "compute": COMPUTE, "conversion": {}, "stages": {},
@@ -505,7 +515,8 @@ def main() -> None:
     if "decoder" in graphs:
         log.start("export-decoder")
         decoder = qg.Decoder(model, slots=args.slots, images=args.images, dtype=qg.DTYPES[args.decoder_compute],
-                             attention=qg.DTYPES[args.decoder_attention], storage=weights, statics=image_dtype).eval()
+                             attention=qg.DTYPES[args.decoder_attention], storage=weights, statics=image_dtype,
+                             head=qg.DTYPES[args.head_compute]).eval()
         del model
         gc.collect()
         example, dynamic = decoder.example()

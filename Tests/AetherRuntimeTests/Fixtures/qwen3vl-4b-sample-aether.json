@@ -253,7 +253,7 @@
     "logits": "fp32",
     "components": {
       "vision": "fp16 weights, fp32 compute; LayerNorm statistics, rotary and position resampling fp32; outputs fp16",
-      "decoder": "fp16 weights and KV, fp16 residual stream and matmuls, fp32 attention; RMSNorm statistics, M-RoPE angles and the tied head fp32",
+      "decoder": "fp16 weights and KV, fp16 residual stream and matmuls, fp32 attention, fp16 tied head; RMSNorm statistics and M-RoPE angles fp32",
       "io": "patches f32, grid i32; image/deepstack embeds fp16; tokens, positions, image_positions and rope shifts i32; logits f32"
     }
   },
