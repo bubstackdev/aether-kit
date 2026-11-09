@@ -51,7 +51,8 @@ public struct Krea2Model: Sendable {
 ///   so a seed gives the same image here and in the Forge reference.
 /// - **Refine** (image-to-image) needs the export's optional `vaeEncoder`: ``encode(image:job:)`` gives an image's
 ///   packed latents, and ``generate(_:refining:reusing:noise:observing:)`` runs the steps from a start step.
-/// - Reference images (reserved for `krea2@1`) are not implemented: no export has the vision graph yet.
+/// - **Reference images** need the export's `krea2.references` block and `vision` graph: ``encode(prompt:references:job:)``
+///   gives conditioning that ``generate(_:reusing:observing:)`` renders from.
 public actor Krea2Pipeline {
     public typealias Options = ImagePipelineOptions
     public typealias Request = ImageRequest
@@ -68,17 +69,19 @@ public actor Krea2Pipeline {
     nonisolated let encodePrompt: PromptEncoder
     let device: Device
     private let load: GraphResidency.Loader
-    private let admission: ResidentAdmission
+    let admission: ResidentAdmission
     /// One request at a time, in arrival order (after the GPU grant).
-    private let gate = SerialGate()
+    let gate = SerialGate()
     /// Generations running or waiting (for the GPU or their turn).
-    private var pending = 0
+    var pending = 0
     /// What happens to the graphs after each generation (default ``ImageRetention/keepLoaded``).
     public private(set) var retention: ImageRetention = .keepLoaded
     /// The export a ``Krea2Conditioning`` must come from: the manifest's ``Manifest/contentDigest``.
     nonisolated let export: String
     /// The canvas of the last generation, so an ``encode(prompt:job:)`` plans against the residency it would keep.
     private var lastProfile: String?
+    /// What an encode plans against: the last generation's canvas, else a conditioning-only profile.
+    var lastProfileForEncode: String { lastProfile ?? "conditioning" }
 
     /// Opens an installed bundle with the app's content filter; graphs load on the first generation.
     public init(
@@ -259,7 +262,8 @@ public actor Krea2Pipeline {
                 try Task.checkCancellation()
                 let conditioning = Krea2Conditioning(
                     prompt: text, rows: prompt.conditioningRows, columns: krea2.conditioning.columns,
-                    truncated: prompt.truncated, export: export, scalarType: rows.scalarType, bytes: try rows.readBytes())
+                    truncated: prompt.truncated, referenceDigests: [], export: export, scalarType: rows.scalarType,
+                    bytes: try rows.readBytes())
                 admission.finish()
                 if retention == .releaseAfterEachGeneration { admission.release() }
                 return conditioning
@@ -655,6 +659,8 @@ public struct Krea2Conditioning: Sendable, Hashable {
     public let columns: Int
     /// The rendering was longer than `maxTokens` and was cut (``Krea2PreparedPrompt/truncated``).
     public let truncated: Bool
+    /// The reference images' digests, in prompt order (``Krea2ReferenceImage/digest``); empty for a text-only prompt.
+    public let referenceDigests: [String]
     /// The export it belongs to (``Manifest/contentDigest``).
     let export: String
     let scalarType: ScalarType

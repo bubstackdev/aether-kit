@@ -27187,6 +27187,396 @@
    {
     "children": [
      {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GraphBackend",
+          "printedName": "any AetherRuntime.GraphBackend",
+          "usr": "s:13AetherRuntime12GraphBackendP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "(any AetherRuntime.GraphBackend)?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "genericSig": "<Self where Self : AetherRuntime.PhasedGraphBackend>",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime18PhasedGraphBackendP8function8forPhaseAA0dE0_pSgSS_tF",
+      "moduleName": "AetherRuntime",
+      "name": "function",
+      "printedName": "function(forPhase:)",
+      "protocolReq": true,
+      "reqNewWitnessTableEntry": true,
+      "usr": "s:13AetherRuntime18PhasedGraphBackendP8function8forPhaseAA0dE0_pSgSS_tF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime12GraphBackendP",
+      "name": "GraphBackend",
+      "printedName": "GraphBackend",
+      "usr": "s:13AetherRuntime12GraphBackendP"
+     }
+    ],
+    "declKind": "Protocol",
+    "genericSig": "<Self : AetherRuntime.GraphBackend>",
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime18PhasedGraphBackendP",
+    "moduleName": "AetherRuntime",
+    "name": "PhasedGraphBackend",
+    "printedName": "PhasedGraphBackend",
+    "usr": "s:13AetherRuntime18PhasedGraphBackendP"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "GraphBackend",
+            "printedName": "any AetherRuntime.GraphBackend",
+            "usr": "s:13AetherRuntime12GraphBackendP"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Dictionary",
+          "printedName": "[Swift.String : any AetherRuntime.GraphBackend]",
+          "usr": "s:SD"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime16GraphFunctionSetC9functionsSDySSAA0C7Backend_pGvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime16GraphFunctionSetC9functionsSDySSAA0C7Backend_pGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GraphBackend",
+          "printedName": "any AetherRuntime.GraphBackend",
+          "usr": "s:13AetherRuntime12GraphBackendP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Dictionary",
+        "printedName": "[Swift.String : any AetherRuntime.GraphBackend]",
+        "usr": "s:SD"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC9functionsSDySSAA0C7Backend_pGvp",
+      "moduleName": "AetherRuntime",
+      "name": "functions",
+      "printedName": "functions",
+      "usr": "s:13AetherRuntime16GraphFunctionSetC9functionsSDySSAA0C7Backend_pGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GraphFunctionSet",
+        "printedName": "AetherRuntime.GraphFunctionSet",
+        "usr": "s:13AetherRuntime16GraphFunctionSetC"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "GraphBackend",
+          "printedName": "any AetherRuntime.GraphBackend",
+          "usr": "s:13AetherRuntime12GraphBackendP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Dictionary",
+        "printedName": "[Swift.String : any AetherRuntime.GraphBackend]",
+        "usr": "s:SD"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC9functionsACSDySSAA0C7Backend_pG_t0A4Core0A5ErrorOYKcfc",
+      "moduleName": "AetherRuntime",
+      "name": "init",
+      "printedName": "init(functions:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime16GraphFunctionSetC9functionsACSDySSAA0C7Backend_pG_t0A4Core0A5ErrorOYKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GraphSignature",
+          "printedName": "AetherCore.GraphSignature",
+          "usr": "s:10AetherCore14GraphSignatureV"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime16GraphFunctionSetC9signature0A4Core0C9SignatureVvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime16GraphFunctionSetC9signature0A4Core0C9SignatureVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GraphSignature",
+        "printedName": "AetherCore.GraphSignature",
+        "usr": "s:10AetherCore14GraphSignatureV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC9signature0A4Core0C9SignatureVvp",
+      "moduleName": "AetherRuntime",
+      "name": "signature",
+      "printedName": "signature",
+      "usr": "s:13AetherRuntime16GraphFunctionSetC9signature0A4Core0C9SignatureVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "TensorBuffer",
+        "printedName": "AetherRuntime.TensorBuffer",
+        "usr": "s:13AetherRuntime12TensorBufferV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TensorRole",
+        "printedName": "AetherRuntime.TensorRole",
+        "usr": "s:13AetherRuntime10TensorRoleO"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Int]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "TensorArena",
+        "printedName": "AetherRuntime.TensorArena",
+        "usr": "s:13AetherRuntime11TensorArenaC"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC10makeBuffer3for4role10dimensions2inAA06TensorG0VSS_AA0L4RoleOSaySiGAA0L5ArenaCt0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "makeBuffer",
+      "printedName": "makeBuffer(for:role:dimensions:in:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime16GraphFunctionSetC10makeBuffer3for4role10dimensions2inAA06TensorG0VSS_AA0L4RoleOSaySiGAA0L5ArenaCt0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Bindings",
+        "paramValueOwnership": "InOut",
+        "printedName": "AetherRuntime.Bindings",
+        "usr": "s:13AetherRuntime8BindingsV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated",
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC3runyyAA8BindingsVzYa0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "run",
+      "printedName": "run(_:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime16GraphFunctionSetC3runyyAA8BindingsVzYa0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GraphBackend",
+          "printedName": "any AetherRuntime.GraphBackend",
+          "usr": "s:13AetherRuntime12GraphBackendP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "(any AetherRuntime.GraphBackend)?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime16GraphFunctionSetC8function8forPhaseAA0C7Backend_pSgSS_tF",
+      "moduleName": "AetherRuntime",
+      "name": "function",
+      "printedName": "function(forPhase:)",
+      "usr": "s:13AetherRuntime16GraphFunctionSetC8function8forPhaseAA0C7Backend_pSgSS_tF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime12GraphBackendP",
+      "name": "GraphBackend",
+      "printedName": "GraphBackend",
+      "usr": "s:13AetherRuntime12GraphBackendP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$s13AetherRuntime18PhasedGraphBackendP",
+      "name": "PhasedGraphBackend",
+      "printedName": "PhasedGraphBackend",
+      "usr": "s:13AetherRuntime18PhasedGraphBackendP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "kind": "TypeDecl",
+    "mangledName": "$s13AetherRuntime16GraphFunctionSetC",
+    "moduleName": "AetherRuntime",
+    "name": "GraphFunctionSet",
+    "printedName": "GraphFunctionSet",
+    "usr": "s:13AetherRuntime16GraphFunctionSetC"
+   },
+   {
+    "children": [
+     {
       "accessors": [
        {
         "accessorKind": "get",

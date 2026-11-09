@@ -71,6 +71,12 @@ public struct DriverContract: Sendable, Hashable {
         public var phases: Set<String>
         public var allowsFunctionFamily: Bool
         public var requiresMaxContext: Bool
+        /// A phase's own input roles, in place of ``inputs`` for that phase (a second function that takes other
+        /// inputs, as Krea 2's `references` text encoder). Absent for a phase: ``inputs``.
+        public var inputsByPhase: [String: [String: RoleSpec]] = [:]
+
+        /// The input roles of `phase`.
+        public func inputs(forPhase phase: String) -> [String: RoleSpec] { inputsByPhase[phase] ?? inputs }
 
         public init(
             inputs: [String: RoleSpec], allowsStaticSourcedInputs: Bool, outputs: [String: RoleSpec],
@@ -151,7 +157,7 @@ extension DriverContract.GraphContract {
         }
         for phase in graph.phases.keys.sorted() {
             let field = graph.inputsByFunction?[phase] != nil ? "\(prefix).inputsByFunction.\(phase)" : "\(prefix).inputs"
-            try checkInputs(graph.inputs(forPhase: phase), at: field, driver: driver)
+            try checkInputs(graph.inputs(forPhase: phase), at: field, driver: driver, phase: phase)
         }
         for role in graph.outputs.keys.sorted() where outputs[role] == nil {
             throw .manifestInvalid(
@@ -173,7 +179,10 @@ extension DriverContract.GraphContract {
         }
     }
 
-    func checkInputs(_ bindings: [String: Manifest.Binding], at prefix: String, driver: DriverID) throws(AetherError) {
+    func checkInputs(
+        _ bindings: [String: Manifest.Binding], at prefix: String, driver: DriverID, phase: String = "step"
+    ) throws(AetherError) {
+        let inputs = inputs(forPhase: phase)
         for (role, binding) in bindings.sorted(by: { $0.key < $1.key }) where inputs[role] == nil {
             guard allowsStaticSourcedInputs, binding.isStatic, binding.source != nil else {
                 throw .manifestInvalid(
@@ -233,6 +242,16 @@ extension DriverContract {
                 outputs: ["image": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
+
+    private static func stateless(
+        inputs: [String: RoleSpec], outputs: [String: RoleSpec], phases: Set<String>,
+        inputsByPhase: [String: [String: RoleSpec]]
+    ) -> GraphContract {
+        var contract = stateless(inputs: inputs, outputs: outputs)
+        contract.phases = phases
+        contract.inputsByPhase = inputsByPhase
+        return contract
+    }
 
     private static func stateless(inputs: [String: RoleSpec], outputs: [String: RoleSpec]) -> GraphContract {
         GraphContract(
@@ -298,8 +317,11 @@ extension DriverContract {
     /// denoiser segments chained by their carries (`denoiser0` in `latents`, `conditioning` from the text encoder,
     /// `sigma`, `imageRotary`, out `carryImage`, `carryText`, `condition`; `denoiser1` and `denoiser2` in the previous
     /// carries, `condition` and `imageRotary`, out the carries; `denoiser3` the same inputs, out `velocity`);
-    /// `vaeDecoder` in `latents`, out `image`; an optional `vaeEncoder` (refine) in `pixels`, out `latents`. The driver
-    /// also requires a tokenizer and the `schedule`, `latent` and `krea2` blocks (checked when it loads).
+    /// `vaeDecoder` in `latents`, out `image`; an optional `vaeEncoder` (refine) in `pixels`, out `latents`; for
+    /// reference images, an optional `vision` graph (in `patches`, `grid`; out `imageEmbeds`, `deepstackEmbeds`) and the
+    /// text encoder's `references` function (in `tokens`, `ropePositions`, `imageEmbeds`, `deepstackEmbeds`; out
+    /// `conditioning`). The driver also requires a tokenizer and the `schedule`, `latent` and `krea2` blocks (checked
+    /// when it loads).
     public static let krea2 = DriverContract(
         driver: .krea2,
         graphs: [
@@ -308,7 +330,14 @@ extension DriverContract {
                     "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
                     "positions": RoleSpec(required: true, rank: 2, scalar: .integer),
                 ],
-                outputs: ["conditioning": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
+                outputs: ["conditioning": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)],
+                phases: ["step", "references"],
+                inputsByPhase: ["references": [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "ropePositions": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "imageEmbeds": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "deepstackEmbeds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                ]]),
             "denoiser0": stateless(
                 inputs: [
                     "latents": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
@@ -329,6 +358,15 @@ extension DriverContract {
             "vaeEncoder": stateless(
                 inputs: ["pixels": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
                 outputs: ["latents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+            "vision": stateless(
+                inputs: [
+                    "patches": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "grid": RoleSpec(required: true, rank: 1, scalar: .integer),
+                ],
+                outputs: [
+                    "imageEmbeds": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "deepstackEmbeds": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                ]),
         ],
         requiresTokenizer: false)
 

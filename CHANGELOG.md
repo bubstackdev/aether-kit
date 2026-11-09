@@ -47,6 +47,15 @@
   sigma. It optionally takes reused conditioning (one encode for every tile of a picture) and caller noise (tiles cut
   from one canvas-wide field). `FlowMatchSchedule` gains `replacingLastSigma(_:trainTimesteps:)` and
   `refineStart(x0:noise:step:)`. Additive; the `AetherRuntime` and `AetherImage` API baselines record it.
+- **Krea 2 reference images** for exports with a `krea2.references` block, a `vision` graph and the text encoder's
+  `references` function (0.0.x's `visionTokens` contract, ported exactly). `Krea2ReferenceImage` takes RGB bytes or an
+  encoded image. `prepare(prompt:references:)` gives the expanded prompt's ids and conditioning rows on the CPU.
+  `encode(prompt:references:job:)` runs the vision graph per image, then the references function: image rows as
+  extension ids, M-RoPE positions, slot-indexed image embeddings and deepstack levels. It returns `Krea2Conditioning`
+  with the images' digests in order (`referenceDigests`), for `generate(_:reusing:observing:)`. Preprocessing is
+  bit-exact with 0.0.7, and the pixels and the pad expansion and positions are exact against the 0.0.x oracle's
+  fixtures. For the second function: `DriverContract.GraphContract.inputsByPhase`, and multi-function graphs load as
+  one specialization (`PhasedGraphBackend`, `GraphFunctionSet`). Additive; the API baselines record it.
 
 ### Fixed
 
