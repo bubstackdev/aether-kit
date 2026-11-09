@@ -3,6 +3,10 @@ the qualified canvas (960×544, 124 frames, T2VA; the first-frame encoder for FL
 own inputs so every comparison isolates one graph. The limit is the 0.0.x prototype's: relative L2 ≤ 0.02 per tensor.
 
     Forge/.venv/bin/python -I Forge/h3/check_h3.py --output <export dir> --report <new report.json> [--wait]
+    Forge/.venv/bin/python -I Forge/h3/check_h3.py --output <export dir> --report <new report.json> --only condition
+
+`--only condition` runs the FL2VA keyframe encoder alone (the tile graph and each profile canvas's tail against
+`encode_vae_condition` on a seeded random keyframe), without loading the transformer or conditioner.
 
   tap       conditioner: the bundle's layer graph ×50 from its weight files, the embedding row source and rotary tables,
             against the original Qwen3-VL decoder layers streamed from the checkpoint (causal mask), hidden_states[50]
@@ -100,6 +104,7 @@ def main() -> None:
     parser.add_argument("--snapshot", type=Path, default=ex.DEFAULT_SNAPSHOT)
     parser.add_argument("--converter", type=Path)
     parser.add_argument("--wait", action="store_true")
+    parser.add_argument("--only", choices=["condition"], help="run one part alone")
     args = parser.parse_args()
     assert not args.report.exists(), "report exists; choose a new path"
     torch.set_num_threads(8)
@@ -114,6 +119,12 @@ def main() -> None:
         print(json.dumps({name: results[name]}), flush=True)
 
     wait_for_gpu(args.wait)
+    if args.only == "condition":
+        g = torch.Generator().manual_seed(20261108)
+        for p in ex.PROFILES:
+            check_condition(args, bundle, meta, p, g, record, name=f"condition_{p.width}x{p.height}")
+        finish(args, profile, results, started)
+        return
     # tap: the conditioner.
     from transformers import AutoTokenizer, Qwen3VLConfig
     from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLTextDecoderLayer, Qwen3VLTextRotaryEmbedding
@@ -237,7 +248,6 @@ def main() -> None:
 
     # tile, pcm, condition: the decoders and the first-frame encoder.
     from diffusers import AutoencoderKLMiniMaxH3
-    from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
     work = args.output / "work"
     vae16 = AutoencoderKLMiniMaxH3.from_pretrained(work / "converted/vae", torch_dtype=torch.bfloat16).eval()
     vae16.use_tiling = False
@@ -249,6 +259,15 @@ def main() -> None:
     audio_rows = torch.randn(MINIMAX_H3_AUDIO_CHANNELS, na, 32, generator=g)
     with torch.inference_mode():
         record("pcm", Graph(bundle / f"models/audio-decoder-na{na}.aimodel")(rows=audio_rows)["pcm"], hg.AudioDecoder(audio_vae).eval()(audio_rows))
+    check_condition(args, bundle, meta, profile, g, record)
+    finish(args, profile, results, started)
+
+
+def check_condition(args, bundle: Path, meta: dict, profile, g: torch.Generator, record, name: str = "condition") -> None:
+    """The tiled first-frame encoder (FL2VA): the tile graph over the canvas's tiles, then its tail, against
+    `encode_vae_condition` (the converted float32 VAE, tiled, seed-42 posterior draw, float16 rounding, normalization)."""
+    from diffusers.modular_pipelines.minimax_h3.encoders import encode_vae_condition
+    work = args.output / "work"
     vae = ex.converted_vae(type("B", (), {"work": work})())
     key = f"{profile.width}x{profile.height}"
     image = torch.randint(0, 256, (1, 3, 1, profile.height, profile.width), dtype=torch.uint8, generator=g)
@@ -259,8 +278,11 @@ def main() -> None:
                          for y in starts["yStarts"] for x0 in starts["xStarts"]])
     with torch.inference_mode():
         reference = encode_vae_condition(vae, image, hg.PIXEL_MEAN, hg.PIXEL_STD, hg.ENCODE_SEED)
-    record("condition", Graph(bundle / f"models/video-encoder-tail-{key}.aimodel")(tiles=moments)["condition"], reference)
+    record(name, Graph(bundle / f"models/video-encoder-tail-{key}.aimodel")(tiles=moments)["condition"], reference,
+           canvas=key, tiles=len(starts["yStarts"]) * len(starts["xStarts"]))
 
+
+def finish(args, profile, results: dict, started: float) -> None:
     report = {"schema": 1, "profile": profile.dict(), "prompt": PROMPT, "limit": LIMIT, "results": results,
               "pass": all(r["pass"] for r in results.values()), "seconds": round(time.monotonic() - started, 1)}
     args.report.write_text(json.dumps(report, indent=1))

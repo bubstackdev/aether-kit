@@ -62,6 +62,19 @@
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
   `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
+- **MiniMax H3 keyframes (FL2VA):** `VideoRequest.keyframes` anchors a clip to a picture at its first frame, its last
+  frame or both (`VideoKeyframes.first`, `.last`, `.firstAndLast`; each a `VideoKeyframe`, RGB8 at the profile's
+  canvas, not resized), with the new `VideoRequest(prompt:keyframes:…)`. The driver runs the export's FL2VA graphs:
+  the tiled first-frame encoder (`videoEncoderTile`, `videoEncoderTail<W>x<H>`) for each keyframe's condition rows,
+  noised to t = 0.999 from Kit's stream before the generated rows and held through every step, and Diffusers'
+  conditioner presentation (a `"<Picture i>: "` label and a vision block per keyframe from `conditionerVision<W>x<H>`,
+  M-RoPE positions, DeepStack after layers 0–2), with the `fl2va` recipe. Layout, presentation, the processor's
+  pixels and tower tables, the M-RoPE gather and the noising are exact against Diffusers' own code
+  (`Forge/h3/keyframe_fixture_h3.py`). A last frame alone is new: it is presented as one keyframe, anchored 5/3 before
+  the end of the generated span. `check_h3.py --only condition` runs the keyframe-encoder check alone. `WeightBanks` now
+  fills a weight input whose preferred strides pad its rows (the tower's MLP width is off Core AI's alignment) from
+  the row-major extent, row by row; an extent must hold the input's logical bytes. Additive; the `AetherVideo` API
+  baseline records it.
 
 ### Fixed
 

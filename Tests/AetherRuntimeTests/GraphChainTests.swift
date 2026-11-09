@@ -185,6 +185,29 @@ struct GraphChainTests {
         }
     }
 
+    /// A weight input whose preferred strides pad its rows (an inner dimension off Core AI's alignment, like the H3
+    /// vision tower's MLP width): the extent holds the logical row-major bytes, and the bank places each row.
+    @Test func banksFillPaddedRowsFromRowMajorExtents() async throws {
+        final class Padded: GraphBackend {
+            let signature = GraphSignature(function: "w", inputs: [TensorSpec(name: "w0", scalarType: .float32, shape: [3, 5])],
+                                           states: [], outputs: [])
+            func makeBuffer(for name: String, role: TensorRole, dimensions: [Int], in arena: TensorArena) throws(AetherError) -> TensorBuffer {
+                try arena.allocate(name: name, shape: [3, 5], scalarType: .float32, strides: [8, 1])
+            }
+            func run(_ bindings: inout Bindings) async throws(AetherError) {}
+        }
+        try await withTemporaryDirectory { root in
+            let values = (0..<15).map(Float.init)
+            try values.withUnsafeBytes { Data($0) }.write(to: root.appending(path: "w.bin"))
+            let table = try WeightTable(inputs: ["w0"], blocks: [["w0": .init(file: "main:w.bin", bytes: 60)]])
+            let banks = try WeightBanks(table: table, graph: Padded(), arena: TensorArena()) { root.appending(path: $0.path) }
+            let buffer = try #require(banks.banks[0]["w0"])
+            #expect(!buffer.isContiguous && buffer.storageByteCount == (2 * 8 + 5) * 4)
+            try banks.load(block: 0, into: 0)
+            #expect(try buffer.read(Float.self) == values)
+        }
+    }
+
     @Test func weightTablesAreValidated() throws {
         let extent = WeightTable.Extent(file: "main:w.bin", bytes: 16)
         #expect(throws: AetherError.self) { _ = try WeightTable(inputs: [], blocks: [[:]]) }
