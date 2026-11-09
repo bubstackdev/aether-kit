@@ -182,9 +182,6 @@ public actor DecoderEngine: LanguageEngine {
         let gpu = MTLCreateSystemDefaultDevice()
         let gpuBefore = gpu?.currentAllocatedSize ?? 0
         let loaded = try await Graph.load(url: url, functions: Array(Set(phases.values)).sorted(), options: graphOptions)
-        // The model's own memory (MemoryBudget): its Metal allocations across the load, at least its files' size.
-        let gpuDelta = Int64(max(0, (gpu?.currentAllocatedSize ?? 0) - gpuBefore))
-        let modelBytes = max(gpuDelta, diskBytes(url))
         var signatures: [String: GraphSignature] = [:]
         for (name, g) in loaded { signatures[name] = g.signature }
         // A VLM's tower: one static function, its own specialization, resident for the engine's lifetime.
@@ -208,6 +205,8 @@ public actor DecoderEngine: LanguageEngine {
             image = ImageConfiguration(vision: vision, image: block, preprocess: preprocess)
         }
         try SignatureValidator.validate(manifest, signatures: all)
+        // The model's own memory (MemoryBudget): its Metal allocations across the loads (decoder and tower), at least
+        // its files' size.
         let gpuTotal = Int64(max(0, (gpu?.currentAllocatedSize ?? 0) - gpuBefore))
         let device = device
         let metal: (any MTLDevice)? = options.execution == .automatic ? gpu : nil
