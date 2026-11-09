@@ -558,6 +558,10 @@ runtime pieces:
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph
   reference; a whole clip and its repeat bit-identical, 425 s each (the debug build's host decode and stitching
   dominate); phase peaks 4.2 GiB (prompt), 9.7 GiB (steps), 1.4 GiB (image), each within the 18 GiB bar.
+- **Measured, keyframes (gate, same host and build, a rendered geometric keyframe):** the anchored frame against its
+  keyframe 33.8 dB (first), 34.2 dB (last alone), 34.6 and 34.6 dB (first + last), each above the 30 dB bar (0.0.x
+  measured 31.9–35.5 dB); 457–506 s a clip; phase peaks 6.9–7.0 GiB (prompt, with the vision tower and encoder),
+  10.7–11.2 GiB (steps), 2.0–3.0 GiB (image), within the 18 GiB bar.
 
 ## 7. AetherText
 
