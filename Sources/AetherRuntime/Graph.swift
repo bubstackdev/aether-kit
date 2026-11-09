@@ -16,7 +16,9 @@ public struct GraphOptions: Sendable, Hashable {
     public enum Cache: Sendable, Hashable {
         /// The process's default specialization cache.
         case `default`
-        /// A cache shared through an app group container.
+        /// A cache shared through an app group container. Needs a process entitled to the group: Core AI returns no
+        /// cache (and loading throws) for an unsigned or ad-hoc signed tool and under `swift test` (docs/RELEASE.md,
+        /// "The compile cache").
         case appGroup(String)
     }
 

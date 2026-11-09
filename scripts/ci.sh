@@ -6,6 +6,8 @@
 #                            also the real-graph gates (needs lab/models and a free GPU; Mac only)
 #   AETHER_CI_IOS=1 scripts/ci.sh
 #                            also the iOS compile check (scripts/ci-ios.sh; the CI workflow runs it as its own job)
+#   AETHER_CI_KEEP_COMPILE_CACHE=1 AETHER_GATES=1 scripts/ci.sh
+#                            keep the test runners' Core AI compile-cache entries the gates leave (pruned by default)
 #
 # Builds in .build-ci/ so CI never fights an interactive `swift build` over .build/.
 set -euo pipefail
@@ -50,12 +52,26 @@ AETHER_CI_SCRATCH="$SCRATCH" scripts/check-api.sh
 
 step "hermetic tests"
 env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
+python3 -I scripts/test_coreai_cache.py
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"
   # GateTests (runtime) and TextGateTests (chat); --no-parallel keeps GPU-heavy suites from overlapping. The run holds
   # the machine's GPU lease (the runtime gates drive graphs directly and take none); pipeline gates inherit it.
-  scripts/gpu-lease -- env AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests
+  gates=0
+  scripts/gpu-lease -- env AETHER_GATES=1 swift test --scratch-path "$SCRATCH" --skip-build --no-parallel --filter GateTests \
+    || gates=$?
+  if [[ "${AETHER_CI_KEEP_COMPILE_CACHE:-0}" != "1" ]]; then
+    # Core AI keeps a compiled copy of every graph the gates loaded, per process name, and never evicts it: tens of GB
+    # for the large models. `swift test` runs Swift Testing in swiftpm-testing-helper and XCTest in xctest
+    # (com.apple.dt.xctest.tool). Prune those buckets whether or not the gates passed; an entry a running process
+    # holds is skipped. Every package's `swift test` on this Mac shares them, so another run recompiles what it loads.
+    # The prune holds the GPU lease, so a load in another leased run can't start while it deletes.
+    step "compile cache: prune the test runners' buckets under the GPU lease (AETHER_CI_KEEP_COMPILE_CACHE=1 keeps them)"
+    scripts/gpu-lease -- scripts/coreai-cache prune --bucket swiftpm-testing-helper --bucket com.apple.dt.xctest.tool --yes \
+      || echo "warning: scripts/coreai-cache prune failed; the gates' result stands" >&2
+  fi
+  if [[ $gates -ne 0 ]]; then exit "$gates"; fi
 fi
 
 step "ok"
