@@ -35,7 +35,8 @@ func pidText(_ directory: URL) -> String? {
 /// Entries beside the lock, ignoring the reclaimers' persistent `.reclaim` flock file.
 func leaseSiblings(_ directory: URL) throws -> [String] {
     try FileManager.default.contentsOfDirectory(atPath: directory.deletingLastPathComponent().path)
-        .filter { $0 != "gpu.lock.reclaim" && $0 != "gpu.lock.second.reclaim" }.sorted()
+        // The reclaim and waiters files persist by design (deleting one a process still holds would split it).
+        .filter { !$0.hasSuffix(".reclaim") && !$0.hasSuffix(".waiters") }.sorted()
 }
 
 /// The admission failure an error carries, if any.
@@ -668,4 +669,87 @@ private let leaseScriptChild = ["/bin/sh", "-c", "echo ready; while kill -0 $PPI
     #expect(pidText(directory) == ownPID)
     next.release()
     #expect(try leaseSiblings(directory).isEmpty)
+}
+
+
+// MARK: Waiters (C2)
+
+@Test func aWaitingAcquisitionIsVisibleToTheHolderUntilItStopsWaiting() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let noWrapper = directory.deletingLastPathComponent().appendingPathComponent("no-wrapper.lock")
+    let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    let reported = BusyLog()
+    let waiter = Task { try await SharedGPULease.acquire(leaseConfiguration(directory), onBusy: { reported.append($0) }) }
+    let deadline = Date().addingTimeInterval(30)
+    while reported.values.isEmpty, Date() < deadline { usleep(5_000) }
+    #expect(SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    // Probing doesn't disturb the waiter, and asking again gives the same answer.
+    #expect(SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    held.release()
+    let lease = try await waiter.value
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    lease.release()
+}
+
+@Test func aCancelledOrTimedOutWaiterStopsBeingAWaiter() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let noWrapper = directory.deletingLastPathComponent().appendingPathComponent("no-wrapper.lock")
+    let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    await #expect(throws: AetherError.self) { try await SharedGPULease.acquire(leaseConfiguration(directory), timeout: .milliseconds(100)) }
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    let reported = BusyLog()
+    let waiter = Task { try await SharedGPULease.acquire(leaseConfiguration(directory), onBusy: { reported.append($0) }) }
+    let deadline = Date().addingTimeInterval(30)
+    while reported.values.isEmpty, Date() < deadline { usleep(5_000) }
+    #expect(held.othersWaiting || SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    waiter.cancel()
+    _ = try? await waiter.value
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    // A one-attempt acquisition never marks itself.
+    await #expect(throws: AetherError.self) { try await SharedGPULease.acquire(leaseConfiguration(directory), timeout: .zero) }
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    held.release()
+}
+
+@Test func aLegacyWrapperHoldingItsLockCountsAsAWaiter() throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let wrapper = directory.deletingLastPathComponent().appendingPathComponent("wrapper.lock")
+    #expect(FileManager.default.createFile(atPath: wrapper.path, contents: Data()))
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: wrapper))
+    let queued = open(wrapper.path, O_RDONLY | O_CLOEXEC)
+    defer { close(queued) }
+    #expect(flock(queued, LOCK_EX | LOCK_NB) == 0)
+    #expect(SharedGPULease.hasWaiters(directory: directory, legacyWrapper: wrapper))
+    flock(queued, LOCK_UN)
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: wrapper))
+}
+
+@Test func aWaitersFileThatIsNotThisUsersPrivateFileIsNeverUsed() throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let parent = directory.deletingLastPathComponent()
+    let noWrapper = parent.appendingPathComponent("no-wrapper.lock")
+    // A hard link to another file of this user's (two links) is refused, so holding it can't fake a waiter.
+    let other = parent.appendingPathComponent("other")
+    #expect(FileManager.default.createFile(atPath: other.path, contents: Data()))
+    let waiters = parent.appendingPathComponent(directory.lastPathComponent + ".waiters")
+    #expect(link(other.path, waiters.path) == 0)
+    let held = open(other.path, O_RDONLY | O_CLOEXEC)
+    defer { close(held) }
+    #expect(flock(held, LOCK_SH | LOCK_NB) == 0)
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+}
+
+@Test func aWaitingLeaseScriptIsVisibleToTheHolder() async throws {
+    let directory = try privateLeaseDirectory(); defer { removeLeaseParent(directory) }
+    let noWrapper = directory.deletingLastPathComponent().appendingPathComponent("no-wrapper.lock")
+    let script = try gpuLeaseScript()
+    let held = try SharedGPULease.tryAcquire(leaseConfiguration(directory))
+    let (waiter, _) = try start(script, ["--quiet", "--directory", directory.path, "--", "/bin/echo", "ran"], until: nil)
+    let deadline = Date().addingTimeInterval(30)
+    while !SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper), Date() < deadline { usleep(10_000) }
+    #expect(held.othersWaiting || SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
+    held.release()
+    #expect(exited(waiter) && waiter.terminationStatus == 0)
+    #expect(!SharedGPULease.hasWaiters(directory: directory, legacyWrapper: noWrapper))
 }

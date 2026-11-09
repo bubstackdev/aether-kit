@@ -56,6 +56,12 @@
   bit-exact with 0.0.7, and the pixels and the pad expansion and positions are exact against the 0.0.x oracle's
   fixtures. For the second function: `DriverContract.GraphContract.inputsByPhase`, and multi-function graphs load as
   one specialization (`PhasedGraphBackend`, `GraphFunctionSet`). Additive; the API baselines record it.
+- **GPU waiters (`AetherHost`)**: a waiting `SharedGPULease.acquire` and `scripts/gpu-lease` hold a shared flock on the
+  lease's `<name>.waiters` file while they wait (this user's single-link, mode-0600 sibling, checked as `<name>.reclaim`
+  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:legacyWrapper:)`
+  (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
+  `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
+  API baseline records it.
 
 ### Fixed
 

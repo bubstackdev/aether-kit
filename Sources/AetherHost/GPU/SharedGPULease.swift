@@ -136,13 +136,19 @@ public final class SharedGPULease: Sendable {
         let clock = ContinuousClock()
         let deadline = timeout.map { clock.now.advanced(by: max(.zero, $0)) }
         var reported: (busy: Busy, at: ContinuousClock.Instant)?
+        // Held while waiting so a holder can see it (hasWaiters); closing it on any exit releases the shared lock.
+        var waiting: WaiterMark?
+        defer { withExtendedLifetime(waiting) {} }
         while true {
             try Task.checkCancellation()
             let busy: Busy
             switch try attempt(configuration) {
-            case .acquired(let lease): return lease
+            case .acquired(let lease):
+                waiting = nil
+                return lease
             case .busy(let current): busy = current
             }
+            if waiting == nil, timeout != .zero { waiting = WaiterMark(directory: configuration.directory) }
             let now = clock.now
             if reported?.busy != busy || reported.map({ $0.at.duration(to: now) >= configuration.busyReportInterval }) == true {
                 reported = (busy, now)
@@ -159,6 +165,31 @@ public final class SharedGPULease: Sendable {
 
     /// The process an existing lease names, if its pid file is present and well formed.
     public static func holder(of directory: URL = sharedDirectory) -> Int32? { readHolder(directory) }
+
+    /// The legacy wrapper lock the lab's `with-gpu-lock.sh` holds exclusively while a job waits in its queue.
+    public static var legacyWrapperLock: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cache/aether-kit/gpu.lock")
+    }
+
+    /// Whether another process is waiting for the lease at `directory`: a waiting ``acquire(_:timeout:onBusy:)`` or
+    /// `scripts/gpu-lease` holds a shared lock on the lease's `<name>.waiters` file (this user's single-link, mode-0600
+    /// sibling, as `<name>.reclaim`) for as long as it waits; or, with `legacyWrapper`, a lab wrapper holds that lock
+    /// file exclusively. A holder that keeps the GPU between its own jobs (a warm session) can ask this between jobs
+    /// and step aside. Never blocks; a file this user can't use reads as no waiter.
+    public static func hasWaiters(directory: URL = sharedDirectory, legacyWrapper: URL? = legacyWrapperLock) -> Bool {
+        if let legacyWrapper {
+            let descriptor = open(legacyWrapper.path, O_RDONLY | O_SHLOCK | O_NONBLOCK | O_CLOEXEC)
+            if descriptor >= 0 { close(descriptor) } else if errno == EWOULDBLOCK { return true }
+        }
+        guard let waiters = privateSibling(directory, suffix: ".waiters", create: false) else { return false }
+        defer { close(waiters) }
+        guard flock(waiters, LOCK_EX | LOCK_NB) == 0 else { return errno == EWOULDBLOCK }
+        flock(waiters, LOCK_UN)
+        return false
+    }
+
+    /// Whether another process waits for this lease (``hasWaiters(directory:legacyWrapper:)`` on its directory).
+    public var othersWaiting: Bool { Self.hasWaiters(directory: directory) }
 
     /// Releases an owned lease only if the pid file still names this process. Idempotent; an inherited lease is left.
     public func release() {
@@ -289,23 +320,30 @@ public final class SharedGPULease: Sendable {
         return parent > 0 ? parent : nil
     }
 
+    /// Opens `<directory>.<suffix>` beside the lease (created if asked), or nil. /tmp is shared: a file another user
+    /// created could be held forever to block everyone, and a hard link to one of this user's files would pass the uid
+    /// check. Only this user's single-link regular file is used, made private if an older build created it 0644.
+    static func privateSibling(_ directory: URL, suffix: String, create: Bool) -> Int32? {
+        let path = directory.deletingLastPathComponent().appendingPathComponent(directory.lastPathComponent + suffix).path
+        let descriptor = open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | (create ? O_CREAT : 0), 0o600)
+        guard descriptor >= 0 else { return nil }
+        var owner = stat()
+        guard fstat(descriptor, &owner) == 0, owner.st_mode & S_IFMT == S_IFREG, owner.st_uid == getuid(),
+              owner.st_nlink == 1 else { close(descriptor); return nil }
+        if owner.st_mode & 0o077 != 0 {
+            guard fchmod(descriptor, 0o600) == 0, fstat(descriptor, &owner) == 0, owner.st_mode & 0o077 == 0 else {
+                close(descriptor); return nil
+            }
+        }
+        return descriptor
+    }
+
     /// Atelier's stale reclaim, step for step. Returns true only when it removed a lease naming a dead process.
     /// `beforeMove` runs between the holder check and the move aside (tests use it to model a racing replacement).
     static func clearStale(_ directory: URL, beforeMove: () -> Void = {}) -> Bool {
         let parent = directory.deletingLastPathComponent()
-        let reclaim = parent.appendingPathComponent(directory.lastPathComponent + ".reclaim").path
-        let serial = open(reclaim, O_RDONLY | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0o600)
-        guard serial >= 0 else { return false }
+        guard let serial = privateSibling(directory, suffix: ".reclaim", create: true) else { return false }
         defer { close(serial) }
-        // /tmp is shared: a reclaim file another user created could be held forever to block every reclaim, and a
-        // hard link to one of this user's files would pass the uid check. Use only this user's single-link regular
-        // file, made private if an older build created it 0644; otherwise report the lease as held.
-        var owner = stat()
-        guard fstat(serial, &owner) == 0, owner.st_mode & S_IFMT == S_IFREG, owner.st_uid == getuid(),
-              owner.st_nlink == 1 else { return false }
-        if owner.st_mode & 0o077 != 0 {
-            guard fchmod(serial, 0o600) == 0, fstat(serial, &owner) == 0, owner.st_mode & 0o077 == 0 else { return false }
-        }
         // Another reclaimer is mid-reclaim; report the lease as held rather than wait.
         guard flock(serial, LOCK_EX | LOCK_NB) == 0 else { return false }
         guard let dead = readHolder(directory), isDead(dead) else { return false }
@@ -388,4 +426,24 @@ enum LeaseSignalRelease {
             return Handler(signal: signal, source: source)
         }
     }
+}
+
+/// A waiting acquisition's mark: a shared lock on the lease's `<name>.waiters` file, released when this is freed.
+/// Shared, so any number of waiters coexist; a holder's exclusive probe (``SharedGPULease/hasWaiters(directory:legacyWrapper:)``)
+/// fails while any is held. A file this user can't use leaves the waiter unmarked (it still waits).
+final class WaiterMark: Sendable {
+    private let descriptor: Int32?
+
+    init(directory: URL) {
+        guard let file = SharedGPULease.privateSibling(directory, suffix: ".waiters", create: true) else { descriptor = nil; return }
+        // A holder's probe holds the exclusive lock only for an instant: try a few times rather than block.
+        for _ in 0..<20 {
+            if flock(file, LOCK_SH | LOCK_NB) == 0 { descriptor = file; return }
+            usleep(1_000)
+        }
+        close(file)
+        descriptor = nil
+    }
+
+    deinit { if let descriptor { close(descriptor) } }
 }

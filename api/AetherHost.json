@@ -4494,6 +4494,138 @@
       "usr": "s:10AetherHost14SharedGPULeaseC6holder2ofs5Int32VSg10Foundation3URLV_tFZ"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "URL",
+          "printedName": "Foundation.URL",
+          "usr": "s:10Foundation3URLV"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost14SharedGPULeaseC17legacyWrapperLock10Foundation3URLVvgZ",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:10AetherHost14SharedGPULeaseC17legacyWrapperLock10Foundation3URLVvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "URL",
+        "printedName": "Foundation.URL",
+        "usr": "s:10Foundation3URLV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost14SharedGPULeaseC17legacyWrapperLock10Foundation3URLVvpZ",
+      "moduleName": "AetherHost",
+      "name": "legacyWrapperLock",
+      "printedName": "legacyWrapperLock",
+      "static": true,
+      "usr": "s:10AetherHost14SharedGPULeaseC17legacyWrapperLock10Foundation3URLVvpZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "URL",
+        "printedName": "Foundation.URL",
+        "usr": "s:10Foundation3URLV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "URL",
+          "printedName": "Foundation.URL",
+          "usr": "s:10Foundation3URLV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Foundation.URL?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost14SharedGPULeaseC10hasWaiters9directory13legacyWrapperSb10Foundation3URLV_AISgtFZ",
+      "moduleName": "AetherHost",
+      "name": "hasWaiters",
+      "printedName": "hasWaiters(directory:legacyWrapper:)",
+      "static": true,
+      "usr": "s:10AetherHost14SharedGPULeaseC10hasWaiters9directory13legacyWrapperSb10Foundation3URLV_AISgtFZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost14SharedGPULeaseC13othersWaitingSbvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost14SharedGPULeaseC13othersWaitingSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost14SharedGPULeaseC13othersWaitingSbvp",
+      "moduleName": "AetherHost",
+      "name": "othersWaiting",
+      "printedName": "othersWaiting",
+      "usr": "s:10AetherHost14SharedGPULeaseC13othersWaitingSbvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
