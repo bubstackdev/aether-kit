@@ -72,6 +72,10 @@ public final class FootprintLedger: Sendable {
         /// What changes the shapes the graphs run at; `""` when nothing does.
         public var profile: String
         public var phase: Manifest.Residency
+        /// How many shape specializations of the phase's graphs were resident when it was measured: graphs loaded
+        /// without the reshape hint keep one per shape they ran at (``GraphResidency/specializations``), and each
+        /// holds its own memory. 1 for a single shape, and for whatever doesn't vary by shape.
+        public var specializations: Int = 1
 
         public init(model: String, profile: String, phase: Manifest.Residency) {
             self.model = model
@@ -79,7 +83,14 @@ public final class FootprintLedger: Sendable {
             self.phase = phase
         }
 
-        public var description: String { "\(model)[\(profile)].\(phase.rawValue)" }
+        public init(model: String, profile: String, phase: Manifest.Residency, specializations: Int) {
+            self.init(model: model, profile: profile, phase: phase)
+            self.specializations = max(1, specializations)
+        }
+
+        public var description: String {
+            "\(model)[\(profile)].\(phase.rawValue)" + (specializations > 1 ? "×\(specializations)" : "")
+        }
     }
 
     private let entries = Mutex<[Key: PhaseFootprint]>([:])
@@ -96,6 +107,36 @@ public final class FootprintLedger: Sendable {
     }
 
     public func footprint(_ key: Key) -> PhaseFootprint? { entries.withLock { $0[key] } }
+
+    /// `key`'s footprint: measured, or for more specializations than were measured, an estimate from the same phase
+    /// at fewer. From the largest count `j` below `key`'s that was measured, each further specialization adds what one
+    /// added between 1 and `j`; with only one specialization measured, each adds that whole footprint's held bytes (a
+    /// full copy of the phase's graphs, the conservative case). Nil when even one wasn't measured. The second value is
+    /// false for an estimate.
+    public func estimate(_ key: Key) -> (footprint: PhaseFootprint, measured: Bool)? {
+        let all = entries.withLock { $0 }
+        if let exact = all[key] { return (exact, true) }
+        var one = key
+        one.specializations = 1
+        guard key.specializations > 1, let single = all[one] else { return nil }
+        var base = (count: 1, footprint: single)
+        for (other, footprint) in all where other.model == key.model && other.profile == key.profile
+            && other.phase == key.phase && other.specializations > base.count && other.specializations < key.specializations {
+            base = (other.specializations, footprint)
+        }
+        let extraHeld: Int64, extraPeak: Int64
+        if base.count > 1 {
+            let copies = Int64(base.count - 1)
+            extraHeld = max(0, (base.footprint.heldBytes - single.heldBytes) / copies)
+            extraPeak = max(0, (base.footprint.peakBytes - single.peakBytes) / copies)
+        } else {
+            extraHeld = single.heldBytes
+            extraPeak = single.heldBytes
+        }
+        let more = Int64(key.specializations - base.count)
+        return (PhaseFootprint(peakBytes: base.footprint.peakBytes + more * extraPeak,
+                               heldBytes: base.footprint.heldBytes + more * extraHeld), false)
+    }
 
     public var snapshot: [Key: PhaseFootprint] { entries.withLock { $0 } }
 }
@@ -177,13 +218,27 @@ public struct ResidencyPlan: Sendable, Hashable {
         manifest: Manifest, ledger: FootprintLedger, model: String? = nil, profile: String,
         unphasedPhase: Manifest.Residency = .perStep, fileBytes: (String) -> Int64
     ) -> Inputs {
+        inputs(manifest: manifest, ledger: ledger, model: model, profile: profile, specializations: 1,
+               unphasedPhase: unphasedPhase, fileBytes: fileBytes)
+    }
+
+    /// The inputs with `specializations` shape specializations resident (``FootprintLedger/estimate(_:)`` for a count
+    /// not measured yet, which makes the inputs unmeasured).
+    public static func inputs(
+        manifest: Manifest, ledger: FootprintLedger, model: String? = nil, profile: String, specializations: Int,
+        unphasedPhase: Manifest.Residency = .perStep, fileBytes: (String) -> Int64
+    ) -> Inputs {
+        func key(_ phase: Manifest.Residency) -> FootprintLedger.Key {
+            .init(model: model ?? manifest.id, profile: profile, phase: phase, specializations: specializations)
+        }
         var phases: [Manifest.Residency: PhaseFootprint] = [:]
         var measured = true
         for phase in Manifest.Residency.allCases {
             let roles = manifest.graphs.filter { $0.value.residency == phase }.map(\.key)
             guard !roles.isEmpty else { continue }
-            if let footprint = ledger.footprint(.init(model: model ?? manifest.id, profile: profile, phase: phase)) {
+            if let (footprint, exact) = ledger.estimate(key(phase)) {
                 phases[phase] = footprint
+                if !exact { measured = false }
             } else {
                 let files = roles.reduce(Int64(0)) { $0 + fileBytes($1) }
                 phases[phase] = PhaseFootprint(peakBytes: files, heldBytes: files)
@@ -192,8 +247,8 @@ public struct ResidencyPlan: Sendable, Hashable {
         }
         let unphased = manifest.graphs.filter { $0.value.residency == nil }.map(\.key)
         if phases.isEmpty, !unphased.isEmpty,
-           let footprint = ledger.footprint(.init(model: model ?? manifest.id, profile: profile, phase: unphasedPhase)) {
-            return Inputs(phases: [unphasedPhase: footprint], isMeasured: true, allowsPerPhase: false)
+           let (footprint, exact) = ledger.estimate(key(unphasedPhase)) {
+            return Inputs(phases: [unphasedPhase: footprint], isMeasured: exact, allowsPerPhase: false)
         }
         // Measured phases already include them (they load in some phase); otherwise their files are added.
         if !unphased.isEmpty, !measured || phases.isEmpty {
@@ -305,6 +360,11 @@ public final class GraphResidency {
     /// phase begins once no more than this is pending. Absent for a phase: the ledger's held bytes of the phase before
     /// it.
     public var overlapAllowance: [Manifest.Residency: Int64] = [:]
+    /// How many shape specializations the graphs hold in this generation (``FootprintLedger/Key/specializations``),
+    /// set by whoever plans it (``ResidentAdmission``). All resident, each phase's footprint is recorded under it;
+    /// per phase, graphs are released at every phase's end, so they're recorded as one.
+    public var specializations: Int = 1
+    private var recordedSpecializations: Int { mode == .allResident ? max(1, specializations) : 1 }
     private let phaseOrder: [Manifest.Residency]
     private var loaded: [String: any GraphBackend] = [:]
     private var open: (phase: Manifest.Residency, baseline: Int64, observed: Int64, meter: PeakMeter)?
@@ -418,7 +478,8 @@ public final class GraphResidency {
         if let allowance = overlapAllowance[phase] { return allowance }
         guard phaseOrder.count > 1, let i = phaseOrder.firstIndex(of: phase) else { return 0 }
         let previous = phaseOrder[(i + phaseOrder.count - 1) % phaseOrder.count]
-        return ledger.footprint(.init(model: model, profile: profile, phase: previous))?.heldBytes ?? 0
+        return ledger.estimate(.init(model: model, profile: profile, phase: previous, specializations: recordedSpecializations))?
+            .footprint.heldBytes ?? 0
     }
 
     /// Ends `phase`: records its footprint and, per phase, releases the graphs whose residency is `phase`.
@@ -445,7 +506,7 @@ public final class GraphResidency {
             }
             measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
-            ledger.record(.init(model: model, profile: profile, phase: phase),
+            ledger.record(.init(model: model, profile: profile, phase: phase, specializations: recordedSpecializations),
                           PhaseFootprint(peakBytes: peak, heldBytes: held))
             open = nil
         }

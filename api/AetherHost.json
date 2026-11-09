@@ -9493,6 +9493,39 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Inputs",
+        "printedName": "AetherRuntime.ResidencyPlan.Inputs",
+        "usr": "s:13AetherRuntime13ResidencyPlanV6InputsV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC6inputs7profile15specializations0A7Runtime13ResidencyPlanV6InputsVSS_SitF",
+      "moduleName": "AetherHost",
+      "name": "inputs",
+      "printedName": "inputs(profile:specializations:)",
+      "usr": "s:10AetherHost17ResidentAdmissionC6inputs7profile15specializations0A7Runtime13ResidencyPlanV6InputsVSS_SitF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Int64",
         "printedName": "Swift.Int64",
         "usr": "s:s5Int64V"
