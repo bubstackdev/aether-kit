@@ -52,6 +52,47 @@ and exits 75 on `--timeout`. `AETHER_GATES=1 scripts/ci.sh` already runs its gat
 `mkdir` protocol: the wrapper also does the stale-holder reclaim and the guarded release, interop-tested against the
 Swift implementation in `SharedGPULeaseTests`.
 
+**The compile cache.** Core AI writes a compiled copy of every graph it specializes, and evicts nothing for an export
+that was replaced or deleted. It keeps one copy per process name, so an app, a lab tool and `swift test` each hold
+their own (about 30 GB for a large model). `scripts/coreai-cache` lists and prunes it:
+
+```bash
+scripts/coreai-cache list --entries                       # per OS build and bucket: size, entries, oldest/newest
+scripts/coreai-cache prune --other-os-builds              # dry run: what an OS update left behind
+scripts/coreai-cache prune --bucket swiftpm-testing-helper --yes
+scripts/coreai-cache prune --stale --source ../lab/models --source ../forge-outputs --keep MyApp --yes
+```
+
+`prune` deletes nothing without `--yes` and needs a selector: `--bucket NAME`, `--older-than DAYS` (since last
+use), `--other-os-builds` or `--stale` (no export under the `--source` folders has the entry's model). Selectors
+combine with AND, and a `--keep NAME` bucket is never deleted from. It skips any entry a process holds, never follows
+a symlink, and refuses a root that doesn't look like a Core AI cache. `AETHER_GATES=1 scripts/ci.sh` prunes the test
+runners' buckets after its gate step, pass or fail, while holding the GPU lease (`scripts/gpu-lease`), so a load in
+another leased run can't start mid-prune; `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them. An executable's bucket follows
+its bundle identifier (from an embedded Info.plist), else its file name.
+
+What the cache keys on, measured on macOS 27 (26B123) with the `Fixtures/chain` graph (the script's docstring has
+the details):
+
+- **Layout.** `~/Library/Caches/coreai-cache/<OS build>/<bucket>/<model hash>/<options hash>/model.aimodelx`
+  (`~/Library/Application Support/coreai-cache` for `.persistent` entries), plus `sync/<OS build>/*.lock` and `tmp/`.
+- **The model hash** is the export's `main.hash` file, verbatim. For an `.aimodel` that file is the SHA-256 of
+  `main.mlirb`, which holds the graph and its weights. The path, `metadata.json` and mtimes don't enter it, so a
+  copy of an export hits the same entry, and an export whose `main.mlirb` changed gets a new one (the old one stays
+  until pruned).
+- **The options hash** depends only on the specialization options (compute-unit preference, reshape hint,
+  allowed units), not on the model or the process. Whether it also depends on the device is not established.
+- **The bucket** is the process's main-bundle identifier when it has one, else the executable's file name as
+  invoked (a symlink's own name). `swift test` runs Swift Testing in `swiftpm-testing-helper` and XCTest in
+  `com.apple.dt.xctest.tool`, so every package's tests on a Mac already share those two buckets.
+- **One cache for tests and tools.** `AIModelCache(appGroup:)` returned nil, so `GraphOptions.Cache.appGroup` throws,
+  in every case tried: a linker-signed tool, an ad-hoc signed tool with the `com.apple.security.application-groups`
+  entitlement (both `group.` and team-prefixed identifiers), and XCTest and Swift Testing under `swift test`. A tool
+  signed with a development team and a provisioned group was not tried. What does share a cache is the bundle
+  identifier. Two differently named command-line tools linked with the same embedded Info.plist
+  (`-Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker Info.plist`, with a `CFBundleIdentifier`)
+  land in one bucket and hit each other's entries. A test runner's bucket can't be changed.
+
 **Device gate.** SD-Turbo (iOS bundle), Kokoro and the six M4 models on a physical iPhone, recorded in docs/DEVICE.md:
 
 ```bash

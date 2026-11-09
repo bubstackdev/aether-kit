@@ -74,6 +74,15 @@
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
   `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
+- **Compile-cache tooling:** `scripts/coreai-cache list [--entries]` shows Core AI's compile cache by OS build and
+  bucket (one bucket per process name), with sizes, entry counts and dates. `scripts/coreai-cache prune` deletes what
+  its selectors pick (`--bucket`, `--older-than DAYS`, `--other-os-builds`, `--stale --source DIR`), never a
+  `--keep` bucket. It is a dry run without `--yes`, skips entries a process holds, never follows symlinks and refuses
+  a root that isn't a Core AI cache. `AETHER_GATES=1 scripts/ci.sh` now prunes the test runners' buckets
+  (`swiftpm-testing-helper`, `com.apple.dt.xctest.tool`) after the gates, under the GPU lease, which used to leave tens of GB behind;
+  `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them. docs/RELEASE.md records what the cache keys on (the export's
+  `main.hash`, the specialization options and the process's bundle identifier or executable name). It also records
+  that `GraphOptions.Cache.appGroup` has no cache to open for an unsigned or ad-hoc signed tool or under `swift test`.
 - **MiniMax H3 keyframes (FL2VA):** `VideoRequest.keyframes` anchors a clip to a picture at its first frame, its last
   frame or both (`VideoKeyframes.first`, `.last`, `.firstAndLast`; each a `VideoKeyframe`, RGB8 at the profile's
   canvas, not resized), with the new `VideoRequest(prompt:keyframes:…)`. The driver runs the export's FL2VA graphs:

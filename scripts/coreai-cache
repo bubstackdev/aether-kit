@@ -1,0 +1,538 @@
+#!/usr/bin/env python3
+"""List and prune Core AI's compile (specialization) cache.
+
+    scripts/coreai-cache [--root DIR]... list [--entries]
+    scripts/coreai-cache [--root DIR]... prune [selectors] [--keep NAME]... [--yes]
+
+Core AI writes each model it specializes to disk, and nothing evicts the copies of an export that was replaced or
+deleted, or of a process that no longer runs. For a large model each copy is on the order of the export's size, and
+every executable gets its own. This lists what is there and deletes what a selector picks.
+
+Layout (`AIModelCache`'s own documentation, and what this tool established on macOS 27, build 26B123):
+
+    ~/Library/Caches/coreai-cache/                purgeable entries (`AIModelCache.Policy.default`)
+    ~/Library/Application Support/coreai-cache/   non-purgeable entries (`.persistent`)
+        <OS build>/<bucket>/<model hash>/<options hash>/model.aimodelx/...   one compiled copy (an "entry")
+        sync/<OS build>/<64 hex>.lock                                         empty lock files
+        tmp/
+
+- The bucket is the process's main-bundle identifier when it has one (`xctest` has `com.apple.dt.xctest.tool`, and a
+  command-line tool with an embedded `__TEXT,__info_plist` gets its `CFBundleIdentifier`), otherwise the executable's
+  file name as invoked (a symlink's own name; `argv[0]` doesn't count). Swift Testing under `swift test` runs in
+  `swiftpm-testing-helper`, XCTest in `com.apple.dt.xctest.tool`. Two executables with the same bundle identifier
+  share a bucket and hit each other's entries; differently named ones without one never do.
+- The model hash (lower-case hex) is the export's `main.hash` file verbatim. For an `.aimodel` that is the SHA-256 of
+  `main.mlirb`, the file that holds the graph and its weights. The path, `metadata.json` and the mtime don't enter it:
+  a copy of an export elsewhere hits the same entry. Core AI doesn't recompute it (an export with a zeroed `main.hash`
+  is cached under 64 zeros).
+- The options hash (upper-case hex) depends on the `SpecializationOptions` alone, not on the model or the bucket: one
+  entry per compute-unit preference and reshape hint. (Not established: whether it also depends on the device or the
+  OS build; only one Mac was measured. Nor how the lock files' names are derived.)
+- While an `AIModel` holds an entry, Core AI holds a shared `flock` on its `model.aimodelx` directory. A cache hit
+  doesn't change any mtime; it updates the access time of the entry's `.odix` files only.
+- App-group caches (`AIModelCache(appGroup:)`, `<group container>/Library/Caches/coreai-cache/<group>/...` per its
+  documentation) are not handled: no OS build level, and the initializer returned nil for every unsigned, ad-hoc
+  signed (with or without the app-group entitlement) and `swift test` process tried.
+
+list         per root, OS build and bucket: allocated size, entry count, oldest and newest entry mtime. Never deletes.
+  --entries  also each entry: model hash, options hash, size, compiled (mtime), last used, "in use" when held.
+
+prune        deletes the entries every given selector picks (selectors combine with AND; at least one is required).
+             Dry run unless --yes.
+  --bucket NAME         entries in bucket NAME (repeatable: any of them)
+  --older-than DAYS     entries last used more than DAYS ago (the newest of the entry's mtime and its .odix files'
+                        access time; on a volume mounted noatime this is the compile time)
+  --other-os-builds     entries under OS builds other than the running one (`sw_vers -buildVersion`, or
+                        --os-build), and those builds' `sync/` locks
+  --stale               entries whose model hash no export under any --source DIR has (every `*.aimodel` and
+                        `*.aimodelc` with a `main.hash`, symlinks followed): exports since replaced or deleted. Only as
+                        good as the sources given: an export kept elsewhere counts as stale.
+  --source DIR          where --stale looks for exports (repeatable; required with --stale)
+  --keep NAME           a bucket never deleted from, whatever matches (repeatable)
+  --yes                 delete; otherwise print what would go
+
+  --root DIR            a cache root (repeatable); default: both roots above, where they exist
+  --os-build BUILD      the running OS build (tests); default: `sw_vers -buildVersion`
+
+Safety. A root must be a real directory named `coreai-cache` whose children are OS builds, `sync` and `tmp` only;
+anything else is refused (exit 65). Symlinks are never followed inside a root, and every path deleted is checked to
+be inside it. An entry is deleted under an exclusive non-blocking `flock` on its `model.aimodelx`: one an `AIModel`
+holds is skipped and reported as in use. It is first renamed aside (`.coreai-cache-prune-<uuid>` in its bucket), so
+Core AI never sees half of it; a later prune finishes one an interrupted prune left. An entry without `model.aimodelx`
+younger than an hour may still be in the making and is skipped. Emptied model-hash, bucket and OS-build directories
+are removed under other OS builds only (under the running one a process may be writing into them). A process that loads an entry between the lookup and the lock gets a miss and compiles again.
+
+Exit status: 0 done (a dry run, or every picked entry deleted or in use), 1 some deletion failed, 64 usage,
+65 a root isn't a Core AI cache.
+
+Standard library only; Python 3.9+.
+"""
+import argparse
+import errno
+import fcntl
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import time
+import uuid
+
+EX_FAILED, EX_USAGE, EX_NOT_A_CACHE = 1, 64, 65
+ROOT_NAME = "coreai-cache"
+ENTRY_PACKAGE = "model.aimodelx"
+ASIDE_PREFIX = ".coreai-cache-prune-"
+BUILD_RE = re.compile(r"^[0-9]{2}[A-Z][0-9]{1,5}[a-z]?$")
+HASH_RE = re.compile(r"^[0-9A-Fa-f]{64}$")
+IGNORED = {".DS_Store"}
+YOUNG_INCOMPLETE = 3600.0
+
+
+class NotACache(Exception):
+    pass
+
+
+def warn(text):
+    sys.stderr.write("coreai-cache: %s\n" % text)
+    sys.stderr.flush()
+
+
+def default_roots():
+    home = os.path.expanduser("~")
+    return [os.path.join(home, "Library", "Caches", ROOT_NAME),
+            os.path.join(home, "Library", "Application Support", ROOT_NAME)]
+
+
+def running_build():
+    try:
+        out = subprocess.run(["sw_vers", "-buildVersion"], capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out or None
+
+
+# MARK: Walking (never follows a symlink)
+
+def _is_dir(path):
+    try:
+        return stat.S_ISDIR(os.lstat(path).st_mode)
+    except OSError:
+        return False
+
+
+def _children(path):
+    try:
+        return sorted(os.listdir(path))
+    except OSError:
+        return []
+
+
+def tree_bytes(path):
+    """Allocated bytes under `path` (as du counts), symlinks not followed."""
+    try:
+        info = os.lstat(path)
+    except OSError:
+        return 0
+    total = info.st_blocks * 512
+    if stat.S_ISDIR(info.st_mode):
+        for name in _children(path):
+            total += tree_bytes(os.path.join(path, name))
+    return total
+
+
+def validate_root(root):
+    """The root's real path, or NotACache."""
+    try:
+        info = os.lstat(root)
+    except OSError as error:
+        raise NotACache("%s: %s" % (root, error.strerror))
+    if stat.S_ISLNK(info.st_mode):
+        raise NotACache("%s is a symlink; give the directory itself" % root)
+    if not stat.S_ISDIR(info.st_mode):
+        raise NotACache("%s is not a directory" % root)
+    if os.path.basename(os.path.normpath(root)) != ROOT_NAME:
+        raise NotACache("%s is not named %s" % (root, ROOT_NAME))
+    unexpected = []
+    for name in _children(root):
+        path = os.path.join(root, name)
+        if name in IGNORED:
+            continue
+        if (name in ("sync", "tmp") or BUILD_RE.match(name)) and _is_dir(path):
+            continue
+        unexpected.append(name)
+    if unexpected:
+        raise NotACache("%s doesn't look like a Core AI cache (unexpected: %s)" % (root, ", ".join(unexpected)))
+    return os.path.realpath(root)
+
+
+class Entry:
+    def __init__(self, root, build, bucket, model_hash, options_hash):
+        self.root, self.build, self.bucket = root, build, bucket
+        self.model_hash, self.options_hash = model_hash, options_hash
+        self.path = os.path.join(root, build, bucket, model_hash, options_hash)
+        self.bytes = tree_bytes(self.path)
+        try:
+            self.mtime = os.lstat(self.path).st_mtime
+        except OSError:
+            self.mtime = 0.0
+        self.last_used = self.mtime
+        package = os.path.join(self.path, ENTRY_PACKAGE)
+        self.complete = _is_dir(package)
+        if self.complete:
+            for name in _children(package):
+                if name.endswith(".odix"):
+                    try:
+                        info = os.lstat(os.path.join(package, name))
+                    except OSError:
+                        continue
+                    if stat.S_ISREG(info.st_mode):
+                        self.last_used = max(self.last_used, info.st_mtime, info.st_atime)
+
+
+class Bucket:
+    def __init__(self, root, build, name):
+        self.root, self.build, self.name = root, build, name
+        self.path = os.path.join(root, build, name)
+        self.entries, self.asides = [], []
+        for model in _children(self.path):
+            model_path = os.path.join(self.path, model)
+            if model.startswith(ASIDE_PREFIX) and _is_dir(model_path):
+                self.asides.append(model_path)
+                continue
+            if not (HASH_RE.match(model) and _is_dir(model_path)):
+                continue
+            for options in _children(model_path):
+                if HASH_RE.match(options) and _is_dir(os.path.join(model_path, options)):
+                    self.entries.append(Entry(root, build, name, model, options))
+        self.bytes = tree_bytes(self.path)
+
+
+def scan(root):
+    """(buckets, sync builds) of a validated root: every bucket under every OS build, and `sync/<build>` names."""
+    buckets = []
+    for build in _children(root):
+        if not (BUILD_RE.match(build) and _is_dir(os.path.join(root, build))):
+            continue
+        for name in _children(os.path.join(root, build)):
+            if name in IGNORED or not _is_dir(os.path.join(root, build, name)):
+                continue
+            buckets.append(Bucket(root, build, name))
+    sync = os.path.join(root, "sync")
+    builds = [b for b in _children(sync) if BUILD_RE.match(b) and _is_dir(os.path.join(sync, b))]
+    return buckets, builds
+
+
+# MARK: Locking and deletion
+
+def open_package(entry):
+    """A descriptor on the entry's model.aimodelx (no symlink), or None when it has none."""
+    try:
+        return os.open(os.path.join(entry.path, ENTRY_PACKAGE), os.O_RDONLY | os.O_NOFOLLOW | os.O_DIRECTORY)
+    except OSError:
+        return None
+
+
+def in_use(entry):
+    """True while some process holds the entry's flock (an AIModel referencing it)."""
+    descriptor = open_package(entry)
+    if descriptor is None:
+        return False
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as error:
+        return error.errno in (errno.EWOULDBLOCK, errno.EAGAIN)
+    finally:
+        os.close(descriptor)
+    return False
+
+
+def inside(root, path):
+    """`path`'s parent resolves inside `root` and `path` itself is not a symlink."""
+    parent = os.path.realpath(os.path.dirname(path))
+    if not (parent == root or parent.startswith(root + os.sep)):
+        return False
+    try:
+        return not stat.S_ISLNK(os.lstat(path).st_mode)
+    except OSError:
+        return False
+
+
+def remove_aside(root, path):
+    if not inside(root, path):
+        raise OSError(errno.EPERM, "outside the cache root", path)
+    shutil.rmtree(path)
+
+
+def delete_entry(entry):
+    """'deleted' or 'in use'; OSError on failure. Locks the entry, renames it aside, then removes it."""
+    if not inside(entry.root, entry.path):
+        raise OSError(errno.EPERM, "outside the cache root", entry.path)
+    descriptor = open_package(entry)
+    if descriptor is None and entry.complete:
+        raise OSError(errno.ENOENT, "its package vanished", entry.path)
+    # An incomplete entry has nothing to lock (the caller skips a recent one).
+    try:
+        if descriptor is not None:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as error:
+                if error.errno in (errno.EWOULDBLOCK, errno.EAGAIN):
+                    return "in use"
+                raise
+        bucket = os.path.join(entry.root, entry.build, entry.bucket)
+        aside = os.path.join(bucket, ASIDE_PREFIX + str(uuid.uuid4()).upper())
+        os.rename(entry.path, aside)
+        remove_aside(entry.root, aside)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    return "deleted"
+
+
+def remove_if_empty(path):
+    try:
+        os.rmdir(path)
+        return True
+    except OSError:
+        return False
+
+
+def remove_sync_build(root, build):
+    """Removes sync/<build> when it holds only regular *.lock files."""
+    path = os.path.join(root, "sync", build)
+    if not inside(root, path):
+        raise OSError(errno.EPERM, "outside the cache root", path)
+    for name in _children(path):
+        info = os.lstat(os.path.join(path, name))
+        if not (name.endswith(".lock") and stat.S_ISREG(info.st_mode)):
+            raise OSError(errno.ENOTEMPTY, "holds %s, not only locks" % name, path)
+    shutil.rmtree(path)
+
+
+# MARK: Sources (--stale)
+
+def source_hashes(directories):
+    """The lower-case hex of every export's main.hash under `directories` (symlinks followed, loops skipped)."""
+    hashes, seen = set(), set()
+
+    def visit(path):
+        try:
+            info = os.stat(path)
+        except OSError:
+            return
+        if not stat.S_ISDIR(info.st_mode) or (info.st_dev, info.st_ino) in seen:
+            return
+        seen.add((info.st_dev, info.st_ino))
+        name = os.path.basename(os.path.normpath(path))
+        if name.endswith(".aimodel") or name.endswith(".aimodelc"):
+            try:
+                with open(os.path.join(path, "main.hash"), "rb") as handle:
+                    data = handle.read(33)
+            except OSError:
+                data = b""
+            if len(data) == 32:
+                hashes.add(data.hex())
+            return
+        for child in _children(path):
+            visit(os.path.join(path, child))
+
+    for directory in directories:
+        visit(directory)
+    return hashes
+
+
+# MARK: Commands
+
+def human(count):
+    value = float(count)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if value < 1000 or unit == "TB":
+            return ("%d %s" % (value, unit)) if unit == "B" else ("%.1f %s" % (value, unit))
+        value /= 1000
+
+
+def when(seconds):
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(seconds)) if seconds else "-"
+
+
+def command_list(roots, build, entries, out):
+    for root in roots:
+        buckets, sync_builds = scan(root)
+        total = sum(b.bytes for b in buckets)
+        out.write("%s  %s  (running OS build %s)\n" % (root, human(total), build or "unknown"))
+        builds = sorted({b.build for b in buckets})
+        for name in builds:
+            out.write("  %s%s\n" % (name, "" if name == build else "  (another OS build)"))
+            for bucket in sorted((b for b in buckets if b.build == name), key=lambda b: -b.bytes):
+                times = [e.mtime for e in bucket.entries]
+                out.write("    %-36s %10s  %3d entr%s  oldest %s  newest %s%s\n" % (
+                    bucket.name, human(bucket.bytes), len(bucket.entries), "y" if len(bucket.entries) == 1 else "ies",
+                    when(min(times) if times else 0), when(max(times) if times else 0),
+                    "  (%d left by an interrupted prune)" % len(bucket.asides) if bucket.asides else ""))
+                if entries:
+                    for entry in sorted(bucket.entries, key=lambda e: -e.bytes):
+                        flags = [] if entry.complete else ["incomplete"]
+                        if in_use(entry):
+                            flags.append("in use")
+                        out.write("      %s/%s  %10s  compiled %s  used %s%s\n" % (
+                            entry.model_hash, entry.options_hash, human(entry.bytes), when(entry.mtime),
+                            when(entry.last_used), ("  " + ", ".join(flags)) if flags else ""))
+        if not builds:
+            out.write("  (no entries)\n")
+        sync = os.path.join(root, "sync")
+        if sync_builds:
+            out.write("  sync: %s\n" % ", ".join("%s (%d locks)" % (b, len(_children(os.path.join(sync, b))))
+                                                for b in sync_builds))
+    return 0
+
+
+def select(buckets, args, build, now, hashes):
+    picked = []
+    for bucket in buckets:
+        if bucket.name in args.keep:
+            continue
+        if args.bucket and bucket.name not in args.bucket:
+            continue
+        if args.other_os_builds and (build is None or bucket.build == build):
+            continue
+        for entry in bucket.entries:
+            if args.older_than is not None and entry.last_used > now - args.older_than * 86400:
+                continue
+            if args.stale and entry.model_hash.lower() in hashes:
+                continue
+            picked.append(entry)
+    return picked
+
+
+def command_prune(roots, build, args, out, now=None):
+    now = time.time() if now is None else now
+    hashes = source_hashes(args.source) if args.stale else set()
+    verb = "deleted" if args.yes else "would delete"
+    status, freed, would = 0, 0, 0
+    for root in roots:
+        buckets, sync_builds = scan(root)
+        # Leftovers of an interrupted prune go whatever the selectors (never in a kept bucket).
+        for bucket in buckets:
+            if bucket.name in args.keep:
+                continue
+            for aside in bucket.asides:
+                size = tree_bytes(aside)
+                out.write("%s %s  %s (left by an interrupted prune)\n" % (verb, human(size), aside))
+                if args.yes:
+                    try:
+                        remove_aside(root, aside)
+                        freed += size
+                    except OSError as error:
+                        warn("could not delete %s: %s" % (aside, error.strerror or error))
+                        status = EX_FAILED
+                else:
+                    would += size
+        for entry in select(buckets, args, build, now, hashes):
+            label = "%s/%s/%s/%s" % (entry.build, entry.bucket, entry.model_hash, entry.options_hash)
+            if not entry.complete and now - entry.mtime < YOUNG_INCOMPLETE:
+                out.write("skipped %s  %s (incomplete and recent: may still be compiling)\n" % (human(entry.bytes), label))
+                continue
+            if in_use(entry):
+                out.write("skipped %s  %s (in use)\n" % (human(entry.bytes), label))
+                continue
+            if not args.yes:
+                out.write("%s %s  %s\n" % (verb, human(entry.bytes), label))
+                would += entry.bytes
+                continue
+            try:
+                result = delete_entry(entry)
+            except OSError as error:
+                warn("could not delete %s: %s" % (entry.path, error.strerror or error))
+                status = EX_FAILED
+                continue
+            if result == "in use":
+                out.write("skipped %s  %s (in use)\n" % (human(entry.bytes), label))
+                continue
+            out.write("%s %s  %s\n" % (verb, human(entry.bytes), label))
+            freed += entry.bytes
+            # Emptied directories go only under another OS build: under the running one a process may be about to
+            # write into them.
+            if entry.build != build:
+                model_dir = os.path.dirname(entry.path)
+                if remove_if_empty(model_dir) and remove_if_empty(os.path.dirname(model_dir)):
+                    remove_if_empty(os.path.join(root, entry.build))
+        if args.other_os_builds and build is not None:
+            for other in sync_builds:
+                if other == build:
+                    continue
+                path = os.path.join(root, "sync", other)
+                out.write("%s %s  %s\n" % (verb, human(tree_bytes(path)), path))
+                if args.yes:
+                    try:
+                        remove_sync_build(root, other)
+                    except OSError as error:
+                        warn("could not delete %s: %s" % (path, error.strerror or error))
+                        status = EX_FAILED
+    if args.yes:
+        out.write("freed %s\n" % human(freed))
+    else:
+        out.write("would free %s (dry run; --yes deletes)\n" % human(would))
+    return status
+
+
+def parser():
+    top = argparse.ArgumentParser(prog="scripts/coreai-cache", add_help=True,
+                                  description="List and prune Core AI's compile cache (see the script's docstring).")
+    top.add_argument("--root", action="append", default=[], metavar="DIR")
+    top.add_argument("--os-build", metavar="BUILD")
+    commands = top.add_subparsers(dest="command", required=True)
+    listing = commands.add_parser("list")
+    listing.add_argument("--entries", action="store_true")
+    prune = commands.add_parser("prune")
+    prune.add_argument("--bucket", action="append", default=[], metavar="NAME")
+    prune.add_argument("--older-than", type=float, metavar="DAYS")
+    prune.add_argument("--other-os-builds", action="store_true")
+    prune.add_argument("--stale", action="store_true")
+    prune.add_argument("--source", action="append", default=[], metavar="DIR")
+    prune.add_argument("--keep", action="append", default=[], metavar="NAME")
+    prune.add_argument("--yes", action="store_true")
+    return top
+
+
+def main(argv, out=sys.stdout):
+    try:
+        args = parser().parse_args(argv)
+    except SystemExit as exit_:
+        return 0 if exit_.code == 0 else EX_USAGE
+    build = args.os_build or running_build()
+    if args.command == "prune":
+        if not (args.bucket or args.older_than is not None or args.other_os_builds or args.stale):
+            warn("prune needs a selector (--bucket, --older-than, --other-os-builds or --stale)")
+            return EX_USAGE
+        if args.older_than is not None and not (args.older_than >= 0):
+            warn("--older-than takes non-negative days")
+            return EX_USAGE
+        if args.stale and not args.source:
+            warn("--stale needs at least one --source DIR")
+            return EX_USAGE
+        if args.source and not args.stale:
+            warn("--source is only for --stale")
+            return EX_USAGE
+        for source in args.source:
+            if not os.path.isdir(source):
+                warn("--source %s is not a directory" % source)
+                return EX_USAGE
+        if args.other_os_builds and build is None:
+            warn("cannot tell the running OS build (sw_vers); give --os-build")
+            return EX_USAGE
+    roots = [os.path.abspath(r) for r in args.root] or [r for r in default_roots() if os.path.lexists(r)]
+    validated = []
+    for root in roots:
+        try:
+            validated.append(validate_root(root))
+        except NotACache as error:
+            warn(str(error))
+            return EX_NOT_A_CACHE
+    if args.command == "list":
+        return command_list(validated, build, args.entries, out)
+    return command_prune(validated, build, args, out)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
