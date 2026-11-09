@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "id": "huihui-qwen3-4b-instruct-2507-abliterated",
+  "task": "text-generation",
+  "driver": "decoder-lm@1",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "LICENSE",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "NOTICE",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "README.md",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "decoder.aimodel/main.hash",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "decoder.aimodel/main.mlirb",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "decoder.aimodel/metadata.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/added_tokens.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/chat_template.jinja",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/config.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/generation_config.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/merges.txt",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/special_tokens_map.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/tokenizer.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/vocab.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "decoder": {
+      "file": "main:decoder.aimodel",
+      "function": "main",
+      "inputs": {
+        "tokens": "input_ids",
+        "positions": "position_ids"
+      },
+      "outputs": {
+        "logits": {
+          "name": "logits",
+          "rows": "last"
+        }
+      },
+      "states": {
+        "sequence": [
+          {
+            "tensors": [
+              "keyCache",
+              "valueCache"
+            ],
+            "kind": "kv",
+            "seqAxis": 3
+          }
+        ]
+      },
+      "limits": {
+        "maxContext": 32768,
+        "prefillChunk": 512
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "x-notes": "Running contract: input_ids [1,S] (S 1..512), position_ids [1,T] = 0..T-1 (the last S are the fed tokens'), keyCache/valueCache written in place at rows T-S..T-1; logits are the last fed row only. maxContext is the graph's position and KV axis bound (the checkpoint declares its own)."
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "addBos": "template",
+    "stop": [
+      "<|im_end|>",
+      "<|endoftext|>"
+    ],
+    "thinking": null,
+    "toolDialect": "hermes-json"
+  },
+  "precision": {
+    "weights": "fp16",
+    "activations": "fp16",
+    "kv": "fp16",
+    "logits": "fp16",
+    "components": {
+      "decoder": "fp16 weights and KV, fp16 residual stream, matmuls and head, fp32 attention; RMSNorm statistics and rotary angles fp32",
+      "io": "tokens and positions i32; logits fp16"
+    }
+  },
+  "license": "apache-2.0",
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  },
+  "provenance": {
+    "source": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+    "sourceRevision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+    "base": "Qwen/Qwen3-4B-Instruct-2507",
+    "producer": "aether-kit Forge/qwen3/export_qwen3.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "tokenizer.stop": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated@c9bd464550d4078c72af0dd22aa18d0437868ce3 generation_config.json#/eos_token_id \u222a tokenizer_config.json#/eos_token: 151645 <|im_end|>, 151643 <|endoftext|>",
+      "tokenizer.source": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated@c9bd464550d4078c72af0dd22aa18d0437868ce3 tokenizer.json, tokenizer_config.json, vocab.json, merges.txt, special_tokens_map.json, added_tokens.json, generation_config.json, config.json",
+      "tokenizer.chatTemplate": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated@c9bd464550d4078c72af0dd22aa18d0437868ce3 chat_template.jinja",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}

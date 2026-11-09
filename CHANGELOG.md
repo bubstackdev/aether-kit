@@ -35,6 +35,18 @@
   not yet measured), and returns each graph's
   declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
   `AetherRuntime` API baseline records it.
+- **Bundle status** a host can show, for every driver's bundles: `InstalledBundle.status(supportedDrivers:)` returns
+  `BundleStatus` `.notPrepared` (the folder is absent or empty), `.ready`, or `.blocked` with a `BundleBlockReason`:
+  `incomplete` (files but no manifest), `missingFiles` (the declared files absent, with their total bytes),
+  `unsupportedSchema`, `unknownDriver` (including a driver version this build doesn't know), `unsupportedDriver` (not
+  among the caller's drivers, for example `Set(registry.ids)`), `invalidManifest` (naming the field) and `corruptFile`.
+  It reads the manifest and stats every declared file, hashing nothing (52 ms for a 94 GB, 1,375-file local export).
+  `verifiedStatus(supportedDrivers:progress:)` adds every declared file's SHA-256, with progress and cancellation,
+  and reports a changed byte as `corruptFile`. Declared files are the reference's and the manifest's
+  `assets.*.files`, each once, so a local export opened with a reference that lists no files is checked in full; a file
+  both declare differently is `invalidManifest`. `InstalledBundle.status(ofLocalBundleAt:supportedDrivers:)` and
+  `verifiedStatus(ofLocalBundleAt:supportedDrivers:progress:)` take a folder before there is a reference for it.
+  Additive; the `AetherCore` API baseline records it.
 - **Krea 2 conditioning reuse:** `Krea2Pipeline.encode(prompt:job:)` runs the text encoder alone (after the filter's
   prompt review) and returns a `Krea2Conditioning`, which the host owns. `generate(_:reusing:observing:)` renders from it
   at any seed and size without loading or running the text encoder, pixel for pixel what `generate(_:)` renders. It is
@@ -75,6 +87,20 @@
   fills a weight input whose preferred strides pad its rows (the tower's MLP width is off Core AI's alignment) from
   the row-major extent, row by row; an extent must hold the input's logical bytes. Additive; the `AetherVideo` API
   baseline records it.
+- **Our own Qwen3 language-model exports:** `Forge/qwen3/` exports any pinned Qwen3 dense decoder checkpoint in
+  Hugging Face format (`Qwen3ForCausalLM`; the architecture comes from its config.json, and sliding windows, rope
+  scaling, attention bias and MoE are refused) as a local `decoder-lm@1` bundle that `ChatSession` and `Generator` open
+  from its folder through `InstalledBundle(ref:url:isStale:)`. The graph runs the running contract (in-place KV
+  states, last-row logits, prefill chunks up to 512 tokens, up to 32,768 positions) with the 0.0.x Qwen3 recipe:
+  float16 weights, KV, residual stream and head, float32 attention, norm statistics and rotary angles. The first pin
+  is `huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated@c9bd464` (Apache-2.0; 8.06 GB bundle, exported in 26 s, peak
+  RSS 27 GB). `selftest_qwen3.py` checks the graph against transformers' own Qwen3 on small random checkpoints (tied
+  and untied heads; rel. L2 ≤ 7e-7 one-shot and over chunks). The gate (`DecoderLMExportGateTests`) compares greedy
+  replies with the 0.0.7 export of the same checkpoint on nine synthetic chat turns (system + user and user only,
+  `maxTokens` limits, prompts up to 719 tokens, several requests on one opened model, an open-only pre-warm): 7 of 9
+  token-exact, and the other two fork where the 0.0.7 reference itself is tied in float16 (logit margins 0 and one
+  ulp; the near-tie rule). Teacher-forced on the reference's replies, 541 of 543 positions take its token, and the
+  two that don't are those ties. No kit API changes.
 
 ### Fixed
 
