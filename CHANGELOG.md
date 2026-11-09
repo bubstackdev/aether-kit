@@ -83,6 +83,19 @@
   `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them. docs/RELEASE.md records what the cache keys on (the export's
   `main.hash`, the specialization options and the process's bundle identifier or executable name). It also records
   that `GraphOptions.Cache.appGroup` has no cache to open for an unsigned or ad-hoc signed tool or under `swift test`.
+- **MiniMax H3 keyframes (FL2VA):** `VideoRequest.keyframes` anchors a clip to a picture at its first frame, its last
+  frame or both (`VideoKeyframes.first`, `.last`, `.firstAndLast`; each a `VideoKeyframe`, RGB8 at the profile's
+  canvas, not resized), with the new `VideoRequest(prompt:keyframes:…)`. The driver runs the export's FL2VA graphs:
+  the tiled first-frame encoder (`videoEncoderTile`, `videoEncoderTail<W>x<H>`) for each keyframe's condition rows,
+  noised to t = 0.999 from Kit's stream before the generated rows and held through every step, and Diffusers'
+  conditioner presentation (a `"<Picture i>: "` label and a vision block per keyframe from `conditionerVision<W>x<H>`,
+  M-RoPE positions, DeepStack after layers 0–2), with the `fl2va` recipe. Layout, presentation, the processor's
+  pixels and tower tables, the M-RoPE gather and the noising are exact against Diffusers' own code
+  (`Forge/h3/keyframe_fixture_h3.py`). A last frame alone is new: it is presented as one keyframe, anchored 5/3 before
+  the end of the generated span. `check_h3.py --only condition` runs the keyframe-encoder check alone. `WeightBanks` now
+  fills a weight input whose preferred strides pad its rows (the tower's MLP width is off Core AI's alignment) from
+  the row-major extent, row by row; an extent must hold the input's logical bytes. Additive; the `AetherVideo` API
+  baseline records it.
 - **Our own Qwen3 language-model exports:** `Forge/qwen3/` exports any pinned Qwen3 dense decoder checkpoint in
   Hugging Face format (`Qwen3ForCausalLM`; the architecture comes from its config.json, and sliding windows, rope
   scaling, attention bias and MoE are refused) as a local `decoder-lm@1` bundle that `ChatSession` and `Generator` open

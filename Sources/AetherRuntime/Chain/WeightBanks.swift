@@ -80,7 +80,9 @@ public struct WeightTable: Sendable, Hashable, Codable {
 /// - **Sync rule:** ``load(block:into:chain:)`` refuses a bank whose buffers a call since the chain's last
 ///   ``GraphChain/synchronize()`` bound (the GPU may still read them). The usual order: encode block *i* from bank
 ///   *i* mod 2, load block *i + 1* into the other bank (overlapping the GPU), then synchronize.
-/// - Each bank buffer is allocated from the graph's own descriptor, and an extent must hold exactly its bytes.
+/// - Each bank buffer is allocated from the graph's own descriptor, and an extent must hold exactly its logical bytes
+///   (row-major, unpadded). A descriptor whose preferred strides pad the rows (an inner dimension off Core AI's
+///   alignment) is filled row by row; a contiguous one is read in place.
 ///
 /// Non-`Sendable`: owned with the chain.
 public final class WeightBanks {
@@ -108,9 +110,10 @@ public final class WeightBanks {
         for (b, block) in table.blocks.enumerated() {
             for (name, extent) in block {
                 let buffer = banks[0][name]!
-                guard buffer.isContiguous, Int64(buffer.storageByteCount) == extent.bytes else {
+                let bytes = buffer.count * (buffer.scalarType.byteWidth ?? 0)
+                guard bytes > 0, Int64(bytes) == extent.bytes else {
                     throw .manifestMismatch(
-                        field: "weights.blocks[\(b)].\(name).bytes", expected: "\(buffer.storageByteCount) (\(buffer.shape))",
+                        field: "weights.blocks[\(b)].\(name).bytes", expected: "\(bytes) (\(buffer.shape))",
                         found: "\(extent.bytes)")
                 }
                 guard urls[extent.file] == nil else { continue }
@@ -157,8 +160,30 @@ public final class WeightBanks {
         for name in table.inputs {
             let extent = table.blocks[block][name]!
             let handle = try handle(for: urls[extent.file]!)
-            try access(banks[bank][name]!) { bytes throws(AetherError) in
-                try Self.read(handle, offset: extent.offset, into: bytes, name: extent.file)
+            let buffer = banks[bank][name]!
+            guard !buffer.isContiguous else {
+                try access(buffer) { bytes throws(AetherError) in
+                    try Self.read(handle, offset: extent.offset, into: bytes, name: extent.file)
+                }
+                continue
+            }
+            // Padded strides: read the extent once, then place each innermost row at its strided offset.
+            let staged = UnsafeMutableRawBufferPointer.allocate(byteCount: Int(extent.bytes), alignment: 16)
+            defer { staged.deallocate() }
+            try Self.read(handle, offset: extent.offset, into: staged, name: extent.file)
+            let width = buffer.scalarType.byteWidth!, layout = buffer.layout
+            let inner = layout.shape.last ?? 1, innerStride = layout.strides.last ?? 1
+            try access(buffer) { bytes throws(AetherError) in
+                for row in 0..<(layout.count / inner) {
+                    let base = layout.offset(of: row * inner), source = staged.baseAddress! + row * inner * width
+                    if innerStride == 1 {
+                        (bytes.baseAddress! + base * width).copyMemory(from: source, byteCount: inner * width)
+                    } else {
+                        for k in 0..<inner {
+                            (bytes.baseAddress! + (base + k * innerStride) * width).copyMemory(from: source + k * width, byteCount: width)
+                        }
+                    }
+                }
             }
         }
         loaded[bank] = block
