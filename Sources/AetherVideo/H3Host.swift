@@ -42,22 +42,30 @@ public struct H3Geometry: Sendable, Hashable {
     }
 }
 
-/// The packed sequence of a text-to-video-and-audio step (`MiniMaxH3PrepareLayoutStep.build_packed_sequence`):
-/// `[text | audio (channel-major) | video]`, with `(t, h, w)` positions computed in Double and narrowed once to Float.
+/// The packed sequence of one step (`MiniMaxH3PrepareLayoutStep.build_packed_sequence`):
+/// `[text | keyframe conditions | audio (channel-major) | video]`, with `(t, h, w)` positions computed in Double and
+/// narrowed once to Float. A keyframe's condition block is one latent frame of rows at the first latent frame's time
+/// (`.first`) or 5/3 before the end of the generated span (`.last`); the video indices list the condition rows first.
 struct H3Layout: Sendable {
     /// `[rows, 3]` row-major.
     let positions: [Float]
-    /// Per row: text 1, video 0, audio 2.
+    /// Per row: text 1, video 0, audio 2 (a presentation's vision block is tagged video).
     let tags: [Int32]
     let textIndices: [Int32]
     let audioIndices: [Int32]
+    /// The condition rows, then the generated video rows.
     let videoIndices: [Int32]
+    /// Leading video rows that are keyframe conditions (one latent frame each).
+    let conditionRows: Int
     var rows: Int { tags.count }
 
-    /// `latentHeight`, `latentWidth` are the latent grid (H/16, W/16); `audioLatents` per channel.
-    init(textTokens n: Int, latentFrames: Int, latentHeight h: Int, latentWidth w: Int, audioLatents: Int) {
+    /// `latentHeight`, `latentWidth` are the latent grid (H/16, W/16); `audioLatents` per channel. `textTags` tags the
+    /// text rows (all text without keyframes); `anchors` are the keyframe conditions in packed order.
+    init(textTags: [Int32], latentFrames: Int, latentHeight h: Int, latentWidth w: Int, audioLatents: Int,
+         anchors: [H3Anchor] = []) {
+        let n = textTags.count
         let frameRows = (h / 2) * (w / 2)
-        let audioStart = n, videoStart = n + audioLatents * 2
+        let conditionStart = n, audioStart = n + anchors.count * frameRows, videoStart = audioStart + audioLatents * 2
         let rows = videoStart + latentFrames * frameRows
         var positions = [Float](repeating: 0, count: rows * 3)
         for i in 0..<n { positions[i * 3] = Float(i) }
@@ -69,17 +77,27 @@ struct H3Layout: Sendable {
             return (0..<(dimension / 2)).map { (left + Double($0) * step) * 32 }
         }
         let hg = grid(h), wg = grid(w)
-        var time = Double(n)
-        for f in 0..<latentFrames {
+        func frame(start: Int, time: Double) {
             for (y, hy) in hg.enumerated() {
                 for (x, wx) in wg.enumerated() {
-                    let at = (videoStart + f * frameRows + y * wg.count + x) * 3
+                    let at = (start + y * wg.count + x) * 3
                     positions[at] = Float(time)
                     positions[at + 1] = Float(hy)
                     positions[at + 2] = Float(wx)
                 }
             }
-            time += (5.0 / 3.0) * (f % 5 == 0 ? 1.0 : 4.0)
+        }
+        let spans = (0..<latentFrames).map { (5.0 / 3.0) * ($0 % 5 == 0 ? 1.0 : 4.0) }
+        for (index, anchor) in anchors.enumerated() {
+            // The last anchor: the generated span summed as numpy sums it (pairwise), as the reference does.
+            let time = anchor == .first ? Double(n) : Double(n) + h3NumpySum(spans[...]) - 5.0 / 3.0
+            frame(start: conditionStart + index * frameRows, time: time)
+        }
+        // The generated frames: origin + the spans' running sum (torch's sequential cumsum).
+        var cumulative = 0.0
+        for (f, span) in spans.enumerated() {
+            frame(start: videoStart + f * frameRows, time: Double(n) + cumulative)
+            cumulative += span
         }
         for channel in 0..<2 {
             for t in 0..<audioLatents {
@@ -88,18 +106,30 @@ struct H3Layout: Sendable {
                 positions[at + 2] = Float(channel == 0 ? wg[0] : wg[wg.count - 1])
             }
         }
-        var tags = [Int32](repeating: 1, count: n) + [Int32](repeating: 0, count: rows - n)
-        for i in audioStart..<videoStart { tags[i] = 2 }
+        var tags = textTags + [Int32](repeating: H3KeyframeRules.videoTag, count: rows - n)
+        for i in audioStart..<videoStart { tags[i] = H3KeyframeRules.audioTag }
         self.positions = positions
         self.tags = tags
+        conditionRows = anchors.count * frameRows
         textIndices = (0..<n).map(Int32.init)
         audioIndices = (audioStart..<videoStart).map(Int32.init)
-        videoIndices = (videoStart..<rows).map(Int32.init)
+        videoIndices = (conditionStart..<audioStart).map(Int32.init) + (videoStart..<rows).map(Int32.init)
+    }
+
+    /// A text-only layout of `textTokens` rows.
+    init(textTokens n: Int, latentFrames: Int, latentHeight h: Int, latentWidth w: Int, audioLatents: Int) {
+        self.init(textTags: [Int32](repeating: H3KeyframeRules.textTag, count: n), latentFrames: latentFrames,
+                  latentHeight: h, latentWidth: w, audioLatents: audioLatents)
     }
 
     init(textTokens: Int, geometry g: H3Geometry) {
         self.init(textTokens: textTokens, latentFrames: g.latentFrames, latentHeight: g.latentHeight,
                   latentWidth: g.latentWidth, audioLatents: g.audioLatents)
+    }
+
+    init(textTags: [Int32], geometry g: H3Geometry, anchors: [H3Anchor]) {
+        self.init(textTags: textTags, latentFrames: g.latentFrames, latentHeight: g.latentHeight,
+                  latentWidth: g.latentWidth, audioLatents: g.audioLatents, anchors: anchors)
     }
 
     /// `gather[r]`: the source row of packed row `r` in `[text; video; audio]` (the pack graph's input order).
@@ -113,9 +143,11 @@ struct H3Layout: Sendable {
     }
 
     /// One step's row timesteps (`build_row_timesteps`): text and video rows take the video timestep, audio rows the
-    /// audio one; the distinct values ascending, each row's index into them, and the AdaLN row `index · 3 + tag`.
-    func timesteps(video: Float, audio: Float) -> (values: [Float], indices: [Int32], adaln: [Int32]) {
+    /// audio one, condition rows max(video, `condition`); the distinct values ascending, each row's index into them, and
+    /// the AdaLN row `index · 3 + tag`.
+    func timesteps(video: Float, audio: Float, condition: Float = 0.999) -> (values: [Float], indices: [Int32], adaln: [Int32]) {
         var perRow = [Float](repeating: video, count: rows)
+        for i in videoIndices.prefix(conditionRows) { perRow[Int(i)] = max(video, condition) }
         for i in audioIndices { perRow[Int(i)] = audio }
         let values = Array(Set(perRow)).sorted()
         let indices = perRow.map { value in Int32(values.firstIndex(of: value)!) }
@@ -148,15 +180,39 @@ extension H3Geometry {
     /// Seeded initial latents (0.0.x's stream): Kit's ``SeededGaussianNoise`` read once, the source `[24, T, H, W]`
     /// video tensor first, packed to `[videoRows, 96]`, then the channel-major audio rows `[audioRows, 32]`.
     func initialLatents(seed: UInt64) throws(AetherError) -> (video: [Float], audio: [Float]) {
-        let videoCount = videoRows * 96, audioCount = audioRows * 32
-        let noise = try SeededGaussianNoise.generate(seed: seed, count: videoCount + audioCount)
-        return (packFrames(Array(noise[..<videoCount])), Array(noise[videoCount...]))
+        try initialLatents(seed: seed, conditions: [])
     }
+
+    /// FL2VA: the same stream, but first one draw per keyframe condition `[24, 1, H, W]` (normalized latents), in packed
+    /// order, as the pipeline draws each condition before the generated rows (`MiniMaxH3PrepareConditionLatentsStep`).
+    /// Each is noised to `t` (`t · x + (1 − t) · noise` in float32, `scale_noise`) and packed in front of the generated
+    /// video rows. With no conditions, the text-to-video stream.
+    func initialLatents(seed: UInt64, conditions: [[Float]], timestep t: Float = 0.999) throws(AetherError)
+        -> (video: [Float], audio: [Float]) {
+        let frame = 24 * latentHeight * latentWidth
+        guard conditions.allSatisfy({ $0.count == frame }) else {
+            throw .tensor(name: "condition", reason: .unsupported("a keyframe condition must be [1, 24, 1, \(latentHeight), \(latentWidth)]"))
+        }
+        let leading = frame * conditions.count, videoCount = videoRows * 96, audioCount = audioRows * 32
+        let noise = try SeededGaussianNoise.generate(seed: seed, count: leading + videoCount + audioCount)
+        var video: [Float] = []
+        video.reserveCapacity(leading + videoCount)
+        for (index, condition) in conditions.enumerated() {
+            let base = index * frame
+            video += packFrames((0..<frame).map { Self.noised(condition[$0], noise[base + $0], timestep: t) }, latentFrames: 1)
+        }
+        video += packFrames(Array(noise[leading..<(leading + videoCount)]))
+        return (video, Array(noise[(leading + videoCount)...]))
+    }
+
+    /// A condition value noised to `t` (`MiniMaxH3Scheduler.scale_noise`): `t · x + (1 − t) · noise`, float32, the
+    /// products rounded before the add.
+    static func noised(_ x: Float, _ noise: Float, timestep t: Float) -> Float { h3Product(t, x) + h3Product(1 - t, noise) }
 
     /// `[24, latentFrames, H, W]` → rows frame-major then row-major, each `(channel, dy, dx)` (`patchify_video_latents`
     /// with patch (1, 2, 2)).
-    func packFrames(_ values: [Float]) -> [Float] {
-        let lh = latentHeight, lw = latentWidth, lf = latentFrames
+    func packFrames(_ values: [Float], latentFrames lf: Int? = nil) -> [Float] {
+        let lh = latentHeight, lw = latentWidth, lf = lf ?? latentFrames
         var result: [Float] = []
         result.reserveCapacity(values.count)
         for f in 0..<lf {
