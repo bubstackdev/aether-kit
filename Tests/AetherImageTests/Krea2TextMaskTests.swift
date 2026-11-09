@@ -301,8 +301,8 @@ struct Krea2TextMaskTests {
         }
     }
 
-    /// The exporter's masked fixture decodes and passes the contract: `textMask` on every segment, a `references`
-    /// function each.
+    /// The exporter's masked fixture (its defaults: no reference bucket) decodes and passes the contract: `textMask` on
+    /// every segment, one function each.
     @Test func theMaskedFixtureIsAContractManifest() throws {
         let url = Krea2Tests.manifestURL.deletingLastPathComponent().appending(path: "realism-masked.json")
         let manifest = try Manifest.decode(Data(contentsOf: url))
@@ -310,7 +310,7 @@ struct Krea2TextMaskTests {
         for i in 0..<4 {
             let graph = try #require(manifest.graphs["denoiser\(i)"])
             #expect(graph.inputs["textMask"]?.name == "text_mask")
-            #expect(graph.phases == ["step": "segment", "references": "segmentReferences"])
+            #expect(graph.phases == ["step": "segment"])
         }
         _ = try Krea2Pipeline(manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
                               options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,

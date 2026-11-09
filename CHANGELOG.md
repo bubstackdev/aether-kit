@@ -6,14 +6,23 @@
 
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers as upstream Diffusers runs them:
   the text padded to 512 rows with its key-padding mask, applied in the text-fusion refiner and all 28 joint blocks
-  (`--text-mask`, the default; `--no-text-mask` keeps the exact-length graphs). The text axis is static. Bundles with
-  reference images give each segment a second function, `segmentReferences`, at 1,116 rows (the most a reference prompt
-  has), in the same file and sharing its weights. `krea2@1` gains the optional `textMask` input (on all four segments
-  or none) and the segments' optional `references` phase. `Krea2Pipeline` writes the real conditioning rows first and
-  zero rows after, passes the mask, runs the first function whose length holds the rows, and keys admission on that
-  length, so prompts of every length share one denoiser shape. `prepare(prompt:)`, the metrics and `Krea2Conditioning`
-  still report the real rows. Exact-length exports load and run as before. `check_krea2.py` pads and masks for masked
-  bundles and saves its closed-loop image for `--compare-image`. No public API changes. MEASUREMENTS_PLACEHOLDER
+  (`--text-mask`, the default; `--no-text-mask` keeps the exact-length graphs). The text axis is static.
+  `--reference-bucket` adds a second function per segment file, `segmentReferences` at 1,116 rows. It is off by
+  default: on macOS 27.2 it slowed the 512-row function's steps about 1.7× and Core AI kept a separate weights copy per
+  function. `krea2@1` gains the optional `textMask` input (on all four segments or none) and the segments' optional
+  `references` phase. `Krea2Pipeline` writes the real conditioning rows first and zero rows after, passes the mask,
+  runs the first function whose length holds the rows (refusing reference rows that none holds), and keys admission on
+  that length, so prompts of every length share one denoiser shape. `prepare(prompt:)`, the metrics and
+  `Krea2Conditioning` still report the real rows. Exact-length exports load and run as before.
+  - **Measured** (realism, 1024², 8 steps, M5 Max 64 GB):
+    - In one process, prompts of 27, 27, 8 and 258 rows loaded nothing after the first render.
+    - Every later render took 34–36 s. The first paid the ~40 s first step, a cost each process pays.
+    - Later steps took 3.5–4.3 s, against 2.6–2.9 s exact-length; 512 text rows cost the difference.
+  - **Gates against the oracle:** text-only SSIM 0.9924, refine 0.999935, references 0.9824. At the oracle's 512²
+    prompt the masked image matches the exact-length one at 47.6 dB / SSIM 0.998.
+  - **Against exact-length at 1024²:** 56.3 and 62.9 dB on short prompts, 37.6 dB / SSIM 0.988 on the 258-row prompt.
+  - `check_krea2.py` pads and masks for masked bundles and saves its closed-loop image for `--compare-image`.
+    `bench_krea2_{steps,segment,file,attention}.py` measure step and attention time. No public API changes.
 
 - **Krea 2 progress and metrics** for hosts: `Krea2Pipeline.generate(_:observing:)` reports
   `ImageProgress` in order (conditioning ready with its row count, denoisers ready, each step with a copy of its packed

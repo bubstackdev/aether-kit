@@ -26,8 +26,10 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
 The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
 
 The denoisers take a fixed text length with a key-padding mask (`--text-mask`, the default; krea2_graphs.py): `segment`
-at 512 rows and, when the bundle has reference images, `segmentReferences` at 1,116 rows, two functions of one asset
-sharing its weights. `--no-text-mask` exports the earlier exact-length denoisers (a dynamic text axis, no mask).
+at 512 rows. `--reference-bucket` adds `segmentReferences` at 1,116 rows as a second function of each segment file
+(reference conditioning past 512 rows); it is off by default because a second function slowed the first one's steps
+about 1.7x and Core AI holds a separate weights copy per function it runs (2026-11-09). `--no-text-mask` exports the
+earlier exact-length denoisers (a dynamic text axis, no mask).
 
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace \
         --only denoiser0 denoiser1 denoiser2 denoiser3 --base-bundle <existing bundle> --output <new bundle dir>
@@ -235,7 +237,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
                                   "expectFrequentReshapes": False, "residency": "perStep"}
     references = "vision" in asset_names
-    if masked and references and report.get("referenceBucket", True):
+    if masked and references and report.get("referenceBucket", False):
         # Each denoiser's second function: the same weights at the reference bucket's text length.
         for i in range(4):
             segment = graphs[f"denoiser{i}"]
@@ -290,7 +292,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
                                      "vaeDecoder": "fp16 weights, fp32 compute",
                                      **({"denoisers": "text rows padded with zeros to a fixed length (segment 512"
-                                                      + (", segmentReferences 1116" if references else "")
+                                                      + (", segmentReferences 1116" if references and report.get("referenceBucket") else "")
                                                       + ") under a key-padding mask (textMask)"}
                                         if masked else {}),
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
@@ -333,7 +335,7 @@ def reference_block() -> dict:
     }
 
 
-def sample_manifest(variant: str, masked: bool = True) -> dict:
+def sample_manifest(variant: str, masked: bool = True, reference_bucket: bool = False) -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
     fixtures with `--sample-manifest --variant <v> [--no-text-mask] > Tests/AetherCoreTests/Fixtures/krea2/<file>.json`
     (`vanilla.json` and `realism.json` are the exact-length exports, `realism-masked.json` the masked one)."""
@@ -341,7 +343,8 @@ def sample_manifest(variant: str, masked: bool = True) -> dict:
     asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
     report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
-              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked}
+              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked,
+              "referenceBucket": reference_bucket}
     return manifest(variant, files, asset_names, report)
 
 
@@ -401,13 +404,14 @@ def main() -> None:
     parser.add_argument("--text-mask", action=argparse.BooleanOptionalAction, default=True,
                         help="denoisers at a fixed text length (512; 1116 for references) with a key-padding mask "
                              "(default); --no-text-mask: the earlier exact-length denoisers")
-    parser.add_argument("--reference-bucket", action=argparse.BooleanOptionalAction, default=True,
+    parser.add_argument("--reference-bucket", action=argparse.BooleanOptionalAction, default=False,
                         help="with --text-mask and reference images: each denoiser's second function at 1116 rows "
-                             "(default); --no-reference-bucket exports the 512-row function only (benchmarking)")
+                             "(slows the 512-row function; off by default)")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.variant, args.text_mask), indent=2, ensure_ascii=False))
+        print(json.dumps(sample_manifest(args.variant, args.text_mask, args.reference_bucket), indent=2,
+                         ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")

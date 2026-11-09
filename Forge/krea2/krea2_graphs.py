@@ -21,7 +21,7 @@ Functions (names, dtypes and dynamic axes are the bundle contract):
     denoiser1/segment    image_1, text_1, text_mask, cond, rope_image -> image_2, text_2
     denoiser2/segment    image_2, text_2, text_mask, cond, rope_image -> image_3, text_3
     denoiser3/segment    image_3, text_3, text_mask, cond, rope_image -> velocity fp16 [N, 64]
-    denoiser*/segmentReferences   the same at T = 1116 (reference conditioning), sharing the segment's weights
+    denoiser*/segmentReferences   optional: the same at T = 1116 (reference conditioning; `--reference-bucket`)
     vaeDecoder/decode    latents fp16 [H/16, W/16, 64] (packed, normalized) -> image f32 [3, H, W] in [-1, 1]
 
 Precision: text encoder and denoiser matmuls and attention run in fp16 with fp16 weights (denoiser block 0 computes in
