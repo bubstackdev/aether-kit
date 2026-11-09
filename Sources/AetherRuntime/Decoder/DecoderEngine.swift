@@ -4,7 +4,8 @@ import Metal
 
 /// The owned decode engine for `decoder-lm@1` (DESIGN.md §6.2): one decoder graph (with an optional `prefill`
 /// phase), its KV and recurrent states, a position counter, rewind and snapshot, the prefill schedule, and greedy
-/// decoding pipelined on the GPU (§6.1).
+/// decoding pipelined on the GPU (§6.1). For `vlm-static-inject@1` it also owns the vision tower and the decoder's
+/// static image inputs (``ImageConditionedEngine``, docs/VLM.md).
 ///
 /// The Core AI ``LanguageEngine``. An actor: the graphs, the arena and every buffer live inside it and never leave
 /// (§11). Results are `Sendable` values (``Logits``, ``EngineSnapshot``). One request at a time: a greedy decode in
@@ -118,6 +119,8 @@ public actor DecoderEngine: LanguageEngine {
         var position: Int
         var capacity: Int
         var states: StateSnapshot
+        /// The images the statics held (a snapshot records them, not their rows).
+        var images: [ImagePromptPlan.Image] = []
         var byteCount: Int { states.byteCount }
     }
 
@@ -135,7 +138,11 @@ public actor DecoderEngine: LanguageEngine {
         public var encodes: Bool
     }
 
-    private let core: DecoderCore
+    let core: DecoderCore
+    /// The vision tower and the image record of a `vlm-static-inject@1` model; nil for a text model.
+    let imageBinder: ImageBinder?
+    /// The image contract (nil: the model takes no images).
+    public nonisolated let imageInput: ImageInputSpec?
     /// The sizing inputs the capacity was derived from (diagnostics).
     public nonisolated let sizing: KVSizing
     /// The model's measured Metal allocation delta across load and its files' size (diagnostics; zero for fakes).
@@ -155,10 +162,11 @@ public actor DecoderEngine: LanguageEngine {
     /// (``InstalledBundle/readLease()``) for the engine's lifetime, so the store refuses to remove it meanwhile.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws(AetherError) {
         let lease = try bundle.readLease()
-        guard manifest.driver == .decoderLM else {
+        let vlm = manifest.driver == .vlmStaticInject
+        guard manifest.driver == .decoderLM || vlm else {
             throw .manifestMismatch(field: "driver", expected: DriverID.decoderLM.description, found: manifest.driver.description)
         }
-        try DriverContract.decoderLM.validate(manifest)
+        try (vlm ? DriverContract.vlmStaticInject : .decoderLM).validate(manifest)
         guard let graph = manifest.graphs["decoder"] else {
             throw .manifestInvalid(field: "graphs.decoder", reason: "required by decoder-lm@1")
         }
@@ -179,12 +187,34 @@ public actor DecoderEngine: LanguageEngine {
         let modelBytes = max(gpuDelta, diskBytes(url))
         var signatures: [String: GraphSignature] = [:]
         for (name, g) in loaded { signatures[name] = g.signature }
-        try SignatureValidator.validate(manifest, signatures: ["decoder": signatures])
+        // A VLM's tower: one static function, its own specialization, resident for the engine's lifetime.
+        var tower: Graph?
+        var towerDisk: Int64 = 0
+        var image: ImageConfiguration?
+        var all = ["decoder": signatures]
+        if vlm {
+            guard let vision = manifest.graphs["vision"], let function = vision.function,
+                  let towerPath = vision.file.resolve(architecture: device.architecture), let towerURL = bundle.url(of: towerPath) else {
+                throw .manifestInvalid(field: "graphs.vision", reason: "vlm-static-inject@1 needs a one-function vision graph for \(device.architecture)")
+            }
+            guard let block = manifest.image, let preprocess = manifest.preprocess?.image else {
+                throw .manifestInvalid(field: "image", reason: "vlm-static-inject@1 requires the image block and preprocess.image")
+            }
+            let towerOptions = try GraphOptions(manifest: vision, at: "graphs.vision", cachePolicy: options.cachePolicy, cache: options.cache)
+            let loadedTower = try await Graph.load(url: towerURL, functions: [function], options: towerOptions)[function]!
+            all["vision"] = [function: loadedTower.signature]
+            tower = loadedTower
+            towerDisk = diskBytes(towerURL)
+            image = ImageConfiguration(vision: vision, image: block, preprocess: preprocess)
+        }
+        try SignatureValidator.validate(manifest, signatures: all)
+        let gpuTotal = Int64(max(0, (gpu?.currentAllocatedSize ?? 0) - gpuBefore))
         let device = device
         let metal: (any MTLDevice)? = options.execution == .automatic ? gpu : nil
-        let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] })
-        try await self.init(backends: pair, graph: graph, device: device, options: options, metal: metal, modelBytes: modelBytes)
-        loadedModelBytes = (gpu: gpuDelta, disk: diskBytes(url))
+        let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] }, tower: tower)
+        try await self.init(backends: pair, graph: graph, image: image, device: device, options: options, metal: metal,
+                            modelBytes: max(gpuTotal, diskBytes(url) + towerDisk))
+        loadedModelBytes = (gpu: gpuTotal, disk: diskBytes(url) + towerDisk)
         bundleLease = lease
     }
 
@@ -194,18 +224,41 @@ public actor DecoderEngine: LanguageEngine {
         step: sending any GraphBackend, prefill: sending (any GraphBackend)? = nil, graph: Manifest.Graph,
         device: Device, options: Options = Options()
     ) async throws(AetherError) {
-        try await self.init(backends: Backends(step: step, prefill: prefill), graph: graph, device: device, options: options, metal: nil, modelBytes: 0)
+        try await self.init(backends: Backends(step: step, prefill: prefill), graph: graph, image: nil, device: device,
+                            options: options, metal: nil, modelBytes: 0)
     }
 
-    /// The step and prefill backends, sent into the actor as one region.
+    /// A `vlm-static-inject@1` engine over any ``GraphBackend``s (tests drive a fake tower and decoder through this):
+    /// `graph` and `visionGraph` supply the roles, `image` and `preprocess` the image contract, all checked against
+    /// the backends' signatures.
+    public init(
+        step: sending any GraphBackend, prefill: sending (any GraphBackend)? = nil, graph: Manifest.Graph,
+        vision: sending any GraphBackend, visionGraph: Manifest.Graph, image: Manifest.ImageBlock,
+        preprocess: Manifest.ImagePreprocess, device: Device, options: Options = Options()
+    ) async throws(AetherError) {
+        try await self.init(
+            backends: Backends(step: step, prefill: prefill, tower: vision), graph: graph,
+            image: ImageConfiguration(vision: visionGraph, image: image, preprocess: preprocess), device: device,
+            options: options, metal: nil, modelBytes: 0)
+    }
+
+    /// The step, prefill and tower backends, sent into the actor as one region.
     private struct Backends {
         var step: any GraphBackend
         var prefill: (any GraphBackend)?
+        var tower: (any GraphBackend)?
+    }
+
+    /// A VLM's manifest blocks for its tower and statics.
+    struct ImageConfiguration: Sendable {
+        var vision: Manifest.Graph
+        var image: Manifest.ImageBlock
+        var preprocess: Manifest.ImagePreprocess
     }
 
     private init(
-        backends: sending Backends, graph: Manifest.Graph, device: Device, options: Options, metal: (any MTLDevice)?,
-        modelBytes: Int64
+        backends: sending Backends, graph: Manifest.Graph, image: ImageConfiguration?, device: Device, options: Options,
+        metal: (any MTLDevice)?, modelBytes: Int64
     ) async throws(AetherError) {
         let step = backends.step, prefill = backends.prefill
         // DecoderCore keeps 8 token slots and needs ring > depth + 1; no option may reach a trap.
@@ -222,10 +275,25 @@ public actor DecoderEngine: LanguageEngine {
         guard options.reservedSnapshots >= 0 else {
             throw .generation(.invalidParameters("reservedSnapshots \(options.reservedSnapshots); at least 0"))
         }
+        var binder: ImageBinder?
+        if let image {
+            guard let tower = backends.tower else {
+                throw .manifestInvalid(field: "graphs.vision", reason: "vlm-static-inject@1 needs a vision tower")
+            }
+            binder = try ImageBinder(tower: tower, vision: image.vision, decoder: graph, decoderSignature: step.signature,
+                                     image: image.image, preprocess: image.preprocess)
+        }
         var sizing = try Self.sizing(
             step.signature, prefill: prefill?.signature, graph: graph, maxContext: maxContext, platform: device.platform,
             options: options)
         sizing.modelBytes = modelBytes
+        // The static inputs (image rows, rotary inputs) and the tower's buffers.
+        for (_, binding) in graph.inputs(forPhase: "step") where binding.isStatic && binding.source == nil {
+            if let spec = step.signature.input(binding.name), let width = spec.scalarType.byteWidth {
+                sizing.fixedBytes += Int64(spec.shape.map { max($0, 1) }.reduce(1, *) * width)
+            }
+        }
+        sizing.fixedBytes += binder?.bufferBytes ?? 0
         self.sizing = sizing
         let budget = options.memoryBudget.bytes(on: device)
         let maxCapacity = try sizing.capacity(budget: budget, requested: options.capacity)
@@ -239,6 +307,9 @@ public actor DecoderEngine: LanguageEngine {
             initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
+        imageBinder = binder
+        imageInput = binder?.spec
+        if let binder { try core.withStatics { statics throws(AetherError) in try binder.clear(statics) } }
         description = Description(
             vocab: core.vocab, maxCapacity: core.maxCapacity, hasRecurrentState: core.hasRecurrentState,
             prefillChunk: core.shape.prefillChunk, schedule: core.shape, encodes: core.isEncoding)
@@ -340,13 +411,20 @@ public actor DecoderEngine: LanguageEngine {
 
     /// Moves the position back. O(1) on attention-only models (stale slots are overwritten later). With recurrent
     /// states only `rewind(to: 0)` (a reset) is possible; use ``snapshot()`` and ``restore(_:)``.
-    public func rewind(to position: Int) throws(AetherError) { try core.rewind(to: position) }
+    public func rewind(to position: Int) throws(AetherError) {
+        try core.rewind(to: position)
+        if let imageBinder { try core.withStatics { statics throws(AetherError) in try imageBinder.truncate(to: position, statics) } }
+    }
 
-    public func reset() throws(AetherError) { try core.reset() }
+    public func reset() throws(AetherError) {
+        try core.reset()
+        if let imageBinder { try core.withStatics { statics throws(AetherError) in try imageBinder.clear(statics) } }
+    }
 
     /// A host copy of the state: sequence states up to the position, recurrent states whole.
     public func snapshot() throws(AetherError) -> EngineSnapshot {
-        let snapshot = try core.snapshot()
+        var snapshot = try core.snapshot()
+        snapshot.images = boundImages
         return EngineSnapshot(position: snapshot.position, byteCount: snapshot.byteCount, payload: snapshot)
     }
 
@@ -354,6 +432,9 @@ public actor DecoderEngine: LanguageEngine {
     public func restore(_ snapshot: EngineSnapshot) throws(AetherError) {
         guard let state = snapshot.payload as? Snapshot else {
             throw .unsupportedOperation("restore of a snapshot another engine type took (\(type(of: snapshot.payload)))")
+        }
+        guard state.images == boundImages else {
+            throw .unsupportedOperation("restore of a snapshot taken with other images bound; bind its images first")
         }
         try core.restore(state)
     }

@@ -1,0 +1,283 @@
+{
+  "schema": 1,
+  "id": "qwen3-vl-4b-instruct-abliterated",
+  "task": "image-text-to-text",
+  "driver": "vlm-static-inject@1",
+  "variant": {
+    "platform": "macos"
+  },
+  "assets": {
+    "main": {
+      "subtree": "",
+      "files": [
+        {
+          "path": "LICENSE",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "NOTICE",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "README.md",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_decoder.aimodel/main.hash",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_decoder.aimodel/main.mlirb",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_decoder.aimodel/metadata.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_vision.aimodel/main.hash",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_vision.aimodel/main.mlirb",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "qwen3_vl_4b_vision.aimodel/metadata.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/chat_template.jinja",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/merges.txt",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/tokenizer.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "tokenizer/vocab.json",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    }
+  },
+  "graphs": {
+    "vision": {
+      "kind": "vision-tower@1",
+      "file": "main:qwen3_vl_4b_vision.aimodel",
+      "function": "main",
+      "inputs": {
+        "patches": "patches",
+        "grid": "grid"
+      },
+      "outputs": {
+        "imageEmbeds": "image_embeds",
+        "deepstackEmbeds": "deepstack_embeds"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "x-notes": "One static shape for every image: patches [2048,1536] holds the image's h*w block-major rows first and zeros after; grid int32 [2] is (h, w) in patches (both even, h*w <= 2048). Padding rows are masked as keys in the graph and the output rows past h*w/4 are zero. Positional tables (bilinear position-table resampling, 2-D rotary) are computed in the graph from grid, as upstream computes them from grid_thw. One image per call; the host copies its rows into the decoder's static slots."
+    },
+    "decoder": {
+      "file": "main:qwen3_vl_4b_decoder.aimodel",
+      "function": "main",
+      "inputs": {
+        "tokens": "input_ids",
+        "positions": "position_ids",
+        "imageEmbeds": {
+          "name": "image_embeds",
+          "binding": "static"
+        },
+        "deepstackEmbeds": {
+          "name": "deepstack_embeds",
+          "binding": "static"
+        },
+        "imagePositions": {
+          "name": "image_positions",
+          "binding": "static"
+        },
+        "ropeShiftStart": {
+          "name": "rope_shift_start",
+          "binding": "static"
+        },
+        "ropeShiftAmount": {
+          "name": "rope_shift_amount",
+          "binding": "static"
+        }
+      },
+      "inputEncodings": {
+        "tokens": {
+          "extensionIds": {
+            "base": 151936,
+            "count": 4096
+          }
+        }
+      },
+      "outputs": {
+        "logits": {
+          "name": "logits",
+          "rows": "last"
+        }
+      },
+      "states": {
+        "sequence": [
+          {
+            "tensors": [
+              "keyCache",
+              "valueCache"
+            ],
+            "kind": "kv",
+            "seqAxis": 3
+          }
+        ]
+      },
+      "limits": {
+        "maxContext": 32768,
+        "prefillChunk": 512
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": true,
+      "x-notes": "Running contract: input_ids [1,S] (S 1..512), position_ids [1,T] = 0..T-1 (the last S are the fed tokens'), keyCache/valueCache written in place at rows T-S..T-1; logits are the last fed row only. maxContext is the graph's KV axis bound (upstream declares 262144). Image tokens are extension ids vocab + slot, packed over the prompt's images (4096 slots, 16 images); the static inputs hold each slot's rows and rotary positions and each image's rope shift (image.rope)."
+    }
+  },
+  "tokenizer": {
+    "source": {
+      "dir": "main:tokenizer"
+    },
+    "chatTemplate": "main:tokenizer/chat_template.jinja",
+    "chatTemplateSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "stop": [
+      "<|im_end|>",
+      "<|endoftext|>"
+    ],
+    "thinking": null,
+    "toolDialect": "hermes-json"
+  },
+  "preprocess": {
+    "image": {
+      "resize": {
+        "mode": "smartResize",
+        "filter": "torchUint8Bicubic",
+        "factor": 32,
+        "minPixels": 65536,
+        "maxPixels": 524288
+      },
+      "colorSpace": "deviceRGB",
+      "channelOrder": "RGB",
+      "scale": 0.00392156862745098,
+      "mean": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "std": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "layout": "patches",
+      "patchify": {
+        "patch": 16,
+        "temporal": 2,
+        "merge": 2,
+        "rowOrder": "blockMajor",
+        "withinPatch": "C,T,py,px"
+      },
+      "hostDType": "float32",
+      "x-notes": "smartResize is upstream's smart_resize (transformers qwen2_vl image processing), then a resize to exactly that size (upstream's fast processor: torchvision uint8 bicubic, antialias). maxPixels is the tower's capacity (2048 patches); upstream's own default longest_edge is 16777216 pixels, the bundle's budget is the graph's."
+    }
+  },
+  "image": {
+    "feed": [
+      {
+        "from": "vision.imageEmbeds",
+        "to": "decoder.imageEmbeds"
+      },
+      {
+        "from": "vision.deepstackEmbeds",
+        "to": "decoder.deepstackEmbeds"
+      }
+    ],
+    "tokens": {
+      "pad": "<|image_pad|>",
+      "padId": 151655,
+      "open": "<|vision_start|>",
+      "openId": 151652,
+      "close": "<|vision_end|>",
+      "closeId": 151653,
+      "count": "gridH*gridW",
+      "idBase": 151936
+    },
+    "rope": {
+      "rule": "qwen3vl-mrope",
+      "textOnly": {
+        "start": 1073741824,
+        "amount": 0,
+        "zeroStatics": true
+      }
+    },
+    "deepstack": {
+      "rowsPerToken": 3,
+      "layout": "levelMajor"
+    },
+    "maxImages": 16,
+    "slots": 4096,
+    "x-notes": "The chat template renders one <|vision_start|><|image_pad|><|vision_end|> per image; the host expands image k's pad to count_k = gridH*gridW pads (gridH, gridW the merged grid, at most 512 a picture), rewritten to idBase + base_k + i with base_k the earlier images' counts. qwen3vl-mrope: with start_k its first pad's position and shift_k the earlier images' amounts, imagePositions[base_k + i] = (s0, s0 + i // gridW, s0 + i % gridW) for s0 = start_k - shift_k; ropeShiftStart[k] = start_k + count_k; ropeShiftAmount[k] = count_k - max(gridH, gridW); a text token at p takes p minus the amounts whose start <= p."
+  },
+  "precision": {
+    "weights": "fp16",
+    "activations": "vision fp32, decoder fp16",
+    "kv": "fp16",
+    "logits": "fp32",
+    "components": {
+      "vision": "fp16 weights, fp32 compute; LayerNorm statistics, rotary and position resampling fp32; outputs fp16",
+      "decoder": "fp16 weights and KV, fp16 residual stream and matmuls, fp32 attention; RMSNorm statistics, M-RoPE angles and the tied head fp32",
+      "io": "patches f32, grid i32; image/deepstack embeds fp16; tokens, positions, image_positions and rope shifts i32; logits f32"
+    }
+  },
+  "license": "Apache-2.0",
+  "x-license": {
+    "files": [
+      "LICENSE",
+      "NOTICE"
+    ],
+    "modified": true
+  },
+  "provenance": {
+    "source": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+    "sourceRevision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+    "baseModel": "Qwen/Qwen3-VL-4B-Instruct",
+    "producer": "aether-kit Forge/qwen3vl/export_qwen3vl.py",
+    "exportScript": "0000000000000000000000000000000000000000000000000000000000000000",
+    "refs": {
+      "tokenizer.stop": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c22aacb493fb94478de3bfbe834c61844a generation_config.json#/eos_token_id",
+      "tokenizer.source": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c22aacb493fb94478de3bfbe834c61844a tokenizer.json, tokenizer_config.json, vocab.json, merges.txt",
+      "tokenizer.chatTemplate": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c22aacb493fb94478de3bfbe834c61844a chat_template.jinja",
+      "preprocess.image": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated@ce72a7c22aacb493fb94478de3bfbe834c61844a preprocessor_config.json",
+      "forgeLockSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "exportReport": "export-report.json"
+    }
+  }
+}

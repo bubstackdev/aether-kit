@@ -3,6 +3,8 @@ import Foundation
 import Testing
 @testable import AetherText
 import Tokenizers
+import AetherTestSupport
+import AetherRuntime
 
 /// The 0.0.x tokenizer oracles, folded into the parity suite: `chat-oracle.json` (Transformers 4.57.3's own
 /// `apply_chat_template`, `Forge/language/reference_chat_tokens.py`; 24 cases over four Qwen3-family checkpoints) and
@@ -13,7 +15,8 @@ import Tokenizers
 /// - in a Hugging Face hub cache at `AETHER_TOKENIZER_HUB` (`models--org--name/snapshots/<revision>/tokenizer.json`).
 /// A checkpoint whose tokenizer.json is in neither place is skipped (and reported).
 ///
-/// The 4 image cases of the two Qwen3-VL checkpoints are not run: chat messages are text-only until M4.
+/// The two Qwen3-VL checkpoints' image cases whose images come before the text (`ChatMessage.images` renders them
+/// first, as 0.0.7's chat did) are run too; the two with text before the images are not expressible and are skipped.
 @Suite("Tokenizer parity: 0.0.x oracle")
 struct TokenizerOracleTests {
     struct Oracle: Decodable {
@@ -138,8 +141,16 @@ struct TokenizerOracleTests {
     static func check(_ loaded: Loaded, _ repository: String, _ cases: [Oracle.Case], _ decode: Oracle.Decode) throws -> Int {
         var checked = 0
         for entry in cases {
-            guard entry.messages.allSatisfy({ $0.parts.allSatisfy { $0.image != true } }) else { continue }
-            let messages = entry.messages.map { ChatMessage(ChatMessage.Role(rawValue: $0.role)!, $0.parts.compactMap(\.text).joined()) }
+            // Images first, then the text: what a message's images render as.
+            let imagesFirst = entry.messages.allSatisfy { message in
+                !message.parts.drop { $0.image == true }.contains { $0.image == true }
+            }
+            guard imagesFirst else { continue }
+            let messages = entry.messages.map { message in
+                let role = ChatMessage.Role(rawValue: message.role)!, text = message.parts.compactMap(\.text).joined()
+                let images = message.parts.filter { $0.image == true }.map { _ in ChatImage(ImageInput(FakeVLM.picture(width: 4, height: 4, seed: 0))) }
+                return images.isEmpty ? ChatMessage(role, text) : ChatMessage(role, text, images: images)
+            }
             let ids = try loaded.renderer.render(messages, options: RenderOptions(thinking: entry.thinking)).tokens
             #expect(ids == entry.tokenIDs, "\(repository) \(entry.name)")
             #expect(loaded.adapter.decode(entry.tokenIDs) == entry.text, "\(repository) \(entry.name) decode")
@@ -165,8 +176,8 @@ struct TokenizerOracleTests {
             checked += try Self.check(loaded, model.repository, model.cases, model.decode)
             #expect(loaded.adapter.tokenID("<|im_end|>") == 151645)
         }
-        print("ORACLE chat: \(checked) text cases checked; skipped (no tokenizer.json with the recorded hash): \(skipped)")
-        if skipped.isEmpty { #expect(checked == 20) }
+        print("ORACLE chat: \(checked) cases checked (text, and images before text); skipped (no tokenizer.json with the recorded hash): \(skipped)")
+        if skipped.isEmpty { #expect(checked == 22) }
     }
 
     @Test func olmo2OracleMatchesUpstream() async throws {

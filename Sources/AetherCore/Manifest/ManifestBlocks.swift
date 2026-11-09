@@ -413,6 +413,34 @@ extension Manifest {
         public var deepstack: JSONValue?
         public var maxImages: Int?
         public var arrange: JSONValue?
+        /// `vlm-static-inject@1`: the decoder's static image rows, shared by every image of a context (packed in order).
+        public var slots: Int?
+
+        /// The image tokens, typed (`tokens`: `pad`, `padId`, `idBase` required; the open and close markers optional).
+        public struct Tokens: Sendable, Hashable {
+            public var pad: String
+            public var padId: Int
+            public var open: String?
+            public var openId: Int?
+            public var close: String?
+            public var closeId: Int?
+            /// Extension ids start here: image token `slot` is `idBase + slot`.
+            public var idBase: Int
+        }
+
+        /// ``tokens`` typed; errors name `image.tokens.*`.
+        public func typedTokens() throws(AetherError) -> Tokens {
+            func int(_ key: String) -> Int? { tokens[key]?.int }
+            guard let pad = tokens["pad"]?.string, let padId = int("padId"), let idBase = int("idBase") else {
+                throw .manifestInvalid(field: "image.tokens", reason: "requires pad, padId and idBase")
+            }
+            try require(padId >= 0 && idBase > 0, "image.tokens.idBase", "ids must be non-negative, idBase positive")
+            let open = tokens["open"]?.string, close = tokens["close"]?.string
+            try require((open == nil) == (int("openId") == nil), "image.tokens.openId", "open and openId go together")
+            try require((close == nil) == (int("closeId") == nil), "image.tokens.closeId", "close and closeId go together")
+            return Tokens(pad: pad, padId: padId, open: open, openId: int("openId"), close: close, closeId: int("closeId"),
+                          idBase: idBase)
+        }
 
         func validate() throws(AetherError) {
             try require(!feed.isEmpty, "image.feed", "must list at least one feed")
@@ -420,6 +448,7 @@ extension Manifest {
                 try require(f.from.contains(".") && f.to.contains("."), "image.feed.\(i)", "from/to are <graph>.<role>")
             }
             if let maxImages { try require(maxImages > 0, "image.maxImages", "must be > 0") }
+            if let slots { try require(slots > 0, "image.slots", "must be > 0") }
         }
     }
 

@@ -717,6 +717,58 @@
      {
       "children": [
        {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenerationEvent",
+          "printedName": "AetherText.GenerationEvent",
+          "usr": "s:10AetherText15GenerationEventO"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Error",
+          "printedName": "any Swift.Error",
+          "usr": "s:s5ErrorP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "AsyncThrowingStream",
+        "printedName": "_Concurrency.AsyncThrowingStream<AetherText.GenerationEvent, any Swift.Error>",
+        "usr": "s:Scs"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatImage",
+          "printedName": "AetherText.ChatImage",
+          "usr": "s:10AetherText9ChatImageC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatImage]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText11ChatSessionC7respond2to6imagesScsyAA15GenerationEventOs5Error_pGSS_SayAA0C5ImageCGtF",
+      "moduleName": "AetherText",
+      "name": "respond",
+      "printedName": "respond(to:images:)",
+      "usr": "s:10AetherText11ChatSessionC7respond2to6imagesScsyAA15GenerationEventOs5Error_pGSS_SayAA0C5ImageCGtF"
+     },
+     {
+      "children": [
+       {
         "kind": "TypeNominal",
         "name": "GenericTypeParam",
         "printedName": "T"
@@ -3550,6 +3602,124 @@
      {
       "children": [
        {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenerationEvent",
+          "printedName": "AetherText.GenerationEvent",
+          "usr": "s:10AetherText15GenerationEventO"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Error",
+          "printedName": "any Swift.Error",
+          "usr": "s:s5ErrorP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "AsyncThrowingStream",
+        "printedName": "_Concurrency.AsyncThrowingStream<AetherText.GenerationEvent, any Swift.Error>",
+        "usr": "s:Scs"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "RenderedPrompt",
+        "printedName": "AetherText.RenderedPrompt",
+        "usr": "s:10AetherText14RenderedPromptV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatImage",
+          "printedName": "AetherText.ChatImage",
+          "usr": "s:10AetherText9ChatImageC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatImage]",
+        "usr": "s:Sa"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GenerationParameters",
+        "printedName": "AetherText.GenerationParameters",
+        "usr": "s:10AetherText20GenerationParametersV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText9GeneratorC8generate6prompt6images10parametersScsyAA15GenerationEventOs5Error_pGAA14RenderedPromptV_SayAA9ChatImageCGAA0H10ParametersVtF",
+      "moduleName": "AetherText",
+      "name": "generate",
+      "printedName": "generate(prompt:images:parameters:)",
+      "usr": "s:10AetherText9GeneratorC8generate6prompt6images10parametersScsyAA15GenerationEventOs5Error_pGAA14RenderedPromptV_SayAA9ChatImageCGAA0H10ParametersVtF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ImageInputSpec",
+            "printedName": "AetherRuntime.ImageInputSpec",
+            "usr": "s:13AetherRuntime14ImageInputSpecV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherRuntime.ImageInputSpec?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText9GeneratorC10imageInput0A7Runtime05ImageE4SpecVSgvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText9GeneratorC10imageInput0A7Runtime05ImageE4SpecVSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageInputSpec",
+          "printedName": "AetherRuntime.ImageInputSpec",
+          "usr": "s:13AetherRuntime14ImageInputSpecV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherRuntime.ImageInputSpec?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherText9GeneratorC10imageInput0A7Runtime05ImageE4SpecVSgvp",
+      "moduleName": "AetherText",
+      "name": "imageInput",
+      "printedName": "imageInput",
+      "usr": "s:10AetherText9GeneratorC10imageInput0A7Runtime05ImageE4SpecVSgvp"
+     },
+     {
+      "children": [
+       {
         "kind": "TypeNominal",
         "name": "JSONSchemaConstraint",
         "printedName": "AetherText.JSONSchemaConstraint",
@@ -4879,6 +5049,270 @@
    {
     "children": [
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ImageInput",
+          "printedName": "AetherRuntime.ImageInput",
+          "usr": "s:13AetherRuntime10ImageInputV"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText9ChatImageC5input0A7Runtime0D5InputVvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText9ChatImageC5input0A7Runtime0D5InputVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ImageInput",
+        "printedName": "AetherRuntime.ImageInput",
+        "usr": "s:13AetherRuntime10ImageInputV"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText9ChatImageC5input0A7Runtime0D5InputVvp",
+      "moduleName": "AetherText",
+      "name": "input",
+      "printedName": "input",
+      "usr": "s:10AetherText9ChatImageC5input0A7Runtime0D5InputVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ChatImage",
+        "printedName": "AetherText.ChatImage",
+        "usr": "s:10AetherText9ChatImageC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ImageInput",
+        "printedName": "AetherRuntime.ImageInput",
+        "usr": "s:13AetherRuntime10ImageInputV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherText9ChatImageCyAC0A7Runtime0D5InputVcfc",
+      "moduleName": "AetherText",
+      "name": "init",
+      "printedName": "init(_:)",
+      "usr": "s:10AetherText9ChatImageCyAC0A7Runtime0D5InputVcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "PreparedPromptImage",
+        "printedName": "AetherRuntime.PreparedPromptImage",
+        "usr": "s:13AetherRuntime19PreparedPromptImageV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ImageInputSpec",
+        "printedName": "AetherRuntime.ImageInputSpec",
+        "usr": "s:13AetherRuntime14ImageInputSpecV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText9ChatImageC8prepared3for0A7Runtime014PreparedPromptD0VAF0D9InputSpecV_t0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherText",
+      "name": "prepared",
+      "printedName": "prepared(for:)",
+      "throwing": true,
+      "usr": "s:10AetherText9ChatImageC8prepared3for0A7Runtime014PreparedPromptD0VAF0D9InputSpecV_t0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ChatImage",
+        "printedName": "AetherText.ChatImage",
+        "usr": "s:10AetherText9ChatImageC"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "ChatImage",
+        "printedName": "AetherText.ChatImage",
+        "usr": "s:10AetherText9ChatImageC"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText9ChatImageC2eeoiySbAC_ACtFZ",
+      "moduleName": "AetherText",
+      "name": "==",
+      "printedName": "==(_:_:)",
+      "static": true,
+      "usr": "s:10AetherText9ChatImageC2eeoiySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText9ChatImageC4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherText",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:10AetherText9ChatImageC4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText9ChatImageC9hashValueSivg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText9ChatImageC9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText9ChatImageC9hashValueSivp",
+      "moduleName": "AetherText",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:10AetherText9ChatImageC9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declAttributes": [
+     "Final"
+    ],
+    "declKind": "Class",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherText9ChatImageC",
+    "moduleName": "AetherText",
+    "name": "ChatImage",
+    "printedName": "ChatImage",
+    "usr": "s:10AetherText9ChatImageC"
+   },
+   {
+    "children": [
+     {
       "children": [
        {
         "children": [
@@ -5539,6 +5973,103 @@
       "usr": "s:10AetherText11ChatMessageV8toolNameSSSgvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ChatImage",
+            "printedName": "AetherText.ChatImage",
+            "usr": "s:10AetherText9ChatImageC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[AetherText.ChatImage]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "ChatImage",
+            "printedName": "AetherText.ChatImage",
+            "usr": "s:10AetherText9ChatImageC"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[AetherText.ChatImage]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvs",
+        "moduleName": "AetherText",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvs"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatImage",
+          "printedName": "AetherText.ChatImage",
+          "usr": "s:10AetherText9ChatImageC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatImage]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvp",
+      "moduleName": "AetherText",
+      "name": "images",
+      "printedName": "images",
+      "usr": "s:10AetherText11ChatMessageV6imagesSayAA0C5ImageCGvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -5608,6 +6139,50 @@
        },
        {
         "kind": "TypeNominal",
+        "name": "Role",
+        "printedName": "AetherText.ChatMessage.Role",
+        "usr": "s:10AetherText11ChatMessageV4RoleO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatImage",
+          "printedName": "AetherText.ChatImage",
+          "usr": "s:10AetherText9ChatImageC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatImage]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherText11ChatMessageV__6imagesA2C4RoleO_SSSayAA0C5ImageCGtcfc",
+      "moduleName": "AetherText",
+      "name": "init",
+      "printedName": "init(_:_:images:)",
+      "usr": "s:10AetherText11ChatMessageV__6imagesA2C4RoleO_SSSayAA0C5ImageCGtcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ChatMessage",
+        "printedName": "AetherText.ChatMessage",
+        "usr": "s:10AetherText11ChatMessageV"
+       },
+       {
+        "kind": "TypeNominal",
         "name": "String",
         "printedName": "Swift.String",
         "usr": "s:SS"
@@ -5647,6 +6222,45 @@
       "printedName": "user(_:)",
       "static": true,
       "usr": "s:10AetherText11ChatMessageV4useryACSSFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ChatMessage",
+        "printedName": "AetherText.ChatMessage",
+        "usr": "s:10AetherText11ChatMessageV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatImage",
+          "printedName": "AetherText.ChatImage",
+          "usr": "s:10AetherText9ChatImageC"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatImage]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText11ChatMessageV4user_6imagesACSS_SayAA0C5ImageCGtFZ",
+      "moduleName": "AetherText",
+      "name": "user",
+      "printedName": "user(_:images:)",
+      "static": true,
+      "usr": "s:10AetherText11ChatMessageV4user_6imagesACSS_SayAA0C5ImageCGtFZ"
      },
      {
       "children": [

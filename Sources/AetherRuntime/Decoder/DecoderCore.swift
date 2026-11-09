@@ -41,6 +41,11 @@ final class DecoderCore {
     }
 
     let roles: Roles
+    /// `binding: static` inputs without a `source` (a VLM's image rows and rotary inputs): role → (input name, its one
+    /// buffer at the descriptor's static shape), bound whole on every call. Their owner writes them while idle.
+    let statics: [String: (name: String, buffer: TensorBuffer)]
+    /// Token ids past the head's rows that the graph takes (`inputEncodings.tokens.extensionIds`: image tokens).
+    let extensionIds: Range<Int>
     let step: Phase
     let prefillPhase: Phase?
     let vocab: Int
@@ -100,11 +105,23 @@ final class DecoderCore {
         else {
             throw .manifestInvalid(field: "\(prefix).inputs", reason: "decoder-lm@1 needs tokens, positions and logits roles")
         }
-        if let extra = inputs.keys.sorted().first(where: { $0 != "tokens" && $0 != "positions" }) {
-            throw .unsupportedOperation("input role '\(extra)' (static tables and fills) is not implemented by the M2 DecoderEngine")
+        let extras = inputs.filter { $0.key != "tokens" && $0.key != "positions" }
+        if let sourced = extras.keys.sorted().first(where: { !extras[$0]!.isStatic || extras[$0]!.source != nil }) {
+            throw .unsupportedOperation("input role '\(sourced)' (static tables and fills) is not implemented by the DecoderEngine")
         }
         roles = Roles(tokens: tokens, positions: positionsName, logits: logitsName)
         let signature = stepGraph.signature
+        var statics: [String: (name: String, buffer: TensorBuffer)] = [:]
+        for (role, binding) in extras.sorted(by: { $0.key < $1.key }) {
+            guard let spec = signature.input(binding.name), !spec.isDynamic else {
+                throw .manifestMismatch(field: "\(prefix).inputs.\(role)", expected: "a static input '\(binding.name)' with a fully static shape",
+                                        found: "\(signature.input(binding.name)?.summary ?? "no such input")")
+            }
+            statics[role] = (binding.name, try stepGraph.makeBuffer(for: binding.name, role: .input, dimensions: [], in: arena))
+        }
+        self.statics = statics
+        let ext = graph.inputEncodings?["tokens"]?.extensionIds
+        extensionIds = ext.map { $0.base..<($0.base + max(0, $0.count)) } ?? 0..<0
         guard let tokenSpec = signature.input(tokens), let logitsSpec = signature.output(logitsName),
               let positionSpec = signature.input(positionsName)
         else { throw .manifestMismatch(field: "\(prefix).inputs", expected: "the roles' tensors", found: "\(signature.inputs.map(\.name))") }
@@ -301,7 +318,7 @@ final class DecoderCore {
             throw .unsupportedOperation("the recurrent state ran past position \(position) (a pipelined stop); restore a snapshot or reset")
         }
         guard !tokens.isEmpty else { return select == .none ? nil : nil }
-        if let bad = tokens.first(where: { $0 < 0 || Int($0) >= vocab }) {
+        if let bad = tokens.first(where: { $0 < 0 || (Int($0) >= vocab && !extensionIds.contains(Int($0))) }) {
             throw .tensor(name: roles.tokens, reason: .outOfBounds(index: Int(bad), count: vocab))
         }
         let n = tokens.count
@@ -430,8 +447,15 @@ final class DecoderCore {
             try b.bindInput(roles.tokens, to: history, origin: [0, position], extent: [1, fed])
         }
         try b.bindInput(roles.positions, to: positions, extent: [1, position + fed])
+        for (_, input) in statics { try b.bindInput(input.name, to: input.buffer) }
         try b.bindOutput(roles.logits, to: logits, extent: phase.staticRows == nil ? [1, fed, vocab] : nil)
         return b
+    }
+
+    /// The static input buffers by role, for their owner to write while no operation runs.
+    func withStatics<R>(_ body: ([String: TensorBuffer]) throws(AetherError) -> R) throws(AetherError) -> R {
+        try requireIdle("writing static inputs")
+        return try body(statics.mapValues(\.buffer))
     }
 
     // MARK: - Rewind, snapshot

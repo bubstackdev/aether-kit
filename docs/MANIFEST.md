@@ -43,7 +43,7 @@ Rules that apply to every driver:
 
 | driver | graphs | required roles | optional roles / blocks | bundles |
 |---|---|---|---|---|
-| `vlm-static-inject@1` | `vision` (graph kind `vision-tower@1`), `decoder` (the `decoder-lm@1` contract) | vision in `patches` or `pixels`, out `imageEmbeds`; decoder: everything `decoder-lm@1` requires plus static `imageEmbeds`; `image` block (`tokens`, `feed`) | vision out `deepstackEmbeds`; decoder static `deepstackEmbeds`, `ropeShiftStart`, `ropeShiftAmount`, `imageRC`; `image.rope`; decoder `prefill` function (pf64) | lfm2.5-vl-450m, qwen3-vl-2b, minicpm-v-4.7-1b, glm-ocr, mineru2.5-pro; *qwen3-vl-4b/8b, holo2-4b, minicpm-v-4.6, lfm2.5-vl-3b, north-micro-vision, mineru layout/* |
+| `vlm-static-inject@1` | `vision` (graph kind `vision-tower@1`), `decoder` (the `decoder-lm@1` contract) | vision in `patches` or `pixels`, out `imageEmbeds`; decoder: everything `decoder-lm@1` requires plus static `imageEmbeds`; `image` block (`tokens`, `feed`) | vision in `grid` [2] (a grid-static tower), out `deepstackEmbeds`; decoder static `deepstackEmbeds`, `imagePositions` [slots, 3], `ropeShiftStart`, `ropeShiftAmount` [images] (`image.rope.rule: qwen3vl-mrope`), `imageRC`; `image.rope`, `image.slots`; decoder `prefill` function (pf64) | lfm2.5-vl-450m, qwen3-vl-2b, minicpm-v-4.7-1b, glm-ocr, mineru2.5-pro; *qwen3-vl-4b/8b, holo2-4b, minicpm-v-4.6, lfm2.5-vl-3b, north-micro-vision, mineru layout/* |
 | `vlm-embeds@1` | `vision`, `decoder` with `prefill` + `decode` functions | vision in `pixels`, out `visualTokens`; decoder prefill in `embeds` [1,L,H], decode in `embeds` [1,1,H] + `position` (scalar); out `logits` (last row); `states.sequence` (static capacity); `tables.embedTokens`; `image.arrange` | `generation` guards (noRepeatNgram, runCap), fixed task prompts | unlimited-ocr |
 | graph kind `vision-tower@1` | — | in `patches` [rows,dim] or `pixels` [1,3,H,W]; out ≥ 1 embedding role | in `posTable`, `keyBias`, `patchMask`, `unshuffleIndex` (bound from `tables`) | every VLM tower above; decider-2b-vision g256; d1-3b tower; d1-omni vision; clef g256/g448 (unverified) |
 
@@ -258,6 +258,10 @@ brackets:
   covering). `fitLongSide` scales an image whose longer
   side exceeds `maxSide` down to it (other side floored); smaller images are untouched. `size` goes with the first
   three modes, `maxSide` only with `fitLongSide`, `shortestSide` only with `centerCrop`, `anchor` and `padValue` only with `letterbox`.
+  `smartResize` (Qwen-VL's `smart_resize`, the `patches` layout only) takes `factor`, `minPixels` and `maxPixels`: each
+  side rounds to a multiple of `factor`, ties to even; above `maxPixels` both sides divide by √(HW / max) and floor to
+  the factor (at least one factor), below `minPixels` they multiply by √(min / HW) and ceil; an aspect ratio over 200
+  is refused. The tensor's rows follow the image; a VLM's `maxPixels` is its tower's rows · patch², checked at load.
 - **Filters:** `vImage` is Accelerate's `vImageScale` (fast, its own kernel, not a parity filter). `pillowBicubic` is
   Pillow's `Image.resize(BICUBIC)` and `torchUint8Bicubic` torch's uint8 `interpolate(bicubic, antialias=True)` (what
   torchvision's `resize` of a uint8 tensor and Hugging Face's fast processors run); both are reproduced bit for bit.
@@ -275,8 +279,8 @@ brackets:
   must be multiples of `patch · merge`.
 - **dtype:** binding converts `hostDType` to the graph input's own type, read from the descriptor (DA3 is fed fp16 from
   an fp32 host), and checks the input's shape against the prepared one.
-- `x-` keys are ignored, as everywhere (§2.1.6). Later slices add `tiling` (AdcSR), `crop` tiles and smart sizing (VLM)
-  when their drivers land.
+- `x-` keys are ignored, as everywhere (§2.1.6). Later slices add `tiling` (AdcSR) and `crop` tiles when their drivers
+  land.
 
 Each field has a bundle that needs it: BGR, 0–255 and letterbox top-left pad 114 (yolox); `[-1,1]` (adcsr: scale
 1/255, mean 0.5, std 0.5); NVCHW (colmodernvbert, DA3 multi-view); patchify, which fails silently when wrong (qwen3-vl
@@ -293,11 +297,12 @@ perRow, clipBuckets}` (d1-omni).
 | field | req | reason / bundles |
 |---|---|---|
 | `feed` | R | `[{from: "vision.imageEmbeds", to: "decoder.imageEmbeds"}]`. Handles minicpm's rename. |
-| `tokens` | R | `{pad, padId, open?, openId?, close?, closeId?, count, idBase}`. The pad ids are rewritten to `idBase + slot`, and `tokens` must accept ids ≥ vocab. |
+| `tokens` | R | `{pad, padId, open?, openId?, close?, closeId?, count, idBase}`. The pad ids are rewritten to `idBase + slot`, and `tokens` must accept ids ≥ vocab. `idBase` must equal the decoder's `inputEncodings.tokens.extensionIds.base`. |
 | `grid` | O | merged grid [h, w]. It cannot be read from the graph (196 rows does not say 14×14). Needed by the rope rule. Glm/mineru 682 = 22×31 is inferred. |
-| `rope` | O | `{start: expr, amount: expr\|int, frameTail, textOnly: {start: 1073741824, amount: 0, zeroStatics: true}}`. Covers qwen3-vl, minicpm-v-4.7 (frameTail 2), glm, mineru, decider-2b-vision. The expression grammar is closed: `imageStart`, `count`, `gridH`, `gridW`, `frameTail`, integers, `+ - max`. |
+| `rope` | O | `{start: expr, amount: expr\|int, frameTail, textOnly: {start: 1073741824, amount: 0, zeroStatics: true}}`. Covers qwen3-vl, minicpm-v-4.7 (frameTail 2), glm, mineru, decider-2b-vision. The expression grammar is closed: `imageStart`, `count`, `gridH`, `gridW`, `frameTail`, integers, `+ - max`. `{rule: qwen3vl-mrope}` (Qwen3-VL, several images): for image k with first token at `start_k`, merged grid `gridH × gridW`, `count_k` tokens and `shift_k` the earlier images' amounts, `imagePositions[base_k + i] = (s0, s0 + i / gridW, s0 + i % gridW)` with `s0 = start_k − shift_k`, `ropeShiftStart[k] = start_k + count_k`, `ropeShiftAmount[k] = count_k − max(gridH, gridW)`; a text token at position p takes `p − Σ amount_j [p ≥ start_j]` on all three axes (upstream's `get_rope_index`). Unused entries: positions 0, start 1073741824, amount 0. |
 | `deepstack` | O | `{rowsPerToken: 3}` (qwen3-vl, north) |
-| `maxImages` | O, default 1 | every export has one static image buffer at a fixed canvas |
+| `maxImages` | O, default 1 | images per context. `vlm-static-inject@1` with `rope.rule: qwen3vl-mrope`: the decoder's `ropeShiftStart`/`ropeShiftAmount` entries |
+| `slots` | O (`vlm-static-inject@1`) | the decoder's static image rows, shared by a context's images: image k's tokens take slots `base_k …` (the earlier images' counts), extension ids `idBase + slot`, its rows `imageEmbeds[base_k …]` and `deepstackEmbeds[level · slots + base_k …]` |
 | `arrange` | O (`vlm-embeds@1` only) | `{grid: [10,10], rowSuffix: {table: "imageNewline"}, trailer: {table: "viewSeparator"}, placeholderId: 128815, promptIds: {table}}` (unlimited-ocr) |
 
 ### 2.7 `decision`

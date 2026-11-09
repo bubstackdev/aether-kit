@@ -62,6 +62,23 @@
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
   `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
+- **Vision-language models (`vlm-static-inject@1`)**, Qwen3-VL first (docs/VLM.md): `VLMStaticInjectDriver` loads
+  a decoder and a grid-static vision tower into one `DecoderEngine`, which conforms to the new
+  `ImageConditionedEngine` (`imageInput`, `boundImages`, `bindImages(_:prepared:)`). A user turn carries images
+  (`ChatMessage.user(_:images:)` with `ChatImage`, rendered as content parts before its text),
+  `ChatSession.respond(to:images:)` sends one, and `Generator.generate(prompt:images:parameters:)` takes a prompt
+  already rendered with one placeholder per image. Several images per turn: their tokens are extension ids over
+  slots packed in prompt order, and `ImagePromptPlan` writes the decoder's rotary inputs by upstream's rule (gated
+  against 0.0.7's M-RoPE positions). Images are prepared on the CPU before the reply's single GPU grant; a later turn
+  reuses the state past images it already holds and skips their encode, and never past an image that changed (two
+  same-sized pictures render the same ids). `DecoderEngine` binds `binding: static` inputs and accepts
+  `inputEncodings.tokens.extensionIds`. Manifest: `preprocess.image.resize` mode `smartResize` (`factor`,
+  `minPixels`, `maxPixels`; `Resize.smartSize(width:height:)`), `graphs.<g>.kind`, `image.slots`,
+  `ImageBlock.typedTokens()`, `DriverContract.vlmStaticInject`, `DriverID.vlmStaticInject` and `.visionTower`.
+  `Forge/qwen3vl` exports any pinned Qwen3-VL checkpoint (`--pins`; 4B: `source-pins-4b-abliterated.json`) with packed
+  image slots (4,096 slots, 16 images) and fp16 image statics. Adding the `smartResize` case to
+  `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
+  The FoundationModels bridge stays text-only for now.
 
 ### Fixed
 

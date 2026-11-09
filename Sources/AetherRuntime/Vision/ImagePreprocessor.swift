@@ -154,6 +154,9 @@ public struct ImagePreprocessor: Sendable {
             }
             return (try RGB8Image(rgb: canvas, width: size.width, height: size.height),
                     CGRect(x: -cx, y: -cy, width: rw, height: rh))
+        case .smartResize:
+            let size = try resize.smartSize(width: w, height: h)!
+            return (try resample(image, size.width, size.height, resize.filter), CGRect(x: 0, y: 0, width: size.width, height: size.height))
         case .fitLongSide:
             let limit = resize.maxSide!
             guard max(w, h) > limit else { return (image, CGRect(x: 0, y: 0, width: w, height: h)) }

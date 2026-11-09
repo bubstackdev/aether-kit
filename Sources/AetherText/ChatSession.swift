@@ -28,8 +28,8 @@ public actor ChatSession {
         self.configuration = configuration
     }
 
-    /// Loads a chat model from an installed bundle: the `decoder-lm@1` engine, the tokenizer, the manifest's renderer
-    /// and output profile. Replies take `gpu` (by default ``GPUAdmission/shared``); a reply's priority is
+    /// Loads a chat model from an installed bundle: the `decoder-lm@1` engine (or a `vlm-static-inject@1` one, which
+    /// also takes images), the tokenizer, the manifest's renderer and output profile. Replies take `gpu` (by default ``GPUAdmission/shared``); a reply's priority is
     /// `configuration.parameters.job`.
     public static func load(
         bundle: InstalledBundle, manifest: Manifest, device: Device, engine options: DecoderEngine.Options = .init(),
@@ -77,8 +77,19 @@ public actor ChatSession {
     /// its thinking) joins the history only after the reply finished; an error, a cancellation or a
     /// ``clearHistory()`` while it runs drops the turn.
     public func respond(to text: String) -> AsyncThrowingStream<GenerationEvent, any Error> {
+        respond(to: .user(text))
+    }
+
+    /// Sends a user turn with images (rendered before its text) to a model that takes images, as
+    /// ``respond(to:)``. The images stay in the history with the turn; a later turn that renders them at the same
+    /// place reuses their encoding.
+    public func respond(to text: String, images: [ChatImage]) -> AsyncThrowingStream<GenerationEvent, any Error> {
+        respond(to: .user(text, images: images))
+    }
+
+    private func respond(to message: ChatMessage) -> AsyncThrowingStream<GenerationEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
-        let task = Task { await self.turn(.user(text), parameters: nil, check: nil, continuation) }
+        let task = Task { await self.turn(message, parameters: nil, check: nil, continuation) }
         continuation.onTermination = { _ in task.cancel() }
         return stream
     }
@@ -217,6 +228,6 @@ public actor ChatSession {
 }
 
 extension Registry {
-    /// The drivers AetherText links: `decoder-lm@1`.
-    public static let text = Registry([DecoderLMDriver.self])
+    /// The drivers AetherText links: `decoder-lm@1` and `vlm-static-inject@1`.
+    public static let text = Registry([DecoderLMDriver.self, VLMStaticInjectDriver.self])
 }
