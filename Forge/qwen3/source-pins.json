@@ -1,0 +1,28 @@
+{
+ "comment": "Pinned Qwen3 dense decoder sources: SHA-256 of every snapshot file the exporter reads (the safetensors shards equal the Hub's LFS hashes). A checkpoint is exported only from a pinned snapshot; adding a Qwen3 dense checkpoint is adding an entry here, with its license as its model card states it. Nothing is downloaded by the exporter.",
+ "sources": [
+  {
+   "id": "huihui-qwen3-4b-instruct-2507-abliterated",
+   "repository": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+   "revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+   "base": "Qwen/Qwen3-4B-Instruct-2507",
+   "license": "Apache-2.0",
+   "gated": false,
+   "comment": "A community abliterated fine-tune of Qwen/Qwen3-4B-Instruct-2507 (Qwen3ForCausalLM, 36 layers, hidden 2560, 32 query / 8 KV heads of 128, tied head, bf16 safetensors, 8.0 GB), pinned 2026-11-09. The snapshot carries no LICENSE file or model card; Apache-2.0 is the base model's license, which the derivative keeps, and the bundle ships the Apache-2.0 text.",
+   "files": {
+    "added_tokens.json": "79f6ec6fcc423d3a82bfac8b9033b1daac7b7bce06a5f5f441637b480cc605de",
+    "chat_template.jinja": "65adea29f923a4eda2dad1f080cd6ac9458dea65bd581f9fc086e3e7d556d4db",
+    "config.json": "5443f8ef61f1602830e997f577dc333179cf28240135f13438e750f4fb2fc839",
+    "generation_config.json": "f88ce669f055db035352d6f4d029e64a51392d7e816f837f106998ed28030c43",
+    "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+    "model-00001-of-00002.safetensors": "c6bbaf4d73c46bd9c4ef1a32cd65e6524fe9e71aa28ca63865c1eb6a7ad51a98",
+    "model-00002-of-00002.safetensors": "b248ed21539e354dedbab9d73f06b0b2f633396664121fd0b3e1c17bc560840f",
+    "model.safetensors.index.json": "9b7c1c8de866a007d7aeed14befcc84114f26f8c317e77a66b3c58c41359f85d",
+    "special_tokens_map.json": "57255613bbe23c9497211ca68561ff429a51e871dbaf5a59998fa4c8f7fe168a",
+    "tokenizer_config.json": "3b17b67dd43b8b9eeb75798501c0be6a52d034ef241cd138c2ae06810bf314cd",
+    "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+   }
+  }
+ ]
+}

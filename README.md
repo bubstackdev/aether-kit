@@ -20,7 +20,7 @@ AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch
 | `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission (enforced by default, with per-job priorities), `ResourceCoordinator` (an explicitly shared memory budget), the generative pipelines' `PipelineOptions`, and `ModelHost`'s model lifecycle: idle unload and memory-pressure release for models loaded through it. |
 | `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
 | `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
-| `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
+| `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), from text or anchored to a first frame, a last frame or both (FL2VA keyframes), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
 | `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image) and RF-DETR nano and seg-nano (`detector-detr@1`, COCO, seg-nano with instance masks at the source's resolution); `ImageTextEncoder` runs OpenAI CLIP ViT-B/32 (`clip-joint@1`: image and text embeddings, zero-shot classification), on macOS and iOS. Super-resolution and VLM drivers come after 0.1.0. |
 | `AetherEmbeddings` | Embeddings on static graphs (M4): `TextEmbedder` runs EmbeddingGemma 300M (`text-embedder@1`, 768-dimensional unit vectors, query and document prompts, 256 tokens), on macOS and iOS. The reranker, classifiers and page retrieval come after 0.1.0. Gemma is provided under and subject to the Gemma Terms of Use found at [ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms). |
 | `Aether` | The umbrella: re-exports AetherText, AetherVision, AetherImage, AetherSpeech, AetherVideo, AetherEmbeddings and the AetherDecide placeholder. |
@@ -164,6 +164,10 @@ let h3 = try await MiniMaxH3Pipeline(
     bundle: InstalledBundle(ref: local, url: url, isStale: false), manifest: manifest, device: device)
 let clip = try await h3.generate(VideoRequest(prompt: "waves on a pebble beach at dawn", seed: 3))
 // clip.frames: 124 RGB8 frames at 24 fps; clip.audio: the 32 kHz stereo soundtrack (`wavData()`)
+
+// Anchored to a picture (FL2VA): RGB8 at the profile's canvas; also `.last(_:)` and `.firstAndLast(_:_:)`
+let start = try VideoKeyframe(rgb: pixels, width: 960, height: 544)
+let anchored = try await h3.generate(VideoRequest(prompt: "waves on a pebble beach at dawn", keyframes: .first(start)))
 ```
 
 The image, speech and video pipelines are not managed by `ModelHost`: call `unload()` to release their graphs.

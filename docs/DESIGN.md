@@ -164,6 +164,10 @@ are pinned by a golden manifest per catalog entry.
   - **Transports:** `HTTPTransport` gains a `download(_:progress:)` requirement, with a default built on `get`.
     `BackgroundTransport` (iOS background `URLSession`, resume data, joining after relaunch) is the second
     conformer, with one instance per session identifier and no global registry.
+- **Bundle status** (`InstalledBundle.status`, `verifiedStatus`): `notPrepared`, `ready`, or `blocked` with a typed
+  reason (incomplete, missing files, unsupported schema, unknown or unsupported driver, invalid manifest, corrupt
+  file), for any driver's bundle in a store or a local folder. The cheap form reads the manifest and stats the files
+  the reference and the manifest declare; the verified form also hashes them, with progress.
 - **`Device`**: architecture name (`AIModel.deviceArchitectureName`, injected so tests can fake it), available memory,
   and free disk space.
 - **`Manifest`**: the Codable schema, its validation, and the zoo adapter.
@@ -546,11 +550,22 @@ runtime pieces:
   key with the qualified profile's measured phases (`qualifiedFootprints`); an unmeasured graph stands in as its file
   plus two banks of its largest weight block. Options are `PipelineOptions` (`VideoPipelineOptions`; absent memory
   means `MemoryBudget.videoGeneration`, three quarters of RAM), and `MiniMaxH3Driver` loads a `MiniMaxH3Model`.
-- macOS only in 0.1.0 (`unsupportedDevice` on iOS before loading). FL2VA keyframes are not presented yet (the bundle
-  carries the vision tower and keyframe encoder).
+- **Keyframes (FL2VA):** `VideoRequest.keyframes` (`VideoKeyframes`: `.first`, `.last`, `.firstAndLast`, each a
+  `VideoKeyframe` of RGB8 at the canvas). In the prompt phase each keyframe goes through the tiled VAE encoder (host
+  runs of the tile graph, then the canvas's tail) and the canvas's vision tower (one weight block on the host); the
+  conditioner chain runs over the presentation (labels, vision blocks, prompt) with M-RoPE tables gathered from the
+  text ones and runs in segments so DeepStack's bf16 adds happen on the host after layers 0–2. The steps lay out
+  `[text | conditions | audio | video]` (MANIFEST.md §5.10), the conditions noised first from Kit's stream and left
+  alone by the scheduler. A keyframed generation is admitted under its own ledger key (`<profile>/fl2va<n>`), so it
+  plans from files until its phases are measured.
+- macOS only (`unsupportedDevice` on iOS before loading).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph
   reference; a whole clip and its repeat bit-identical, 425 s each (the debug build's host decode and stitching
   dominate); phase peaks 4.2 GiB (prompt), 9.7 GiB (steps), 1.4 GiB (image), each within the 18 GiB bar.
+- **Measured, keyframes (gate, same host and build, a rendered geometric keyframe):** the anchored frame against its
+  keyframe 33.8 dB (first), 34.2 dB (last alone), 34.6 and 34.6 dB (first + last), each above the 30 dB bar (0.0.x
+  measured 31.9–35.5 dB); 457–506 s a clip; phase peaks 6.9–7.0 GiB (prompt, with the vision tower and encoder),
+  10.7–11.2 GiB (steps), 2.0–3.0 GiB (image), within the 18 GiB bar.
 
 ## 7. AetherText
 

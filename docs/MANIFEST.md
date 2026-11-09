@@ -640,10 +640,11 @@ bit-identical.
 
 ### 5.10 `minimax-h3@1` (normative since G4)
 
-MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text (and, reserved, keyframes) to video with audio. macOS only in 0.1.0.
-Producer `Forge/h3/export_h3.py`; the driver is `AetherVideo`'s `MiniMaxH3Pipeline` (`Registry.video`).
-`Manifest.H3` types the block below and refuses, naming the field, what the driver can't run; `keyframe`, `vision`
-and `adapter` stay loose (FL2VA isn't presented yet).
+MiniMax H3 (FL2VA + the Turbo 8-step LoRA): text, and optionally first, last or first and last keyframes, to video with
+audio. macOS only. Producer `Forge/h3/export_h3.py`; the driver is `AetherVideo`'s `MiniMaxH3Pipeline`
+(`Registry.video`). `Manifest.H3` types the block below and refuses, naming the field, what the driver can't run;
+`keyframe`, `vision` and `adapter` stay loose JSON in `AetherCore`, and the driver decodes `keyframe` and `vision`
+itself when `tasks` lists `fl2va` (a malformed block refuses the pipeline, naming it).
 
 | graph | inputs → outputs | weights | residency |
 |---|---|---|---|
@@ -679,3 +680,26 @@ drew it (the first export wrote `packedToken`, which named the wrong order; corr
 bundle's manifest at G4 step 2b). The driver's host recipe (layout `[text | audio | video]`, positions, row
 timesteps, rotary, gather) is Diffusers' `build_packed_sequence`, `build_row_timesteps` and `MiniMaxH3RotaryPosEmbed`;
 each step's modulation is padded to the recipe's largest cardinality so the body specializes once a render.
+
+**Keyframes (FL2VA).** A request with keyframes takes the `<recipe>/fl2va` recipe, whose step tables include the
+condition rows' timestep (`keyframe.conditionTimestep`, 0.999). Each keyframe is RGB8 at the profile's canvas (not
+resized) and conditions the clip twice, as Diffusers' pipeline does:
+
+- **Condition rows.** `videoEncoderTile` encodes each 256 px tile of the source VAE's split (planar 0…255 pixels, tiles
+  row-major) and the canvas's `videoEncoderTail<W>x<H>` (the profile's `keyframeEncoder`) stitches them into normalized
+  latents `[1, 24, 1, H/16, W/16]` (`encode_vae_condition`, its seed-42 posterior draw baked in). Kit's stream draws one
+  `[24, 1, H, W]` noise per keyframe first, in packed order (first, then last), then the generated rows' noise as
+  before; each condition is noised to `conditionTimestep` (`scale_noise`, float32) and packed (one latent frame of
+  `keyframeRows` rows) in front of the generated video rows. The layout is `[text | conditions | audio | video]`: a
+  first condition at the first latent frame's time, a last one 5/3 before the end of the generated span (summed as
+  numpy sums it); the video indices list the condition rows first; condition rows take max(t, `conditionTimestep`).
+  The scheduler advances the generated rows only, so the conditions ride through every step unchanged.
+- **Presentation.** The conditioner reads, per keyframe in packed order, the label `vision.presentation.label` with
+  `{index}` = 1, 2, … (tokenized alone, tagged text), `visionStart`, one `imagePad` per merged image token and
+  `visionEnd` (tagged video), then the prompt (tagged text). The canvas's `conditionerVision<W>x<H>` tower takes the
+  processor's pixels (`(x − 127.5) / 127.5` in float32, rounded to bf16, merge-window rows `[C][T][p][p]`) and the
+  bilinear position taps and patch coordinates (`patchSize`, `mergeSize`, `temporalPatchSize`, `tableSide`), and its
+  merger rows replace the pads' embeddings; DeepStack level k (`deepstackLevels`) is added at the image rows after
+  decoder layer k (a bf16 add). The rotary tables are gathered per column from the text tables at Qwen3-VL's M-RoPE
+  positions (`conditioner.rope.mropeSection`). The presentation's rows count against `limits.textTokens`, and every
+  row against `limits.rows`.
