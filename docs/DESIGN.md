@@ -164,6 +164,10 @@ are pinned by a golden manifest per catalog entry.
   - **Transports:** `HTTPTransport` gains a `download(_:progress:)` requirement, with a default built on `get`.
     `BackgroundTransport` (iOS background `URLSession`, resume data, joining after relaunch) is the second
     conformer, with one instance per session identifier and no global registry.
+- **Bundle status** (`InstalledBundle.status`, `verifiedStatus`): `notPrepared`, `ready`, or `blocked` with a typed
+  reason (incomplete, missing files, unsupported schema, unknown or unsupported driver, invalid manifest, corrupt
+  file), for any driver's bundle in a store or a local folder. The cheap form reads the manifest and stats the files
+  the reference and the manifest declare; the verified form also hashes them, with progress.
 - **`Device`**: architecture name (`AIModel.deviceArchitectureName`, injected so tests can fake it), available memory,
   and free disk space.
 - **`Manifest`**: the Codable schema, its validation, and the zoo adapter.
