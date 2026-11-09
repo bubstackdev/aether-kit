@@ -8,7 +8,9 @@ the rotary permutation and every normalization are exercised), then compares in 
 - the four chained denoiser segments on *unpadded* text rows against `Krea2Transformer2DModel.forward` on the
   pipeline's padded `[real | PAD]` rows with its key-padding mask (the equivalence the graphs rely on);
 - the text encoder graph against `Qwen3VLModel` hidden states at Krea's taps (rows 34..);
-- the VAE decoder graph against the pipeline's decode tail (`_unpack_latents`, denormalize, `vae.decode`).
+- the VAE decoder graph against the pipeline's decode tail (`_unpack_latents`, denormalize, `vae.decode`);
+- the VAE encoder graph (refine) against `vae.encode(...).latent_dist.mode()`, normalized and packed by the pipeline's
+  `_pack_latents` rule.
 `--convert` also exports each tiny graph through coreai-torch and runs it cpu_only. A development aid, not the gate.
 """
 
@@ -147,6 +149,34 @@ def check_vae(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
     return result
 
 
+def check_vae_encoder(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
+    vae = kg.load_vae(checkpoint)
+    g = torch.Generator().manual_seed(5)
+    rows, columns = 4, 6
+    image = (torch.rand(3, rows * 16, columns * 16, generator=g) * 2 - 1).half().float()
+    with torch.no_grad():
+        mode = vae.encode(image[None, :, None]).latent_dist.mode()[:, :, 0]           # [1, z, 2 * rows, 2 * columns]
+        mean = torch.tensor(vae.config.latents_mean).view(1, -1, 1, 1)
+        std = torch.tensor(vae.config.latents_std).view(1, -1, 1, 1)
+        z = (mode - mean) / std
+        c = z.shape[1]
+        # Krea2Pipeline._pack_latents, then the decoder's [rows, columns, 64] layout.
+        upstream = (z.view(1, c, rows, 2, columns, 2).permute(0, 2, 4, 1, 3, 5)
+                    .reshape(rows, columns, c * 4))
+        result = {}
+        for half in (False, True):
+            graph = kg.VAEEncoderGraph(vae, half).eval()
+            got = graph(image.half())
+            result["float16" if half else "float32"] = metrics(upstream, got)
+            if half:
+                decoded = kg.VAEDecoderGraph(vae, half).eval()(got.half())
+                result["roundTrip"] = metrics(image, decoded)                     # informational: random weights
+            if half and convert_dir is not None:
+                convert_and_run(graph, (image.half(),), ["image"], ["latents"], convert_dir / "vae-encoder.aimodel",
+                                got, dynamic=kg.VAEEncoderGraph.example()[1], run=False)
+    return result
+
+
 def convert_and_run(module, example, inputs, outputs, path, expected, dynamic=None, run=True) -> None:
     import coreai_torch as ct
     import coreai.runtime as rt
@@ -196,8 +226,8 @@ def main() -> None:
         convert_dir = args.workdir / "converted"
         convert_dir.mkdir()
     report = {"denoiser": check_denoiser(checkpoint, convert_dir), "text": check_text(checkpoint, convert_dir),
-              "vae": check_vae(checkpoint, convert_dir)}
-    gated = [report["denoiser"], report["text"], report["vae"]["float32"]]
+              "vae": check_vae(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
+    gated = [report["denoiser"], report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"]]
     report["passed"] = all(v["cosine"] >= BAR for v in gated)
     print(json.dumps(report, indent=1))
     if not report["passed"]:

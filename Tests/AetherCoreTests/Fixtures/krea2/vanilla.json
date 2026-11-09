@@ -36,6 +36,11 @@
           "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
         },
         {
+          "path": "krea2_turbo-vae-encoder.aimodel/weights.bin",
+          "bytes": 1,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
           "path": "krea2_turbo-vae.aimodel/weights.bin",
           "bytes": 1,
           "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
@@ -188,6 +193,19 @@
       "compute": "gpu",
       "expectFrequentReshapes": false,
       "residency": "perImage"
+    },
+    "vaeEncoder": {
+      "file": "main:krea2_turbo-vae-encoder.aimodel",
+      "function": "encode",
+      "inputs": {
+        "pixels": "image"
+      },
+      "outputs": {
+        "latents": "latents"
+      },
+      "compute": "gpu",
+      "expectFrequentReshapes": false,
+      "residency": "perPrompt"
     }
   },
   "tokenizer": {
@@ -287,7 +305,8 @@
     "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
     "components": {
       "denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
-      "vaeDecoder": "fp16 weights, fp32 compute"
+      "vaeDecoder": "fp16 weights, fp32 compute",
+      "vaeEncoder": "fp16 weights, fp32 compute"
     }
   },
   "license": "LicenseRef-Krea-2-Community-License-1.0",

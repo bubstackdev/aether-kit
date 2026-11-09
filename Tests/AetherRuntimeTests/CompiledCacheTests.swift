@@ -31,10 +31,11 @@ struct CompiledCacheTests {
             looked[url.lastPathComponent] = options.expectFrequentReshapes
             return url.lastPathComponent.contains("denoiser")
         }
-        #expect(status.entries.map(\.role) == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder"])
+        #expect(status.entries.map(\.role)
+            == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder", "vaeEncoder"])
         #expect(looked["krea2_turbo-text.aimodel"] == true && looked["krea2_turbo-denoiser0.aimodel"] == false)
         #expect(status.entries.allSatisfy { $0.sourceBytes == 10_000 })
-        #expect(!status.isComplete && status.uncompiledSourceBytes == 20_000)
+        #expect(!status.isComplete && status.uncompiledSourceBytes == 30_000)
     }
 
     @Test func aCompleteCacheNeedsNothingAndRolesNarrowTheCheck() throws {

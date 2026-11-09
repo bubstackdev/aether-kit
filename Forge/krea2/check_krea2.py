@@ -12,7 +12,11 @@ Bars (FLUX.2's template):
   the reference's own tensors at that boundary, with the reference's inputs fed in;
 - VAE: decoding the reference's final latents, PSNR >= 35 dB against the reference image (on [0, 1]);
 - final image, closed loop (graph text -> 8 x 4 segments -> host float32 Euler -> graph VAE, from the seed): SSIM >=
-  0.94 against the reference image (PSNR reported).
+  0.94 against the reference image (PSNR reported);
+- refine, when the bundle has `vaeEncoder` and the reference recorded one: the encoder graph on `image.npy` against the
+  source VAE's latents, cosine >= 0.999; then closed loop from the graph's latents (Kit's seeded refine noise, exact;
+  `(1 - sigma) * x0 + sigma * noise` on the host; the remaining steps; graph VAE): SSIM >= 0.94 against
+  `refine_image.npy`. A bundle or reference without them skips the refine checks and says so.
 One gate: exits nonzero when any bar fails. Refuses to start while the M2 Swift gates run (xctest).
 """
 
@@ -213,6 +217,41 @@ def main() -> None:
         delta = np.float32(sigmas[s + 1]) - np.float32(sigmas[s])
         latents = (latents + (delta * o3["velocity"].astype(np.float32)).astype(np.float32)).astype(np.float32)
         step_seconds.append(round(time.monotonic() - t0, 3))
+    # Refine (K7): the encoder graph, then the remaining steps from the start step, closed loop.
+    refine_latents = None
+    refine = ref.get("refine")
+    if refine and "vaeEncoder" in files and (args.reference / "encoder_latents.npy").exists():
+        encoder = Graph(files["vaeEncoder"], functions["vaeEncoder"])
+        timings["loadEncoder"] = encoder.load_seconds
+        picture = np.load(args.reference / "image.npy")
+        t0 = time.monotonic()
+        encoded = encoder(image=picture.astype(np.float16))["latents"].astype(np.float32)
+        timings["encode"] = round(time.monotonic() - t0, 2)
+        encoder.close()
+        x0 = encoded.reshape(n, kg.LATENT_CHANNELS)
+        ref_x0 = np.load(args.reference / "encoder_latents.npy")
+        record("vaeEncoder.latentCosine", round(cosine(x0, ref_x0), 6), COSINE_BAR,
+               rowCosineMin=round(float(row_cosines(x0, ref_x0).min()), 6))
+        refine_noise = kg.seeded_noise(refine["seed"], n * kg.LATENT_CHANNELS).reshape(n, kg.LATENT_CHANNELS)
+        same = np.array_equal(refine_noise, np.load(args.reference / "refine_noise.npy"))
+        record("refine.noise.exact", float(same), 1.0, same)
+        start = refine["startStep"]
+        sigma = np.float32(sigmas[start])
+        record("refine.sigma.exact", float(abs(float(sigma) - refine["startSigma"]) < 1e-6), 1.0,
+               abs(float(sigma) - refine["startSigma"]) < 1e-6, sigma=float(sigma))
+        refine_latents = ((np.float32(1) - sigma) * x0 + sigma * refine_noise).astype(np.float32)
+        start_cosine = cosine(refine_latents, np.load(args.reference / "refine_start.npy"))
+        for s in range(start, ref["steps"]):
+            t = np.array([timesteps[s]], dtype=np.float32)
+            o0 = segments[0](latents=refine_latents.astype(np.float16), text_embeds=text_embeds, sigma=t, rope_image=rope)
+            o1 = segments[1](image_1=o0["image_1"], text_1=o0["text_1"], cond=o0["cond"], rope_image=rope)
+            o2 = segments[2](image_2=o1["image_2"], text_2=o1["text_2"], cond=o0["cond"], rope_image=rope)
+            o3 = segments[3](image_3=o2["image_3"], text_3=o2["text_3"], cond=o0["cond"], rope_image=rope)
+            delta = np.float32(sigmas[s + 1]) - np.float32(sigmas[s])
+            refine_latents = (refine_latents + (delta * o3["velocity"].astype(np.float32))).astype(np.float32)
+        refine["startLatentCosine"] = round(start_cosine, 6)
+    else:
+        print("[check] refine: skipped (no vaeEncoder graph or no refine reference)", file=sys.stderr, flush=True)
     for segment in segments:
         segment.close()
     ref_final = np.load(args.reference / f"step{ref['steps'] - 1}.npz")["latents_out"]
@@ -226,7 +265,15 @@ def main() -> None:
     t0 = time.monotonic()
     image = vae(latents=latents.reshape(rows, columns, kg.LATENT_CHANNELS).astype(np.float16))["image"]
     timings["decode"] = round(time.monotonic() - t0, 2)
+    refined = None
+    if refine_latents is not None:
+        refined = vae(latents=refine_latents.reshape(rows, columns, kg.LATENT_CHANNELS).astype(np.float16))["image"]
     vae.close()
+    if refined is not None:
+        ref_refined = np.load(args.reference / "refine_image.npy")
+        record("refine.ssim", round(ssim(refined, ref_refined), 6), SSIM_BAR, psnrDB=round(psnr(refined, ref_refined), 3),
+               startLatentCosine=refine["startLatentCosine"],
+               ssimToSource=round(ssim(refined, np.load(args.reference / "image.npy")), 6))
     record("image.ssim", round(ssim(image, ref_image), 6), SSIM_BAR, psnrDB=round(psnr(image, ref_image), 3),
            finalLatentCosine=closed_latent_cosine)
     from PIL import Image
@@ -246,7 +293,10 @@ def main() -> None:
                    "vaePSNRdB": next(c["value"] for c in checks if c["check"] == "vae.psnrDB"),
                    "imageSSIM": next(c["value"] for c in checks if c["check"] == "image.ssim"),
                    "imagePSNRdB": next(c["psnrDB"] for c in checks if c["check"] == "image.ssim"),
-                   "closedLoopLatentCosine": closed_latent_cosine},
+                   "closedLoopLatentCosine": closed_latent_cosine,
+                   **({"vaeEncoderLatentCosine": next(c["value"] for c in checks if c["check"] == "vaeEncoder.latentCosine"),
+                       "refineSSIM": next(c["value"] for c in checks if c["check"] == "refine.ssim")}
+                      if refined is not None else {"refine": "skipped"})},
         "timingsSeconds": {**timings, "closedLoopSteps": step_seconds, "total": round(time.monotonic() - started, 1)},
         "hostPeakRSSGB": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9, 2),
         "image": str(png),
