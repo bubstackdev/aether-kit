@@ -35,6 +35,18 @@
   not yet measured), and returns each graph's
   declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
   `AetherRuntime` API baseline records it.
+- **Bundle status** a host can show, for every driver's bundles: `InstalledBundle.status(supportedDrivers:)` returns
+  `BundleStatus` `.notPrepared` (the folder is absent or empty), `.ready`, or `.blocked` with a `BundleBlockReason`:
+  `incomplete` (files but no manifest), `missingFiles` (the declared files absent, with their total bytes),
+  `unsupportedSchema`, `unknownDriver` (including a driver version this build doesn't know), `unsupportedDriver` (not
+  among the caller's drivers, for example `Set(registry.ids)`), `invalidManifest` (naming the field) and `corruptFile`.
+  It reads the manifest and stats every declared file, hashing nothing (52 ms for a 94 GB, 1,375-file local export).
+  `verifiedStatus(supportedDrivers:progress:)` adds every declared file's SHA-256, with progress and cancellation,
+  and reports a changed byte as `corruptFile`. Declared files are the reference's and the manifest's
+  `assets.*.files`, each once, so a local export opened with a reference that lists no files is checked in full; a file
+  both declare differently is `invalidManifest`. `InstalledBundle.status(ofLocalBundleAt:supportedDrivers:)` and
+  `verifiedStatus(ofLocalBundleAt:supportedDrivers:progress:)` take a folder before there is a reference for it.
+  Additive; the `AetherCore` API baseline records it.
 - **Krea 2 conditioning reuse:** `Krea2Pipeline.encode(prompt:job:)` runs the text encoder alone (after the filter's
   prompt review) and returns a `Krea2Conditioning`, which the host owns. `generate(_:reusing:observing:)` renders from it
   at any seed and size without loading or running the text encoder, pixel for pixel what `generate(_:)` renders. It is
