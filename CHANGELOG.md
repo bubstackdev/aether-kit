@@ -2,6 +2,10 @@
 
 All notable changes to AetherKit. Versions follow semantic versioning; 0.0.x releases are experimental previews. From 0.0.4, the API listed in [API stability](docs/api-stability.md) is frozen for 0.0.x; everything else may still change.
 
+## Unreleased (measurements only; no release planned)
+
+- **Measured, not changed: Krea's cost per new prompt length.** A prompt's conditioning row count is one of the denoisers' dynamic dimensions. Three opt-in native measurements record what a new prompt length costs at 1024² and 8 steps on an M5 Max (2026-11-08): `promptRowCountsCostAndRenderWhatAFreshSessionDoes` (`AETHER_NATIVE_KREA_RESHAPE=1`), `keptDenoisersAtAnAlreadySeenRowCount` (`AETHER_NATIVE_KREA_RESHAPE_REPEAT=1`) and `paddedConditioningRowsAgainstTheUnpaddedImage` (`AETHER_NATIVE_KREA_ROW_PADDING=1`). Keeping the denoisers open across row counts (an unshipped variant) rendered pixel-identical images but was no faster: Core AI re-specializes on every shape change, including a return to a row count it already ran, at about 49 s for the first step. The runtime is unchanged.
+
 ## 0.0.7-atelier.2 — 2026-11-07
 
 - Record the rebuilt H3 profile (`e32d9409…`) on h17c: 28 complete neutral-object renders cover first-only and first+last for Standard Full/Quick five/ten seconds in all three shapes, and Large Full five seconds in both orientations. Six exact canvas-scoped FL2VA entries retain the 18/24 GiB bars, 256 MiB margin and 64 GiB floor for extended modes. Last-only uses the measured single-keyframe shape. Other profiles/devices and unmeasured modes gain no coverage.
