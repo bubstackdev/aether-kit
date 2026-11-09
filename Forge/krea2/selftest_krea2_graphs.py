@@ -108,8 +108,6 @@ def check_denoiser(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
                 if convert and convert_dir is not None:
                     convert_and_run(seg, carry, seg.input_names, seg.output_names,
                                     convert_dir / f"denoiser{index}{'-masked' if masked else ''}.aimodel", out)
-                    if index == 0 and masked:
-                        result["sharedWeights"] = convert_two_segment_functions(seg, carry, convert_dir)
                 if index == 0:
                     cond = out[2]
                 extra = [text_mask] if masked else []
@@ -125,49 +123,6 @@ def check_denoiser(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
         noisy = torch.cat([real_rows, garbage[:length - real]])
         result[f"masked{length}Garbage"] = metrics(upstream, chain(True, noisy, tm))
     return result
-
-
-def convert_two_segment_functions(seg, carry, convert_dir: Path) -> dict:
-    """Masked segment 0 with one static text length against the same module with two (`segment` at the example's
-    length, `segmentReferences` at 8 more rows): whether the converter stores the shared weights once, and both
-    functions run (cpu_only) to the module's own outputs."""
-    import coreai_torch as ct
-    import coreai.runtime as rt
-
-    _, dynamic = seg.example()
-    length = carry[1].shape[0]
-    longer = (carry[0], kg.pad_rows(carry[1], length + 8), kg.text_mask(int(carry[2].sum()), length + 8), *carry[3:])
-    sizes, runs = {}, {}
-    for name, functions in (("one", [("segment", carry)]),
-                            ("two", [("segment", carry), ("segmentReferences", longer)])):
-        converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
-        for entry, example in functions:
-            with torch.no_grad():
-                ep = torch.export.export(seg, tuple(example), dynamic_shapes=dynamic, strict=False)
-                ep = ep.run_decompositions(ct.get_decomp_table())
-            converter.add_exported_program(ep, input_names=seg.input_names, output_names=seg.output_names,
-                                           state_names=[], entrypoint_name=entry)
-        program = converter.to_coreai()
-        program.optimize()
-        path = convert_dir / f"denoiser0-functions-{name}.aimodel"
-        program.save_asset(path)
-        sizes[name] = sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
-        if name == "two":
-            async def go():
-                model = await rt.AIModel.load(path, rt.SpecializationOptions.cpu_only())
-                out = {}
-                for entry, example in functions:
-                    fn = model.load_function(entry)
-                    feed = {k: rt.NDArray(np.ascontiguousarray(v.detach().numpy()))
-                            for k, v in zip(seg.input_names, example)}
-                    out[entry] = {k: v.numpy().copy() for k, v in (await fn(feed, {})).items()}
-                return out
-            got = asyncio.run(go())
-            with torch.no_grad():
-                for entry, example in functions:
-                    want = seg(*example)
-                    runs[entry] = metrics(want[0], torch.from_numpy(got[entry]["image_1"].astype(np.float32)))
-    return {"bytes": sizes, "image1": runs}
 
 
 def check_text(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
@@ -382,9 +337,7 @@ def main() -> None:
     if args.convert:
         convert_dir = args.workdir / "converted"
         convert_dir.mkdir()
-    denoiser = check_denoiser(checkpoint, convert_dir)
-    shared = denoiser.pop("sharedWeights", None)
-    report = {"denoiser": denoiser, **({"denoiserSharedWeights": shared} if shared else {}), "text": check_text(checkpoint, convert_dir),
+    report = {"denoiser": check_denoiser(checkpoint, convert_dir), "text": check_text(checkpoint, convert_dir),
               "vae": check_vae(checkpoint, convert_dir), "references": check_references(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
     gated = [*report["denoiser"].values(), report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"],
              report["references"]["vision"], report["references"]["deepstack"], report["references"]["text"]]

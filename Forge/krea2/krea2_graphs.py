@@ -21,7 +21,6 @@ Functions (names, dtypes and dynamic axes are the bundle contract):
     denoiser1/segment    image_1, text_1, text_mask, cond, rope_image -> image_2, text_2
     denoiser2/segment    image_2, text_2, text_mask, cond, rope_image -> image_3, text_3
     denoiser3/segment    image_3, text_3, text_mask, cond, rope_image -> velocity fp16 [N, 64]
-    denoiser*/segmentReferences   optional: the same at T = 1116 (reference conditioning; `--reference-bucket`)
     vaeDecoder/decode    latents fp16 [H/16, W/16, 64] (packed, normalized) -> image f32 [3, H, W] in [-1, 1]
 
 Precision: text encoder and denoiser matmuls and attention run in fp16 with fp16 weights (denoiser block 0 computes in
@@ -32,9 +31,11 @@ and computes in float32.
 
 Text rows: the text encoder runs unpadded (the 0.0.x prompt rule: render, keep at most 546 tokens with the final five,
 drop the 34-token system prefix), which gives exactly the real rows of Diffusers' padded `[prefix | prompt | PAD |
-suffix]` block. The denoisers take a fixed text length, as Diffusers does: `segment` T = 512 (`MASK_TEXT_ROWS`, the
-pipeline's `max_sequence_length`) and `segmentReferences` T = 1116 (`REFERENCE_MAX_TEXT_ROWS`), both static, with the
-host's real rows first and finite padding (zeros) after. `text_mask` [T] is 1 for a real row and 0 for padding, and is
+suffix]` block. The denoisers take one fixed text length for every prompt: T = 1116 (`MASK_TEXT_ROWS`, the most rows
+a reference prompt can have; Diffusers pads text-only prompts to 512), static, with the host's real rows first and
+finite padding (zeros) after. One length means one function and one shape for text-only and reference prompts alike:
+a second function (a 512-row one beside it) slowed the first's steps about 1.7x on macOS 27.2, and Core AI keeps a
+separate weights copy per function it runs (2026-11-09). `text_mask` [T] is 1 for a real row and 0 for padding, and is
 applied exactly as Diffusers applies `encoder_attention_mask`: a key-padding mask in the text-fusion refiner blocks and
 in all 28 joint blocks (image keys always valid). The layerwise fusion blocks attend over one token's tapped layers, so
 padding can't reach them; text positions are all zero, so the padding shifts no rotary angle. Pad rows' own lanes are
@@ -109,11 +110,8 @@ MROPE_SECTION = (24, 20, 20)
 # 512 text rows + 576 image tokens + each image's label and vision start/end (7 ids) = 1116; L = 1116 + 34 ids.
 REFERENCE_MAX_TEXT_ROWS = MAX_TEXT_ROWS + REFERENCE_MAX_IMAGE_TOKENS + 7 * REFERENCE_MAX_IMAGES
 DENOISER_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS                 # the denoisers take text-only and reference rows
-# The masked denoisers' fixed text lengths: `segment` for text-only prompts (Diffusers' max_sequence_length), and
-# `segmentReferences` for reference prompts (the most rows a reference prompt can have).
-MASK_TEXT_ROWS = MAX_TEXT_ROWS
-REFERENCE_FUNCTION_ROWS = REFERENCE_MAX_TEXT_ROWS
-SEGMENT_FUNCTIONS = {"segment": MASK_TEXT_ROWS, "segmentReferences": REFERENCE_FUNCTION_ROWS}
+# The masked denoisers' one fixed text length, for text-only and reference prompts alike.
+MASK_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS
 
 # Within a head, new dim i takes interleaved dim 2i and new dim i + 64 takes dim 2i + 1.
 HALF_SPLIT = torch.cat([torch.arange(0, HEAD_DIM, 2), torch.arange(1, HEAD_DIM, 2)])

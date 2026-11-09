@@ -6,30 +6,23 @@ import Testing
 @testable import AetherImage
 @testable import AetherRuntime
 
-/// A masked `krea2@1` export on fakes: denoisers with a static text length and a `textMask` input (MANIFEST.md §5.5),
-/// `step` at the text-only bucket and `references` at the reference bucket. The fakes reduce over the text rows the
-/// way attention does (a mean over the rows the mask keeps), and refuse padding that isn't zero or a mask that doesn't
-/// mark the real rows, so a padded + masked render must equal the exact-length export's render bit for bit. Also: the
-/// reference bucket, conditioning reuse, the shape admission keys on, refusals, and `prepare(prompt:)`.
+/// A masked `krea2@1` export on fakes: denoisers with one static text length (the reference rows' upper bound) and a
+/// `textMask` input (MANIFEST.md §5.5), for text-only and reference prompts alike. The fakes reduce over the text rows
+/// the way attention does (a mean over the rows the mask keeps), and refuse padding that isn't zero or a mask that
+/// doesn't mark the real rows, so a padded + masked render must equal the exact-length export's render bit for bit.
+/// Also: reference conditioning at the same shape, conditioning reuse, the one shape admission keys on, refusals, and
+/// `prepare(prompt:)`.
 @Suite("Krea 2 text mask")
 struct Krea2TextMaskTests {
     typealias Calls = LatentDiffusionTests.Calls
-    /// The fixture's text-only rows are 1...38 and its reference rows 1...60 (Krea2ReferenceTests.manifest).
-    static let textBucket = 38, referenceBucket = 60
+    /// The fixture's text-only rows are 1...38 and its reference rows 1...60 (Krea2ReferenceTests.manifest): the
+    /// segments' one text length is 60.
+    static let textRows = 38, bucket = 60
 
-    /// Krea2ReferenceTests' manifest (text rows 1...38, reference rows 1...60), its segments taking `textMask` and,
-    /// with `phased`, a `references` function each.
-    static func manifest(phased: Bool = true, references: Bool = true) throws -> Manifest {
+    /// Krea2ReferenceTests' manifest (text rows 1...38, reference rows 1...60), its segments taking `textMask`.
+    static func manifest(references: Bool = true) throws -> Manifest {
         var manifest = try Krea2ReferenceTests.manifest(references: references)
-        for i in 0..<4 {
-            var graph = manifest.graphs["denoiser\(i)"]!
-            graph.inputs["textMask"] = "text_mask"
-            if phased {
-                graph.function = nil
-                graph.functions = ["step": "segment", "references": "segmentReferences"]
-            }
-            manifest.graphs["denoiser\(i)"] = graph
-        }
+        for i in 0..<4 { manifest.graphs["denoiser\(i)"]?.inputs["textMask"] = "text_mask" }
         return try Manifest.decode(manifest.encoded())
     }
 
@@ -130,19 +123,12 @@ struct Krea2TextMaskTests {
         }
     }
 
-    /// A masked segment's two functions, as `GraphResidency` loads a multi-function file.
-    static func phased(_ index: Int, step: Int, references: Int?, _ calls: Calls) throws(AetherError) -> any GraphBackend {
-        var functions: [String: any GraphBackend] = ["step": Segment(index, length: step, calls)]
-        if let references { functions["references"] = Segment(index, length: references, function: "segmentReferences", calls) }
-        return try GraphFunctionSet(functions: functions)
-    }
-
-    /// `masked`: the masked manifest and segments (`step` and `references` lengths); otherwise the exact-length ones.
+    /// `masked`: the masked manifest and segments at text length `length`; otherwise the exact-length ones.
     static func pipeline(
-        masked: Bool, calls: Calls, manifest: Manifest? = nil, step: Int = textBucket, references: Int? = referenceBucket
+        masked: Bool, calls: Calls, manifest: Manifest? = nil, length: Int = bucket
     ) throws -> (Krea2Pipeline, Calls) {
         let loads = Calls()
-        let manifest = try manifest ?? (masked ? Self.manifest(phased: references != nil) : Krea2ReferenceTests.manifest())
+        let manifest = try manifest ?? (masked ? Self.manifest() : Krea2ReferenceTests.manifest())
         let pipeline = try Krea2Pipeline(
             manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
             options: .init(memory: .bytes(1 << 40), gpu: .unadmitted, probe: Krea2Tests.still),
@@ -150,7 +136,7 @@ struct Krea2TextMaskTests {
             load: { role throws(AetherError) in
                 loads.append(role)
                 if role.hasPrefix("denoiser"), let index = Int(role.dropFirst("denoiser".count)) {
-                    return masked ? try phased(index, step: step, references: references, calls) : Segment(index, length: nil, calls)
+                    return Segment(index, length: masked ? length : nil, calls)
                 }
                 return switch role {
                 case "textEncoder": Krea2ReferenceTests.PhasedText(calls)
@@ -180,9 +166,9 @@ struct Krea2TextMaskTests {
         // prompt at its own length.
         let rows = try Self.prompts.map { try masked.prepare(prompt: $0).conditioningRows }
         #expect(rows == [3, 13, 33])
-        #expect(Set(maskedCalls.log.filter { $0.hasPrefix("segment") }.map { $0.split(separator: " ")[3] }) == ["\(Self.textBucket)"])
+        #expect(Set(maskedCalls.log.filter { $0.hasPrefix("segment") }.map { $0.split(separator: " ")[3] }) == ["\(Self.bucket)"])
         #expect(maskedCalls.log.filter { $0.hasPrefix("segment") }.allSatisfy { $0.contains(" segment ") })
-        for count in rows { #expect(maskedCalls.log.contains("segment3 segment text \(Self.textBucket) kept \(count)")) }
+        for count in rows { #expect(maskedCalls.log.contains("segment3 segment text \(Self.bucket) kept \(count)")) }
         #expect(Set(exactCalls.log.filter { $0.hasPrefix("segment0") }.map { $0.split(separator: " ")[3] }) == Set(rows.map { "\($0)" }))
         // One shape for every prompt: nothing reloads.
         #expect(maskedLoads.log == ["textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"])
@@ -200,16 +186,17 @@ struct Krea2TextMaskTests {
         }
         #expect(maskedLoads.log.filter { $0 == "denoiser0" }.count == 1)
         #expect(exactLoads.log.filter { $0 == "denoiser0" }.count > 1)
-        #expect(masked.denoiserShape(rows: 1) == Self.textBucket && masked.denoiserShape(rows: 38) == Self.textBucket)
-        #expect(masked.denoiserShape(rows: 39) == Self.referenceBucket && exact.denoiserShape(rows: 39) == 39)
+        #expect(masked.denoiserShape(rows: 1) == Self.bucket && masked.denoiserShape(rows: 38) == Self.bucket)
+        #expect(masked.denoiserShape(rows: 60) == Self.bucket && exact.denoiserShape(rows: 39) == 39)
     }
 
-    /// Reference conditioning past the text-only bucket runs every segment's `references` function at its length;
-    /// shorter reference conditioning stays on `step`. Both render the exact-length export's image.
-    @Test func referenceRowsRunTheReferencesBucket() async throws {
+    /// Reference conditioning, short and past the text-only rows, runs at the same shape as text-only prompts (one
+    /// function, nothing reloads) and renders the exact-length export's image.
+    @Test func referenceRowsRunAtTheSameShape() async throws {
         let maskedCalls = Calls()
-        let (masked, _) = try Self.pipeline(masked: true, calls: maskedCalls)
+        let (masked, maskedLoads) = try Self.pipeline(masked: true, calls: maskedCalls)
         let (exact, _) = try Self.pipeline(masked: false, calls: Calls())
+        _ = try await masked.generate(ImageRequest(prompt: "ab", seed: 9, steps: 2, width: 32, height: 32))
         for text in ["a cat", String(repeating: "w", count: 30)] {
             let a = try await masked.encode(prompt: text, references: [Krea2ReferenceTests.square])
             let b = try await exact.encode(prompt: text, references: [Krea2ReferenceTests.square])
@@ -217,10 +204,11 @@ struct Krea2TextMaskTests {
             let request = ImageRequest(prompt: text, seed: 9, steps: 2, width: 32, height: 32)
             let image = try await masked.generate(request, reusing: a).image
             #expect(try await image == exact.generate(request, reusing: b).image)
-            let function = a.rows > Self.textBucket ? "segmentReferences text \(Self.referenceBucket)" : "segment text \(Self.textBucket)"
-            #expect(maskedCalls.log.contains("segment3 \(function) kept \(a.rows)"), "\(a.rows) rows: \(maskedCalls.log.suffix(4))")
+            #expect(maskedCalls.log.contains("segment3 segment text \(Self.bucket) kept \(a.rows)"), "\(a.rows) rows")
         }
-        #expect(maskedCalls.log.contains { $0.hasPrefix("segment0 segmentReferences") })
+        #expect(try await masked.encode(prompt: String(repeating: "w", count: 30), references: [Krea2ReferenceTests.square]).rows
+                > Self.textRows, "the long reference prompt is past the text-only rows")
+        #expect(maskedLoads.log.filter { $0 == "denoiser0" }.count == 1, "text-only and reference renders share one load")
     }
 
     @Test func conditioningReuseRendersTheEncodedImage() async throws {
@@ -243,21 +231,21 @@ struct Krea2TextMaskTests {
             #expect(try masked.prepare(prompt: prompt) == exact.prepare(prompt: prompt))
         }
         let long = try masked.prepare(prompt: String(repeating: "q", count: 60))
-        #expect(long.truncated && long.conditioningRows == Self.textBucket)
+        #expect(long.truncated && long.conditioningRows == Self.textRows)
     }
 
     /// Rows past every function's text length (here a `step` shorter than the manifest's rows, with no `references`)
     /// fail with `invalidParameters` and release the graphs; manifests that mask some segments only, or pair the
     /// references function and the mask wrongly, are refused when the pipeline opens.
     @Test func whatDoesNotFitIsRefused() async throws {
-        let manifest = try Self.manifest(phased: false, references: false)
-        let (short, _) = try Self.pipeline(masked: true, calls: Calls(), manifest: manifest, step: 10, references: nil)
+        let manifest = try Self.manifest(references: false)
+        let (short, _) = try Self.pipeline(masked: true, calls: Calls(), manifest: manifest, length: 10)
         _ = try await short.generate(ImageRequest(prompt: "abc", seed: 1, steps: 1, width: 32, height: 32))
         await #expect {
             try await short.generate(ImageRequest(prompt: String(repeating: "x", count: 20), seed: 1, steps: 1, width: 32, height: 32))
         } throws: { error in
             guard case .generation(.invalidParameters(let reason))? = error as? AetherError else { return false }
-            return reason.contains("21 conditioning rows")
+            return reason.contains("21 conditioning rows exceed this export's denoiser text length 10")
         }
         #expect(await short.residentRoles.isEmpty)
 
@@ -271,34 +259,11 @@ struct Krea2TextMaskTests {
         var partial = try Self.manifest()
         partial.graphs["denoiser2"]?.inputs["textMask"] = nil
         refuses(partial)
-        // A references function without the mask.
-        var unmasked = try Self.manifest()
-        for i in 0..<4 { unmasked.graphs["denoiser\(i)"]?.inputs["textMask"] = nil }
-        refuses(unmasked)
-        // A references function without krea2.references.
-        refuses(try Self.manifest(phased: true, references: false))
-        // One segment with other functions.
-        var mixed = try Self.manifest()
-        mixed.graphs["denoiser1"]?.functions = nil
-        mixed.graphs["denoiser1"]?.function = "segment"
-        refuses(mixed)
-    }
-
-    /// A masked export with reference images but no `references` function (one bucket): reference conditioning that
-    /// fits the text bucket renders; longer reference conditioning is refused with `invalidParameters`.
-    @Test func withoutTheReferenceBucketLongReferenceRowsAreRefused() async throws {
-        let manifest = try Self.manifest(phased: false, references: true)
-        let (pipeline, _) = try Self.pipeline(masked: true, calls: Calls(), manifest: manifest, references: nil)
-        let short = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square])
-        _ = try await pipeline.generate(ImageRequest(prompt: "a cat", seed: 1, steps: 1, width: 32, height: 32), reusing: short)
-        let long = String(repeating: "w", count: 30)
-        let conditioning = try await pipeline.encode(prompt: long, references: [Krea2ReferenceTests.square])
-        await #expect {
-            try await pipeline.generate(ImageRequest(prompt: long, seed: 1, steps: 1, width: 32, height: 32), reusing: conditioning)
-        } throws: { error in
-            guard case .generation(.invalidParameters(let reason))? = error as? AetherError else { return false }
-            return reason.contains("\(conditioning.rows) conditioning rows")
-        }
+        // A second function on a segment: the contract has no segment phase but `step`.
+        var phased = try Self.manifest()
+        phased.graphs["denoiser1"]?.function = nil
+        phased.graphs["denoiser1"]?.functions = ["step": "segment", "references": "segmentReferences"]
+        refuses(phased)
     }
 
     /// The exporter's masked fixture (its defaults: no reference bucket) decodes and passes the contract: `textMask` on
@@ -315,114 +280,5 @@ struct Krea2TextMaskTests {
         _ = try Krea2Pipeline(manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
                               options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,
                               load: { _ throws(AetherError) in Krea2Tests.FakeVAE(Calls()) }, fileBytes: { _ in 0 })
-    }
-
-    // MARK: the references bucket's own footprint
-
-    /// Metal as Core AI spends it on a two-function file: nothing at load, each function's own copy of the weights at
-    /// its first run (measured 2026-11-09: 7.08 GB per segment after `segment`, 13.85 GB after `segmentReferences` too).
-    final class Metal: @unchecked Sendable {
-        let level = Mutex<Int64>(0)
-        let peak = Mutex<Int64>(0)
-        func add(_ bytes: Int64) {
-            let now = level.withLock { $0 += bytes; return $0 }
-            peak.withLock { $0 = max($0, now) }
-        }
-        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in level.withLock { $0 } } }
-    }
-
-    /// A segment function that takes `bytes` at its first run and gives them back when released.
-    final class Charged: GraphBackend {
-        let inner: Segment, metal: Metal, bytes: Int64
-        private(set) var charged = false
-        init(_ inner: Segment, metal: Metal, bytes: Int64) { self.inner = inner; self.metal = metal; self.bytes = bytes }
-        deinit { if charged { metal.add(-bytes) } }
-        var signature: GraphSignature { inner.signature }
-        func run(_ bindings: inout Bindings) async throws(AetherError) {
-            if !charged { charged = true; metal.add(bytes) }
-            try await inner.run(&bindings)
-        }
-    }
-
-    /// A loaded segment file: both functions, recording which ever ran.
-    final class ChargedSet: PhasedGraphBackend {
-        let step: Charged, references: Charged
-        init(step: Charged, references: Charged) { self.step = step; self.references = references }
-        var signature: GraphSignature { step.signature }
-        func run(_ bindings: inout Bindings) async throws(AetherError) { try await step.run(&bindings) }
-        func function(forPhase phase: String) -> (any GraphBackend)? { phase == "references" ? references : nil }
-        var ranBoth: Bool { step.charged && references.charged }
-    }
-
-    /// Text-only and reference renders alternating on a budget that holds every graph with one function's weights but
-    /// not both: each switch releases the graphs and loads them for the other bucket, never holding both functions'
-    /// weights, and renders in a row at one bucket load nothing.
-    @Test func switchingBucketsSwapsTheFunctionsAndNeverHoldsBoth() async throws {
-        let metal = Metal(), calls = Calls(), loads = Calls()
-        /// Weak: a released segment must give its memory back. Each entry notes whether that set ran both functions.
-        final class Sets: @unchecked Sendable {
-            struct Weak { weak var set: ChargedSet? }
-            var all: [Weak] = []
-            var ranBoth = false
-            func note() { ranBoth = ranBoth || all.contains { $0.set?.ranBoth == true } }
-        }
-        let sets = Sets()
-        // Weights: text encoder 10 and decoder 10 at load, each segment function 20 at its first run. One bucket with
-        // every graph: 100; both buckets' segments: 180. Budget 150.
-        let budget: Int64 = 150
-        let pipeline = try Krea2Pipeline(
-            manifest: try Self.manifest(), device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
-            options: .init(memory: .bytes(budget), gpu: .unadmitted, probe: metal.probe),
-            encodePrompt: Krea2ReferenceTests.encode,
-            load: { role throws(AetherError) in
-                loads.append(role)
-                if role.hasPrefix("denoiser"), let index = Int(role.dropFirst("denoiser".count)) {
-                    let set = ChargedSet(
-                        step: Charged(Segment(index, length: Self.textBucket, calls), metal: metal, bytes: 20),
-                        references: Charged(Segment(index, length: Self.referenceBucket, function: "segmentReferences", calls),
-                                            metal: metal, bytes: 20))
-                    sets.all.append(.init(set: set))
-                    return set
-                }
-                switch role {
-                case "textEncoder": metal.add(10); return Released(Krea2ReferenceTests.PhasedText(calls), metal: metal, bytes: 10)
-                case "vision": return Krea2ReferenceTests.FakeVision(calls)
-                default: metal.add(10); return Released(Krea2Tests.FakeVAE(calls), metal: metal, bytes: 10)
-                }
-            },
-            fileBytes: { ["textEncoder": 10, "vaeDecoder": 10, "denoiser0": 20, "denoiser1": 20, "denoiser2": 20, "denoiser3": 20][$0] ?? 0 })
-        let long = String(repeating: "w", count: 30)
-        func text(_ prompt: String) async throws {
-            _ = try await pipeline.generate(ImageRequest(prompt: prompt, seed: 2, steps: 1, width: 32, height: 32))
-            sets.note()
-        }
-        func reference() async throws {
-            let conditioning = try await pipeline.encode(prompt: long, references: [Krea2ReferenceTests.square])
-            #expect(conditioning.rows > Self.textBucket)
-            _ = try await pipeline.generate(ImageRequest(prompt: long, seed: 2, steps: 1, width: 32, height: 32), reusing: conditioning)
-            sets.note()
-        }
-        func denoiserLoads() -> Int { loads.log.filter { $0 == "denoiser0" }.count }
-        try await text("ab")
-        try await text("abcdefg")
-        #expect(denoiserLoads() == 1, "text-only renders in a row keep the denoisers")
-        try await reference()
-        #expect(denoiserLoads() == 2, "the reference bucket loads its own copy")
-        try await reference()
-        #expect(denoiserLoads() == 2, "reference renders in a row keep it")
-        try await text("abc")
-        #expect(denoiserLoads() == 3, "back to the text bucket")
-        #expect(!sets.ranBoth, "no loaded segment ran both functions")
-        #expect(metal.peak.withLock { $0 } <= budget, "peak \(metal.peak.withLock { $0 }) over \(budget)")
-    }
-
-    /// A graph that gives back `bytes` when released.
-    final class Released: PhasedGraphBackend {
-        let inner: any GraphBackend, metal: Metal, bytes: Int64
-        init(_ inner: any GraphBackend, metal: Metal, bytes: Int64) { self.inner = inner; self.metal = metal; self.bytes = bytes }
-        deinit { metal.add(-bytes) }
-        var signature: GraphSignature { inner.signature }
-        func run(_ bindings: inout Bindings) async throws(AetherError) { try await inner.run(&bindings) }
-        func function(forPhase phase: String) -> (any GraphBackend)? { (inner as? any PhasedGraphBackend)?.function(forPhase: phase) }
     }
 }

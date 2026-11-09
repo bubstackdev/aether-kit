@@ -46,9 +46,9 @@ public struct Krea2Model: Sendable {
 ///   `keepTrailingTokens` (the suffix's). The text encoder drops the `dropLeadingRows` prefix rows from its output.
 /// - **Text length:** an export whose denoisers take `textMask` runs them at a fixed text length, as Diffusers does:
 ///   the conditioning's real rows first, zero rows after, and the mask (1 real, 0 padding) keeping the padding out of
-///   every attention. Each segment's `step` function takes the text-only length (512); a reference prompt longer than
-///   that runs the `references` function (1,116) when the export has one, and is refused when it doesn't. So every
-///   prompt of a kind runs at one shape. An export without the mask runs at each prompt's own row count, as before.
+///   every attention. The length is the segments' static text axis (1,116 in Forge's exports, the most a reference
+///   prompt has), the same for text-only and reference prompts, so every prompt runs at one shape; rows past it are
+///   refused. An export without the mask runs at each prompt's own row count, as before.
 /// - **Memory, ordering, cancellation:** as ``LatentDiffusionPipeline``: residency planned from measured footprints
 ///   before each generation (`capacity` before anything loads), one generation at a time, cancellation between graph
 ///   calls, and any failure releases every graph.
@@ -597,35 +597,20 @@ public actor Krea2Pipeline {
         return latents
     }
 
-    /// The segments' functions for `rows` conditioning rows and the text length they run at. Without the mask: each
-    /// segment's own (`step`) function at the rows themselves. With it: the first phase (`step`, then `references`)
-    /// whose static text length holds the rows, the same function of every segment. A masked export whose text axis is
-    /// dynamic runs at the rows (the mask all ones).
+    /// The text length the segments run `rows` conditioning rows at: the rows themselves without the mask, else the
+    /// segments' static text axis (a masked export whose text axis is dynamic runs at the rows, the mask all ones).
+    /// Rows past the static length are refused.
     private func textLayout(rows: Int, graphs: [any GraphBackend]) throws(AetherError) -> (graphs: [any GraphBackend], length: Int) {
         guard wiring.textMask != nil else { return (graphs, rows) }
-        var lengths: [String] = []
-        for phase in wiring.segmentPhases {
-            var functions: [any GraphBackend] = []
-            for (segment, graph) in zip(wiring.segments, graphs) {
-                if phase == "step" {
-                    functions.append(graph)
-                } else if let function = (graph as? any PhasedGraphBackend)?.function(forPhase: phase) {
-                    functions.append(function)
-                } else {
-                    throw .manifestInvalid(
-                        field: "graphs.\(segment.role).functions.\(phase)", reason: "the loaded segment has no such function")
-                }
-            }
-            guard let spec = functions[0].signature.input(wiring.conditioning), spec.rank == 2 else {
-                throw .tensor(name: wiring.conditioning, reason: .unknownName)
-            }
-            let length = spec.shape[0]
-            if length == TensorSpec.dynamic { return (functions, rows) }
-            if rows <= length { return (functions, length) }
-            lengths.append("\(phase) \(length)")
+        guard let spec = graphs[0].signature.input(wiring.conditioning), spec.rank == 2 else {
+            throw .tensor(name: wiring.conditioning, reason: .unknownName)
         }
-        throw .generation(.invalidParameters(
-            "\(rows) conditioning rows exceed this export's denoiser text lengths (\(lengths.joined(separator: ", ")))"))
+        let length = spec.shape[0]
+        if length == TensorSpec.dynamic { return (graphs, rows) }
+        guard rows <= length else {
+            throw .generation(.invalidParameters("\(rows) conditioning rows exceed this export's denoiser text length \(length)"))
+        }
+        return (graphs, length)
     }
 
     /// The first segment's conditioning input: the text encoder's buffer as it is when it already has the run's
@@ -901,13 +886,11 @@ extension Krea2Pipeline {
     }
 
     /// The admission shape of a generation with `rows` conditioning rows: the rows (each count its own denoiser
-    /// specialization) or, with the text mask, the text length of the bucket they fall in (the conditioning range's
-    /// upper bound, else the references range's), so a masked export's prompts share one shape.
+    /// specialization) or, with the text mask, one shape for every prompt (the most rows any prompt of the export may
+    /// have: the references range's upper bound, else the conditioning range's).
     nonisolated func denoiserShape(rows: Int) -> Int {
         guard wiring.textMask != nil else { return rows }
-        let text = krea2.conditioning.rowRange?.upperBound ?? rows
-        if rows <= text { return text }
-        return krea2.references?.rowRange?.upperBound ?? rows
+        return krea2.references?.rowRange?.upperBound ?? krea2.conditioning.rowRange?.upperBound ?? rows
     }
 
     /// The manifest's tensor names and how each segment input is fed, checked once at load: an input chained with
@@ -930,8 +913,6 @@ extension Krea2Pipeline {
         var velocity: String
         /// The first segment's `textMask` input name, when the segments take the text mask (all four do, or none).
         var textMask: String?
-        /// The segments' phases in the order a prompt tries them: `step`, then `references` when they have it.
-        var segmentPhases: [String]
 
         init(manifest: Manifest, krea2: Manifest.Krea2) throws(AetherError) {
             let textGraph = manifest.graphs["textEncoder"]!, vae = manifest.graphs["vaeDecoder"]!
@@ -1000,18 +981,6 @@ extension Krea2Pipeline {
                 throw .manifestInvalid(field: "graphs.\(krea2.segments[0]).inputs.textMask", reason: "every segment takes the text mask, or none")
             }
             textMask = masked[0] ? first.inputs["textMask"]!.name : nil
-            let phases = krea2.segments.map { Set(manifest.graphs[$0]!.phases.keys) }
-            guard Set(phases).count == 1 else {
-                throw .manifestInvalid(field: "graphs.\(krea2.segments[0]).functions", reason: "every segment has the same functions")
-            }
-            segmentPhases = ["step", "references"].filter { phases[0].contains($0) }
-            if segmentPhases.contains("references") {
-                guard textMask != nil, krea2.references != nil else {
-                    throw .manifestInvalid(
-                        field: "graphs.\(krea2.segments[0]).functions.references",
-                        reason: "a segment's references function needs the text mask and krea2.references")
-                }
-            }
         }
     }
 }

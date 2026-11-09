@@ -360,9 +360,8 @@ extension DriverContract {
     /// reference images, an optional `vision` graph (in `patches`, `grid`; out `imageEmbeds`, `deepstackEmbeds`) and the
     /// text encoder's `references` function (in `tokens`, `ropePositions`, `imageEmbeds`, `deepstackEmbeds`; out
     /// `conditioning`). Each denoiser may take a `textMask` (all four or none): its text axis is then a fixed length
-    /// the host pads the conditioning to, and the segments may have a second `references` function (the reference
-    /// bucket's length, sharing the weights). The driver also requires a tokenizer and the `schedule`, `latent` and
-    /// `krea2` blocks (checked when it loads).
+    /// the host pads the conditioning to. The driver also requires a tokenizer and the `schedule`, `latent` and `krea2`
+    /// blocks (checked when it loads).
     public static let krea2 = DriverContract(
         driver: .krea2,
         graphs: [
@@ -387,13 +386,11 @@ extension DriverContract {
                     "imageRotary": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
                     "textMask": kreaTextMask,
                 ],
-                outputs: kreaCarries.merging(["condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]) { a, _ in a },
-                phases: kreaSegmentPhases, inputsByPhase: [:]),
-            "denoiser1": stateless(inputs: kreaSegmentInputs, outputs: kreaCarries, phases: kreaSegmentPhases, inputsByPhase: [:]),
-            "denoiser2": stateless(inputs: kreaSegmentInputs, outputs: kreaCarries, phases: kreaSegmentPhases, inputsByPhase: [:]),
+                outputs: kreaCarries.merging(["condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]) { a, _ in a }),
+            "denoiser1": stateless(inputs: kreaSegmentInputs, outputs: kreaCarries),
+            "denoiser2": stateless(inputs: kreaSegmentInputs, outputs: kreaCarries),
             "denoiser3": stateless(
-                inputs: kreaSegmentInputs, outputs: ["velocity": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)],
-                phases: kreaSegmentPhases, inputsByPhase: [:]),
+                inputs: kreaSegmentInputs, outputs: ["velocity": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]),
             "vaeDecoder": stateless(
                 inputs: ["latents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
                 outputs: ["image": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
@@ -425,8 +422,6 @@ extension DriverContract {
     ]) { a, _ in a }
     /// `[T]`: 1 for a real conditioning row, 0 for padding (a key-padding mask over the fixed text length).
     private static let kreaTextMask = RoleSpec(required: false, rank: 1, scalar: .floatingPoint)
-    /// `step`, and `references` for the reference bucket (masked exports).
-    private static let kreaSegmentPhases: Set<String> = ["step", "references"]
 
     /// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M. `durations` in `tokens` and `style`, out per-token `durations`,
     /// `prosody` and `text` features; `decoder` in the frame-aligned `prosody` and `text`, `style`, the harmonic-source

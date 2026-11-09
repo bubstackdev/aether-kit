@@ -25,11 +25,9 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
 
 The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
 
-The denoisers take a fixed text length with a key-padding mask (`--text-mask`, the default; krea2_graphs.py): `segment`
-at 512 rows. `--reference-bucket` adds `segmentReferences` at 1,116 rows as a second function of each segment file
-(reference conditioning past 512 rows); it is off by default because a second function slowed the first one's steps
-about 1.7x and Core AI holds a separate weights copy per function it runs (2026-11-09). `--no-text-mask` exports the
-earlier exact-length denoisers (a dynamic text axis, no mask).
+The denoisers take one fixed text length, 1,116 rows, with a key-padding mask (`--text-mask`, the default;
+krea2_graphs.py), for text-only and reference prompts alike. `--no-text-mask` exports the earlier exact-length
+denoisers (a dynamic text axis, no mask).
 
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace \
         --only denoiser0 denoiser1 denoiser2 denoiser3 --base-bundle <existing bundle> --output <new bundle dir>
@@ -103,7 +101,6 @@ ASSET_SUFFIX = {"textEncoder": "text", "vaeDecoder": "vae", "vaeEncoder": "vae-e
 FUNCTIONS = {"textEncoder": "encode", "vaeDecoder": "decode", "vaeEncoder": "encode", "vision": "encode",
              **{f"denoiser{i}": "segment" for i in range(4)}}
 REFERENCE_FUNCTION = "encodeWithImages"           # textEncoder's second function (the `references` phase)
-SEGMENT_REFERENCE_FUNCTION = "segmentReferences"  # each masked denoiser's second function (the `references` phase)
 TEXT_REFERENCE_INPUTS = ["input_ids", "rope_positions", "image_embeds", "deepstack_embeds"]
 NOTICE_LINE = ("Krea 2 is licensed under the Krea 2 Community License Agreement. For more information, visit "
                "https://krea.ai/krea-2-licensing.")
@@ -237,12 +234,6 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
                                   "expectFrequentReshapes": False, "residency": "perStep"}
     references = "vision" in asset_names
-    if masked and references and report.get("referenceBucket", False):
-        # Each denoiser's second function: the same weights at the reference bucket's text length.
-        for i in range(4):
-            segment = graphs[f"denoiser{i}"]
-            del segment["function"]
-            segment["functions"] = {"step": FUNCTIONS[f"denoiser{i}"], "references": SEGMENT_REFERENCE_FUNCTION}
     if references:
         # The text encoder's second function: the same weights and output, with images as extra rows.
         text = graphs["textEncoder"]
@@ -291,9 +282,8 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
                                      "vaeDecoder": "fp16 weights, fp32 compute",
-                                     **({"denoisers": "text rows padded with zeros to a fixed length (segment 512"
-                                                      + (", segmentReferences 1116" if references and report.get("referenceBucket") else "")
-                                                      + ") under a key-padding mask (textMask)"}
+                                     **({"denoisers": f"text rows padded with zeros to {kg.MASK_TEXT_ROWS} under a "
+                                                      "key-padding mask (textMask)"}
                                         if masked else {}),
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
                                         if "vaeEncoder" in asset_names else {}),
@@ -335,7 +325,7 @@ def reference_block() -> dict:
     }
 
 
-def sample_manifest(variant: str, masked: bool = True, reference_bucket: bool = False) -> dict:
+def sample_manifest(variant: str, masked: bool = True) -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
     fixtures with `--sample-manifest --variant <v> [--no-text-mask] > Tests/AetherCoreTests/Fixtures/krea2/<file>.json`
     (`vanilla.json` and `realism.json` are the exact-length exports, `realism-masked.json` the masked one)."""
@@ -343,8 +333,7 @@ def sample_manifest(variant: str, masked: bool = True, reference_bucket: bool = 
     asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
     report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
-              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked,
-              "referenceBucket": reference_bucket}
+              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked}
     return manifest(variant, files, asset_names, report)
 
 
@@ -402,16 +391,12 @@ def main() -> None:
                              "fp16 conditioning drifted the 8-step closed loop to SSIM 0.917 against the oracle (bar 0.94) "
                              "while the oracle's conditioning reached 0.987 on the same GPU denoisers")
     parser.add_argument("--text-mask", action=argparse.BooleanOptionalAction, default=True,
-                        help="denoisers at a fixed text length (512; 1116 for references) with a key-padding mask "
-                             "(default); --no-text-mask: the earlier exact-length denoisers")
-    parser.add_argument("--reference-bucket", action=argparse.BooleanOptionalAction, default=False,
-                        help="with --text-mask and reference images: each denoiser's second function at 1116 rows "
-                             "(slows the 512-row function; off by default)")
+                        help="denoisers at one fixed text length (1116) with a key-padding mask (default); "
+                             "--no-text-mask: the earlier exact-length denoisers")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.variant, args.text_mask, args.reference_bucket), indent=2,
-                         ensure_ascii=False))
+        print(json.dumps(sample_manifest(args.variant, args.text_mask), indent=2, ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")
@@ -462,10 +447,6 @@ def main() -> None:
         "textMask": (args.text_mask if denoisers or base is None
                      else "textMask" in base["graphs"].get("denoiser0", {}).get("inputs", {})),
     }
-    # The references bucket is exported when the bundle will have reference images.
-    with_references = "vision" in roles or (base is not None and "vision" in base["graphs"])
-    report["referenceBucket"] = (args.reference_bucket if denoisers or base is None
-                                 else "functions" in base["graphs"].get("denoiser0", {}))
     report_path = args.output / "export-report.json"
 
     def save() -> None:
@@ -522,19 +503,11 @@ def main() -> None:
                                           masked=args.text_mask)
         report["stages"][f"build-{role}"] = log.done(f"build-{role}")
         example, dynamic = segment.example()
-        extra = []
-        if args.text_mask and with_references and args.reference_bucket:
-            # The same module (its weights stored once) at the reference bucket's static text length.
-            ref_example, ref_dynamic = segment.example(text=kg.REFERENCE_FUNCTION_ROWS)
-            extra = [(segment, ref_example, ref_dynamic, segment.input_names, segment.output_names,
-                      SEGMENT_REFERENCE_FUNCTION)]
         log.start(f"export-{role}")
         report["conversion"][role] = convert(segment, example, dynamic, segment.input_names, segment.output_names,
-                                             "segment", args.output / asset_names[role], extra=extra)
+                                             "segment", args.output / asset_names[role])
         if args.text_mask:
-            report["conversion"][role]["textRows"] = {"segment": kg.MASK_TEXT_ROWS,
-                                                      **({SEGMENT_REFERENCE_FUNCTION: kg.REFERENCE_FUNCTION_ROWS}
-                                                         if extra else {})}
+            report["conversion"][role]["textRows"] = kg.MASK_TEXT_ROWS
         report["stages"][f"export-{role}"] = log.done(f"export-{role}")
         del segment
         gc.collect()

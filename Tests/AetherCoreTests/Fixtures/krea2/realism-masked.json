@@ -373,7 +373,7 @@
     "components": {
       "denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
       "vaeDecoder": "fp16 weights, fp32 compute",
-      "denoisers": "text rows padded with zeros to a fixed length (segment 512) under a key-padding mask (textMask)",
+      "denoisers": "text rows padded with zeros to 1116 under a key-padding mask (textMask)",
       "vaeEncoder": "fp16 weights, fp32 compute",
       "vision": "fp16 weights, fp32 compute",
       "textEncoder": "encode and encodeWithImages share the fp16 weights; encodeWithImages computes in float32"

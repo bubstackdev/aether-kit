@@ -47,8 +47,7 @@ def main() -> None:
     manifest = json.loads((args.bundle / ".aether/aether.json").read_text())
     files = {role: args.bundle / g["file"].split(":", 1)[1] for role, g in manifest["graphs"].items()}
     masked = "textMask" in manifest["graphs"]["denoiser0"]["inputs"]
-    length = {"segment": kg.MASK_TEXT_ROWS, "segmentReferences": kg.REFERENCE_FUNCTION_ROWS}[args.function] if masked \
-        else args.rows
+    length = kg.MASK_TEXT_ROWS if masked else args.rows
     if args.rows > length:
         raise SystemExit(f"{args.rows} rows don't fit {length}")
     record = {"bundle": str(args.bundle), "masked": masked, "function": args.function, "rows": args.rows,

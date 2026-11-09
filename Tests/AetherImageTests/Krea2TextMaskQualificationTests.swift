@@ -198,7 +198,7 @@ struct Krea2TextMaskQualificationTests {
                 if let earlier = images[name] { report.repeatIdentical = earlier == image }
                 images[name] = images[name] ?? image
             }
-            if mode == "timing", pipeline.wiring.segmentPhases.contains("references") {
+            if mode == "timing" {
                 report.referenceMetalBefore = metal.currentAllocatedSize
                 let text = "The objects from the four pictures arranged on a wooden table."
                 let references = try Self.references()
