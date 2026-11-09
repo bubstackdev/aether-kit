@@ -1,7 +1,7 @@
 # VLM: the Qwen3-VL driver
 
-Status: **slices V1–V4 implemented, 2026-11-09; G4 passed on the 4B export** (8 cases on 8 synthetic pictures, 7
-token-exact and 1 near-tie flip, see §6). V5 (G5 retention and memory) and the FoundationModels attachments follow. The
+Status: **slices V1–V4 implemented, 2026-11-09; G4 passed on the 4B export** (fp16 tied head, release build: 8 cases
+on 8 synthetic pictures, 7 token-exact and 1 near-tie flip, 18.8–20.9 ms per decode step; see §6). V5 (G5 retention and memory) and the FoundationModels attachments follow. The
 plan below was revised 2026-11-09 for Qwen3-VL **4B** and several images per turn. It supersedes the 2B-only draft
 of 2026-11-06 (one image per context, one rope shift). The driver serves any Qwen3-VL export of `Forge/qwen3vl/`
 (2B, 4B, 8B and their fine-tunes): sizes come from the graph descriptors, never from the model name. The export half of
@@ -85,7 +85,10 @@ generator.generate(prompt: rendered, images: [ChatImage(input)], parameters: …
   images renders as content parts: its images, then `{type: "text", text}`. That's 0.0.7's order (and the order of
   every reference prompt); Qwen's template iterates over the parts. Text-only messages render as today.
 - **`ChatSession.respond(to:images:)`**, with images kept in the history. `ChatSession.load` dispatches on the
-  driver: `decoder-lm@1` or `vlm-static-inject@1`; `Registry.text` gains `VLMStaticInjectDriver`.
+  driver: `decoder-lm@1` or `vlm-static-inject@1`; `Registry.text` gains `VLMStaticInjectDriver`. Every turn renders
+  the whole history, so the history's images count against one context's limits: once a conversation holds
+  `maxImages` images or `slots` image tokens (16 and 4,096 for the 4B export), every later turn, text-only included,
+  is refused (`generation(.invalidParameters)`) until `clearHistory()`. There is no eviction of old images.
 - **The Generator stays the single loop.** A request with images on an engine that isn't an
   `ImageConditionedEngine` is refused (`unsupportedOperation`: "this model takes no images").
 - **FoundationModels** (later slice, V4): `Attachment<ImageAttachmentContent>` maps to `ChatImage`, `.vision` is
@@ -179,7 +182,8 @@ factor); below `minPixels` multiply by β = √(min/HW) and ceil; an aspect rati
 | KV per token (fp16) | **147,456 B** (36·2·8·128·2): 144 MiB per 1k tokens, 576 MiB at 4,096 | 114,688 B |
 | Decoder statics (fp16) | 80 MiB at N = 4,096 | 32 MiB at N = 2,048 |
 | Tower buffers | 12 MiB patches + 10 MiB outputs | the same + 8 MiB |
-| Metal at first image request | measured (G4 run): 15.2 GiB after load, 17.3 GiB after one picture, 20.5 GiB after a three-picture turn (process-wide `currentAllocatedSize`, capacity 4,096; 0.0.x: 8.57 GiB of Metal for a 4B model, INTEGRATION.md). G5 breaks it down by phase | |
+| Bundle on disk | 8.89 GB (8.28 GiB) | |
+| Metal (G4 run, release) | fp16 head (the default): 9.4 GiB after load, 10.3 GiB after the first picture, 12.9 GiB after a three-picture turn, 13.6 GiB at the end; fp32 head: 15.2, 17.3 and 20.5 GiB (process-wide `currentAllocatedSize`, capacity 4,096). 0.0.x's 4B VLM: 13.8 GiB at its first image request (0.0.7's docs/qwen3-vl.md). G5 breaks it down by phase | |
 
 Both graphs stay resident for the engine's lifetime on macOS. A reply takes one `GPUAdmission` grant (DESIGN §10);
 `bindImages` runs inside `Generator.prepare`, so the encodes are inside it by construction.
@@ -206,14 +210,25 @@ states), not a runtime one.
 positions in the graph. The pictures are chosen so the preprocessing is the identity in both, which leaves only the
 pixel precision and the graphs' arithmetic to differ.
 
-**G4 result (2026-11-09, 4B abliterated export, default 4,096 slots and 16 images, context capacity 4,096).** All 8
-pictures' patch rows equal 0.0.7's at fp16. Every case renders 0.0.7's prompt ids. Greedy replies: 7 of 8 cases
-token-exact (single pictures, a three-frame turn, text-only); the two-picture case flips at token 59, where the
-reference's own top-1 − top-2 margin is 0.0000 and our token is in its top five. Decode cost per step, with the 80 MiB
-of image statics bound on every step: 26.3–36.7 ms/token (27–30 ms on the cases past 20 tokens; text-only 26.3 ms),
-against 0.0.7's 20.3–23.3 ms/token on the same cases. Prefill: 0.45 s text-only, 0.58–1.00 s for one picture, 1.23 s
-for two and 2.85 s for three, against 0.0.7's 0.26–0.82 s time to first token. The run doesn't separate the statics' share
-of the step; a 2,048-slot export would measure it.
+**G4 result (2026-11-09, 4B abliterated export, default 4,096 slots and 16 images, context capacity 4,096, release
+build).** The reference is `Tools/DescriberReference007`, built from a local checkout of the 0.0.7 line, on the 0.0.x
+export of the same weights. All 8 pictures' patch rows equal 0.0.7's at fp16. Every case renders 0.0.7's prompt ids.
+Greedy replies: 7 of 8 cases token-exact (single pictures, a three-frame turn, text-only); the two-picture case flips at
+token 59, where the reference's own top-1 − top-2 margin is 0.0000 and our token is in its top five. The same holds for
+both head precisions:
+
+| Per case | fp16 tied head (default) | fp32 tied head | 0.0.7 |
+|---|---|---|---|
+| decode, ms/token (cases past 20 tokens) | 18.8–20.9 | 25.5–28.8 | 20.3–22.7 |
+| decode, text-only | 18.8 | 25.5 | 20.3 |
+| prefill, one picture (s) | 0.24–0.34 | 0.24–0.41 | 0.26–1.30 (time to first token) |
+| prefill, two / three pictures (s) | 0.50 / 0.78 | 0.52 / 0.84 | 0.52 / 0.82 |
+| prefill, text-only (s) | 0.025 | 0.034 | 0.45 |
+| Metal after load | 9.4 GiB | 15.2 GiB | |
+
+Decode binds the 80 MiB of image statics on every step. With the fp16 head it's already at or below 0.0.7's per-step
+cost, so the default slots stay. The fp32 head's extra cost is its float32 copy of the embedding (4·vocab·H bytes) and
+the bandwidth to read it every step; the exporter's default is now fp16, as in 0.0.7's recipe (`--head-compute`).
 
 ## 7. From 0.0.7: port, and what changes
 
@@ -244,7 +259,7 @@ V1–V4 are one PR for 0.2.0 (the describer is its blocker); V5 and the Foundati
 
 1. **Slots and images:** 4,096 slots and 16 images for the 4B export (80 MiB of fp16 statics bound per step), or
    fewer (2,048 slots: 4 full-size pictures or 8 frames at 448 tokens)? It's an export parameter. **Decided for now:**
-   keep 4,096 and 16; G4 measured 27–30 ms per decode step at those defaults (§6).
+   keep 4,096 and 16; G4 measured 18.8–20.9 ms per decode step at those defaults with the fp16 head (§6).
 2. **Picture size:** 0.0.7 snapped every picture to one of five grids around 450–490 tokens. The new driver keeps the
    picture's aspect, up to 512 tokens a picture. A consumer that wants 0.0.7's sizes can resize first; should the kit
    offer 0.0.7's snapping as an opt-in preprocess mode? **Decided:** no opt-in.

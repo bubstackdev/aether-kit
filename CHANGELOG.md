@@ -114,8 +114,14 @@
   `inputEncodings.tokens.extensionIds`. Manifest: `preprocess.image.resize` mode `smartResize` (`factor`,
   `minPixels`, `maxPixels`; `Resize.smartSize(width:height:)`), `graphs.<g>.kind`, `image.slots`,
   `ImageBlock.typedTokens()`, `DriverContract.vlmStaticInject`, `DriverID.vlmStaticInject` and `.visionTower`.
+  `bindImages` holds the engine as its operation across the tower calls (a feed, decode, rewind or second bind
+  meanwhile is refused). After a failed bind on a state that still holds earlier images' tokens, feeding, decoding and
+  snapshots are refused until a rewind before them, a reset or a restore; the Generator resets on such a failure. A
+  conversation's images stay in the `ChatSession` history and count against one context's limits (16 images and
+  4,096 image tokens on the Qwen3-VL exports): past them every turn is refused until `clearHistory()`.
   `Forge/qwen3vl` exports any pinned Qwen3-VL checkpoint (`--pins`; 4B: `source-pins-4b-abliterated.json`) with packed
-  image slots (4,096 slots, 16 images) and fp16 image statics. Adding the `smartResize` case to
+  image slots (4,096 slots, 16 images), fp16 image statics and an fp16 tied head (`--head-compute`; float32 logits).
+  Adding the `smartResize` case to
   `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
   The FoundationModels bridge stays text-only for now.
 
