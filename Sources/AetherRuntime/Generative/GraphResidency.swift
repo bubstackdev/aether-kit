@@ -169,6 +169,14 @@ public struct ResidencyPlan: Sendable, Hashable {
     /// False when some phase was planned from its files' size (no measurement yet): the real peak is likely higher.
     public let isMeasured: Bool
 
+    /// A plan whose peak was measured as a whole rather than computed from the phases (``ResidentAdmission``'s
+    /// all-resident generations).
+    package init(mode: Mode, peakBytes: Int64, isMeasured: Bool) {
+        self.mode = mode
+        self.peakBytes = peakBytes
+        self.isMeasured = isMeasured
+    }
+
     /// The peak of `mode`.
     /// - All resident: what every phase holds, plus the largest transient above that (`peak − held`).
     /// - Per phase: phases run in a cycle (prompt → steps → image → the next prompt), and a released phase's memory
@@ -376,8 +384,15 @@ public final class GraphResidency {
     /// same graphs (a new shape's specialization, say), so its footprint is the sum of its occurrences' growth, not the
     /// largest single one.
     private var heldSoFar: [Manifest.Residency: Int64] = [:]
+    /// All resident: the specialization count each phase last ran at. A phase that runs again at the same count and
+    /// loads nothing adds no graphs, so whatever its level grew by is working memory, not more held bytes.
+    private var specializationsAtLastRun: [Manifest.Residency: Int] = [:]
+    /// Whether the open phase has loaded a graph.
+    private var loadedInPhase = false
     /// The lowest level a phase began at with no graph loaded: what the process held before this model's graphs.
     private var unloadedLevel: Int64?
+    /// The highest level sampled since ``markWindow()`` (nil before any sample): what a whole generation reached.
+    package private(set) var windowPeak: Int64?
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
@@ -414,6 +429,7 @@ public final class GraphResidency {
         }
         let graph = try await load(role)
         loaded[role] = graph
+        loadedInPhase = true
         sample()
         return graph
     }
@@ -448,7 +464,23 @@ public final class GraphResidency {
     }
 
     /// Samples the Metal level into the open phase now (after a run, say).
-    public func sample() { open?.meter.observe(probe.allocatedBytes()) }
+    public func sample() {
+        let level = probe.allocatedBytes()
+        open?.meter.observe(level)
+        if open != nil { windowPeak = max(windowPeak ?? level, level) }
+    }
+
+    /// Starts a new ``windowPeak`` (the admission marks each generation).
+    package func markWindow() { windowPeak = nil }
+
+    /// The lowest level a phase began at with no graph loaded (nil until one did).
+    package var levelBeforeGraphs: Int64? { unloadedLevel }
+
+    /// Whether every graph of the manifest is loaded now.
+    package var holdsEveryGraph: Bool {
+        let roles = Set(loaded.keys.map { Self.parse($0).role })
+        return residency.keys.allSatisfy(roles.contains)
+    }
 
     /// Starts measuring `phase`. A phase still open is ended first. After graphs were released (per phase, or by a
     /// profile change), the phase measures from the level before they loaded: their memory comes back seconds late,
@@ -468,8 +500,9 @@ public final class GraphResidency {
         }
         floor = min(floor ?? baseline, baseline)
         if loaded.isEmpty { unloadedLevel = min(unloadedLevel ?? baseline, baseline) }
-        let meter = PeakMeter(baseline)
+        let meter = PeakMeter(baseline, level: observed)
         if let samplingInterval { meter.start(probe: probe, every: samplingInterval) }
+        loadedInPhase = false
         open = (phase, baseline, observed, meter)
     }
 
@@ -491,9 +524,41 @@ public final class GraphResidency {
             current.meter.stop()
             let level = probe.allocatedBytes()
             current.meter.observe(level)
+            windowPeak = max(windowPeak ?? level, current.meter.peak, level)
+            if mode == .allResident {
+                // Memory that came back while this phase ran (the level fell below where it began) was the other
+                // phases' working memory, still allocated when they ended: they no longer hold it. It is taken off the
+                // phase that ran last first, back through the cycle.
+                var returned = max(0, current.observed - current.meter.minimum)
+                if returned > 0, let i = phaseOrder.firstIndex(of: phase) {
+                    for k in 1..<max(1, phaseOrder.count) where returned > 0 {
+                        let other = phaseOrder[(i + phaseOrder.count - k) % phaseOrder.count]
+                        let take = min(returned, heldSoFar[other] ?? 0)
+                        heldSoFar[other] = (heldSoFar[other] ?? 0) - take
+                        returned -= take
+                    }
+                }
+            }
             let prior = mode == .allResident ? heldSoFar[phase] ?? 0 : 0
-            var held = prior + (level - current.baseline)
-            var peak = prior + (current.meter.peak - current.baseline)
+            var held: Int64, peak: Int64
+            if mode == .allResident, !loadedInPhase, specializationsAtLastRun[phase] == recordedSpecializations {
+                // Nothing loaded and no new specialization: the same graphs ran again. What the level grew by is the
+                // run's working memory (a decoder's activations at the canvas size, say), which a later phase may
+                // give back and this one take again: a transient, never more held bytes.
+                // Its transient is what the level rose above everything the residency already counts as held (this
+                // phase's included): working memory it takes back after another phase made it give it up is already
+                // in its held bytes.
+                held = prior
+                let counted = (unloadedLevel ?? current.baseline) + heldSoFar.values.reduce(0, +)
+                peak = prior + max(0, current.meter.peak - max(counted, unloadedLevel == nil ? current.baseline : counted))
+            } else {
+                // Memory another phase gave back while this one ran (working memory returned as this phase's graphs
+                // loaded) would hide this phase's graphs: count the growth from the lowest level the phase reached.
+                let from = min(current.baseline, current.meter.minimum)
+                held = prior + (level - from)
+                peak = prior + max(current.meter.peak - current.baseline, current.meter.rise, level - from)
+            }
+            if mode == .allResident { specializationsAtLastRun[phase] = recordedSpecializations }
             if mode == .allResident, let unloadedLevel {
                 // The sum of occurrences' growth assumes each began with the phase's resident memory counted.
                 // `phys_footprint` doesn't promise that: between requests part of it can drop out and come back when
@@ -532,6 +597,7 @@ public final class GraphResidency {
             }
         }
         heldSoFar = [:]
+        specializationsAtLastRun = [:]
         open?.meter.stop()
         open = nil
         loaded.removeAll()
@@ -540,14 +606,26 @@ public final class GraphResidency {
 
 /// The high-water mark of a phase, fed by its owner and optionally by a polling thread.
 private final class PeakMeter: Sendable {
-    private struct State { var peak: Int64; var running = false }
+    private struct State { var peak: Int64; var minimum: Int64; var rise: Int64 = 0; var running = false }
     private let state: Mutex<State>
 
-    init(_ baseline: Int64) { state = Mutex(State(peak: baseline)) }
+    /// `baseline` is where the peak is counted from; `level` is the level when the phase began (at or above it).
+    init(_ baseline: Int64, level: Int64? = nil) { state = Mutex(State(peak: baseline, minimum: level ?? baseline)) }
 
     var peak: Int64 { state.withLock { $0.peak } }
+    /// The lowest level observed (from the phase's starting level on).
+    var minimum: Int64 { state.withLock { $0.minimum } }
+    /// The largest rise above an earlier lowest level: how far the phase's own allocations climbed after memory that
+    /// was returning during it had come back.
+    var rise: Int64 { state.withLock { $0.rise } }
 
-    func observe(_ level: Int64) { state.withLock { $0.peak = max($0.peak, level) } }
+    func observe(_ level: Int64) {
+        state.withLock {
+            $0.peak = max($0.peak, level)
+            $0.minimum = min($0.minimum, level)
+            $0.rise = max($0.rise, level - $0.minimum)
+        }
+    }
 
     func start(probe: GPUMemoryProbe, every interval: Duration) {
         state.withLock { $0.running = true }

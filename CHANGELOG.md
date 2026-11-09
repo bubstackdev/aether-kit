@@ -144,6 +144,20 @@
   (`FootprintLedger.Key.specializations`, `estimate(_:)` for counts not measured, a full extra copy each when only one
   is). A new shape that doesn't fit beside the others with every graph resident releases the graphs and reloads for it
   alone; only a shape that doesn't fit alone is refused.
+- **Working memory that outlives its phase no longer pushes resident graphs to per-phase release.** A run's working
+  memory can stay allocated after its phase ends and come back during a later phase (Krea 2's decoder at 1024²: about
+  11.5 GB of activations for 52 MB of weights, returned while the next prompt's text encoder loaded). The all-resident
+  accounting counted it as held, added it again on the next run although nothing had loaded, and measured nothing
+  for the encoder that loaded while it came back. On a 64 GB Mac the phases' sum then exceeded the budget by 54 MB, and
+  the plan fell to per phase and never returned: every render loaded every graph again. Now:
+  - A phase occurrence that loads nothing at the same specialization count keeps the phase's held bytes; its rise
+    above what the residency already holds is its transient.
+  - Memory that comes back during a phase is taken off the held bytes of the phases before it (the one that ran last
+    first), and a load is measured from the lowest level its phase reached.
+  - Admission records the peak a generation with every graph resident actually reached, per profile and
+    specialization count. When the phases' sum doesn't fit but that measured peak does, the graphs stay resident, or a
+    per-phase residency returns to all resident.
+  No public API changes.
 - **Krea 2 metrics and the pressure gate see admission's release.** `loadedRoles` and the `PipelineOptions.pressure`
   check now read the resident graphs after admission plans. When it released them, the generation reports, and gates
   on, loading them all.
