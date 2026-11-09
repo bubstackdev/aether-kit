@@ -45,3 +45,38 @@ extension GraphBackend {
         return try StateSet(arena: arena, entries: entries)
     }
 }
+
+/// A graph whose model file declares more than one function (``Manifest/Graph/phases``), specialized once so the
+/// functions share their weights: the graph itself is its `step` function, and ``function(forPhase:)`` gives the others
+/// (Krea 2's text encoder with its `references` function, say).
+public protocol PhasedGraphBackend: GraphBackend {
+    /// The function of `phase`, or nil when the graph has none.
+    func function(forPhase phase: String) -> (any GraphBackend)?
+}
+
+/// The functions of one specialized model file, by phase; `step` is the graph's own (signature, buffers, run).
+public final class GraphFunctionSet: PhasedGraphBackend {
+    public let functions: [String: any GraphBackend]
+    private let step: any GraphBackend
+
+    /// Fails unless `functions` has a `step` phase.
+    public init(functions: [String: any GraphBackend]) throws(AetherError) {
+        guard let step = functions["step"] else {
+            throw .manifestInvalid(field: "functions.step", reason: "a graph with several functions needs a step function")
+        }
+        self.functions = functions
+        self.step = step
+    }
+
+    public var signature: GraphSignature { step.signature }
+
+    public func makeBuffer(
+        for name: String, role: TensorRole, dimensions: [Int], in arena: TensorArena
+    ) throws(AetherError) -> TensorBuffer {
+        try step.makeBuffer(for: name, role: role, dimensions: dimensions, in: arena)
+    }
+
+    public func run(_ bindings: inout Bindings) async throws(AetherError) { try await step.run(&bindings) }
+
+    public func function(forPhase phase: String) -> (any GraphBackend)? { functions[phase] }
+}

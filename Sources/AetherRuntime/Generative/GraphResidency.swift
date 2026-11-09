@@ -583,12 +583,16 @@ extension GraphResidency {
             guard let path = spec.file.resolve(architecture: device.architecture), let url = bundle.url(of: path) else {
                 throw .manifestInvalid(field: "graphs.\(role).file", reason: "no file for architecture \(device.architecture)")
             }
-            return try await Graph(url: url, function: function, options: options)
+            guard spec.phases.count > 1 else { return try await Graph(url: url, function: function, options: options) }
+            // Several functions: one specialization, so they share the weights.
+            let loaded = try await Graph.load(url: url, functions: Array(Set(spec.phases.values)).sorted(), options: options)
+            return try GraphFunctionSet(functions: spec.phases.compactMapValues { loaded[$0] })
         }
     }
 
     /// Wraps `loader` so each graph is checked against its manifest role and `contract` before use (MANIFEST.md §2.1.1):
-    /// its `step` function's signature against the role's names, ranks and scalar kinds.
+    /// its `step` function's signature (and, for a ``PhasedGraphBackend``, every other phase's) against the role's
+    /// names, ranks and scalar kinds.
     public static func validating(_ loader: @escaping Loader, manifest: Manifest, contract: DriverContract) -> Loader {
         { key throws(AetherError) in
             let graph = try await loader(key)
@@ -599,6 +603,15 @@ extension GraphResidency {
             let spec = try spec(key, in: manifest)
             try SignatureValidator.validate(spec, phase: "step", at: "graphs.\(role)", against: graph.signature,
                                             contract: graphContract, tables: manifest.tables ?? [:])
+            if let phased = graph as? any PhasedGraphBackend {
+                for phase in spec.phases.keys.sorted() where phase != "step" {
+                    guard let function = phased.function(forPhase: phase) else {
+                        throw .manifestInvalid(field: "graphs.\(role).functions.\(phase)", reason: "the loaded graph has no such function")
+                    }
+                    try SignatureValidator.validate(spec, phase: phase, at: "graphs.\(role)", against: function.signature,
+                                                    contract: graphContract, tables: manifest.tables ?? [:])
+                }
+            }
             return graph
         }
     }

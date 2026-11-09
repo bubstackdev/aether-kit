@@ -43,7 +43,7 @@ public enum SignatureValidator {
                 throw .manifestMismatch(
                     field: field, expected: "a graph input named '\(binding.name)'", found: "inputs \(signature.inputs.map(\.name))")
             }
-            try check(spec, field: field, role: contract.inputs[role])
+            try check(spec, field: field, role: contract.inputs(forPhase: phase)[role])
             if case .table(let name, _)? = binding.source, let table = tables[name] {
                 guard table.dtype == spec.scalarType, table.shape == spec.shape else {
                     throw .manifestMismatch(
