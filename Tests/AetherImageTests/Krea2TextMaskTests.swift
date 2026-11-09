@@ -281,4 +281,95 @@ struct Krea2TextMaskTests {
                               options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,
                               load: { _ throws(AetherError) in Krea2Tests.FakeVAE(Calls()) }, fileBytes: { _ in 0 })
     }
+
+    // MARK: reference conditioning beside resident denoisers
+
+    /// Metal as Core AI spends it: a graph's bytes from its load until it's released; a function of a multi-function
+    /// file takes its own copy at its first run.
+    final class Metal: @unchecked Sendable {
+        let level = Mutex<Int64>(0), peak = Mutex<Int64>(0)
+        func add(_ bytes: Int64) {
+            let now = level.withLock { $0 += bytes; return $0 }
+            peak.withLock { $0 = max($0, now) }
+        }
+        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in level.withLock { $0 } } }
+    }
+
+    /// `inner` holding `bytes` while loaded.
+    final class Charged: PhasedGraphBackend {
+        let inner: any GraphBackend, metal: Metal, bytes: Int64
+        init(_ inner: any GraphBackend, metal: Metal, bytes: Int64) {
+            self.inner = inner; self.metal = metal; self.bytes = bytes
+            metal.add(bytes)
+        }
+        deinit { metal.add(-bytes) }
+        var signature: GraphSignature { inner.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) { try await inner.run(&bindings) }
+        func function(forPhase phase: String) -> (any GraphBackend)? { (inner as? any PhasedGraphBackend)?.function(forPhase: phase) }
+    }
+
+    /// The text encoder file: `encode` resident at load, `encodeWithImages` taking another copy at its first run.
+    final class ChargedText: PhasedGraphBackend {
+        let step: Charged, metal: Metal, copy: Int64
+        let references: any GraphBackend
+        private var copied = false
+        init(_ calls: Calls, metal: Metal, bytes: Int64) {
+            let text = Krea2ReferenceTests.PhasedText(calls)
+            step = Charged(text.step, metal: metal, bytes: bytes)
+            references = text.references
+            self.metal = metal
+            copy = bytes
+        }
+        deinit { if copied { metal.add(-copy) } }
+        var signature: GraphSignature { step.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) { try await step.run(&bindings) }
+        func function(forPhase phase: String) -> (any GraphBackend)? {
+            guard phase == "references" else { return nil }
+            if !copied { copied = true; metal.add(copy) }
+            return references
+        }
+    }
+
+    /// Text-only, then reference, then text-only renders on a budget that holds every graph with one text-encoder copy
+    /// but not with the references function's copy beside it (text encoder 10, its references copy 10, vision 2,
+    /// segments 20 each, decoder 10; budget 115). The reference encode releases the text-only encoder first and its own
+    /// graphs after, so it fits; the denoisers and the decoder stay loaded throughout, and only the text encoder and the
+    /// vision tower load again.
+    @Test func referenceConditioningLoadsBesideTheResidentDenoisers() async throws {
+        let metal = Metal(), calls = Calls(), loads = Calls()
+        let budget: Int64 = 115
+        let pipeline = try Krea2Pipeline(
+            manifest: try Self.manifest(), device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
+            options: .init(memory: .bytes(budget), gpu: .unadmitted, probe: metal.probe),
+            encodePrompt: Krea2ReferenceTests.encode,
+            load: { role throws(AetherError) in
+                loads.append(role)
+                if role.hasPrefix("denoiser"), let index = Int(role.dropFirst("denoiser".count)) {
+                    return Charged(Segment(index, length: Self.bucket, calls), metal: metal, bytes: 20)
+                }
+                switch role {
+                case "textEncoder": return ChargedText(calls, metal: metal, bytes: 10)
+                case "vision": return Charged(Krea2ReferenceTests.FakeVision(calls), metal: metal, bytes: 2)
+                default: return Charged(Krea2Tests.FakeVAE(calls), metal: metal, bytes: 10)
+                }
+            },
+            fileBytes: { ["textEncoder": 10, "vision": 2, "vaeDecoder": 10, "denoiser0": 20, "denoiser1": 20,
+                          "denoiser2": 20, "denoiser3": 20][$0] ?? 0 })
+        func text(_ prompt: String) async throws {
+            _ = try await pipeline.generate(ImageRequest(prompt: prompt, seed: 2, steps: 1, width: 32, height: 32))
+        }
+        let long = String(repeating: "w", count: 30)
+        try await text("ab")
+        try await text("abcdefg")
+        let conditioning = try await pipeline.encode(prompt: long, references: [Krea2ReferenceTests.square])
+        let afterEncode = await pipeline.residentRoles
+        #expect(!afterEncode.contains("vision") && !afterEncode.contains("textEncoder"),
+                "the reference conditioning graphs are released after the encode: \(afterEncode)")
+        _ = try await pipeline.generate(ImageRequest(prompt: long, seed: 2, steps: 1, width: 32, height: 32), reusing: conditioning)
+        try await text("abc")
+        let count = { (role: String) in loads.log.filter { $0 == role }.count }
+        #expect(count("denoiser0") == 1 && count("denoiser3") == 1 && count("vaeDecoder") == 1, "\(loads.log)")
+        #expect(count("textEncoder") == 3 && count("vision") == 1, "\(loads.log)")
+        #expect(metal.peak.withLock { $0 } <= budget, "peak \(metal.peak.withLock { $0 }) over \(budget)")
+    }
 }

@@ -247,8 +247,10 @@ public final class ResidentAdmission {
         }
         if residency.mode == .allResident, !residency.residentRoles.isEmpty, let peak = residency.windowPeak,
            let before = residency.levelBeforeGraphs {
+            // Keyed by every role resident during the generation, not only at its end: a phase released mid-way (a
+            // reference encode's vision tower and text encoder) still counted towards the peak.
             let key = MeasuredKey(profile: residency.profile, specializations: residency.specializations,
-                                  roles: Set(residency.residentRoles.map { GraphResidency.parse($0).role }))
+                                  roles: Set((residency.windowRoles.union(residency.residentRoles)).map { GraphResidency.parse($0).role }))
             measuredAllResident[key] = max(measuredAllResident[key] ?? 0, peak - before)
         }
         switch residency.mode {

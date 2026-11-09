@@ -424,6 +424,11 @@ extension Krea2Pipeline {
                 throw AetherError.memoryPressure
             }
             do {
+                // The reference conditioning graphs (the vision tower and the text encoder, whose references function
+                // takes its own copy of the weights when it runs) are loaded for this encode alone: the text-only
+                // encoder is released first and everything this phase loads after it, so the denoisers the last
+                // generation kept never share memory with them.
+                residency.releasePhase(.perPrompt)
                 try await residency.beginPhase(.perPrompt)
                 let arena = TensorArena()
                 let embedded = try await embed(patches, rules: rules, residency: residency, arena: arena)
@@ -434,6 +439,7 @@ extension Krea2Pipeline {
                     truncated: prompt.truncated, referenceDigests: references.map(\.digest), export: export,
                     scalarType: rows.scalarType, bytes: try rows.readBytes())
                 residency.endPhase(.perPrompt)
+                residency.releasePhase(.perPrompt)
                 try Task.checkCancellation()
                 admission.finish()
                 if retention == .releaseAfterEachGeneration { admission.release() }

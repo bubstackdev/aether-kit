@@ -393,6 +393,8 @@ public final class GraphResidency {
     private var unloadedLevel: Int64?
     /// The highest level sampled since ``markWindow()`` (nil before any sample): what a whole generation reached.
     package private(set) var windowPeak: Int64?
+    /// The roles resident at any point since ``markWindow()``: what a generation's ``windowPeak`` was reached with.
+    package private(set) var windowRoles: Set<String> = []
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
@@ -429,6 +431,7 @@ public final class GraphResidency {
         }
         let graph = try await load(role)
         loaded[role] = graph
+        windowRoles.insert(role)
         loadedInPhase = true
         sample()
         return graph
@@ -471,7 +474,22 @@ public final class GraphResidency {
     }
 
     /// Starts a new ``windowPeak`` (the admission marks each generation).
-    package func markWindow() { windowPeak = nil }
+    package func markWindow() {
+        windowPeak = nil
+        windowRoles = Set(loaded.keys)
+    }
+
+    /// Releases the resident graphs of `phase` alone, between phases, keeping every other phase's (a Krea 2 reference
+    /// encode drops its vision tower and text encoder before the denoisers run again). The phase holds nothing
+    /// afterwards: its next occurrence loads and is measured afresh. Its held bytes go in the release log.
+    package func releasePhase(_ phase: Manifest.Residency) {
+        let roles = loaded.keys.filter { (residency[Self.parse($0).role] ?? nil) == phase }
+        guard !roles.isEmpty else { return }
+        for role in roles { loaded[role] = nil }
+        releases.record(heldSoFar[phase] ?? 0)
+        heldSoFar[phase] = nil
+        specializationsAtLastRun[phase] = nil
+    }
 
     /// The lowest level a phase began at with no graph loaded (nil until one did).
     package var levelBeforeGraphs: Int64? { unloadedLevel }
