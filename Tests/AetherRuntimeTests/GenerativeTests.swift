@@ -350,7 +350,10 @@ struct ResidencyTests {
     }
 
     /// Second review, overlap with finding 4: resident graphs that grow on a phase's next occurrence (100, then 80
-    /// more) were recorded as the largest single growth (100), not what they hold (180).
+    /// more) were recorded as the largest single growth (100), so the plan missed the 80. A next occurrence that loads
+    /// nothing at the same specialization count adds no graphs: its growth is the run's working memory (Krea 2's
+    /// decoder, 2026-11-09: 11.5 GB of activations re-allocated at every render). It is counted as the phase's
+    /// transient, not as more held bytes, so it can't add up render after render; the plan still covers it (peak 180).
     @Test func residentGrowthAccumulatesAcrossOccurrences() async throws {
         let gpu = FakeGPU()
         let ledger = FootprintLedger()
@@ -365,7 +368,7 @@ struct ResidencyTests {
         gpu.add(80)
         residency.endPhase(.perPrompt)
         #expect(ledger.footprint(.init(model: manifest.id, profile: "p", phase: .perPrompt))
-            == PhaseFootprint(peakBytes: 180, heldBytes: 180))
+            == PhaseFootprint(peakBytes: 180, heldBytes: 100))
     }
 
     /// A clock the test moves: `sleep` advances it at once and records how long was asked for.
@@ -468,8 +471,9 @@ struct ResidencyTests {
             residency.sample()
             residency.endPhase(.perStep)
         }
-        // Before: 300 + 5 · 160 = 1100. The 10 the last request grew is kept.
-        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 350, heldBytes: 350))
+        // Before: 300 + 5 · 160 = 1100. Nothing loaded after the first request, so what the graph holds stays 300; the
+        // level's rise above it (50 by the last request) is the phase's transient.
+        #expect(ledger.footprint(key) == PhaseFootprint(peakBytes: 350, heldBytes: 300))
     }
 
     @Test func theSamplerCatchesAPeakBetweenSamples() async throws {
