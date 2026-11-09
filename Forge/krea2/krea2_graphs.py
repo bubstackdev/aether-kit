@@ -817,14 +817,20 @@ class VAEEncoderGraph(nn.Module):
     """Refine's head, the inverse of the decoder's tail: the single-frame encoder, quant conv, the posterior's mode,
     `(mean - latents_mean) / latents_std`, then 2x2 patches packed channel-major (`c * 4 + 2 * dy + dx`, the
     pipeline's `_pack_latents` order) as `[rows, columns, 64]` float32. Input: `[3, 16 * rows, 16 * columns]` on
-    [-1, 1]. With no feature cache, each causal conv sees zeros before the frame, as `vae.encode` does for frame 0."""
+    [-1, 1]. With no feature cache, each causal conv sees zeros before the frame, as `vae.encode` does for frame 0.
+
+    Two forms are chosen for Core AI's GPU path, where the plain ones crash with dynamic rows and columns (a null
+    tensor type in MPSGraph's region encoding, macOS 27.2, M5 Max, 2026-11-08; both run on the CPU): the packing is a
+    reshape and permute, not `F.pixel_unshuffle`, and the normalization comes after it, with each packed channel
+    `c * 4 + k` using channel `c`'s mean and std, rather than broadcasting `[16, 1, 1]` over the unpacked latents."""
 
     def __init__(self, vae, half_storage: bool = True) -> None:
         super().__init__()
         cfg = vae.config
         self.channels = cfg.z_dim
-        self.register_buffer("mean", torch.tensor(cfg.latents_mean, dtype=torch.float32).view(-1, 1, 1))
-        self.register_buffer("std", torch.tensor(cfg.latents_std, dtype=torch.float32).view(-1, 1, 1))
+        # Per packed channel (c * 4 + k): channel c's mean and std.
+        self.register_buffer("mean", torch.tensor(cfg.latents_mean, dtype=torch.float32).repeat_interleave(4))
+        self.register_buffer("std", torch.tensor(cfg.latents_std, dtype=torch.float32).repeat_interleave(4))
         encoder = copy.deepcopy(vae.encoder)
         for module in encoder.modules():
             # A downsample3d resample's time conv runs only with a feature cache (from the second frame chunk on);
@@ -837,8 +843,9 @@ class VAEEncoderGraph(nn.Module):
     def forward(self, image):
         moments = self.quant_conv(self.encoder(image.float()[None, :, None]))
         mode = moments[0, : self.channels, 0]                             # DiagonalGaussianDistribution.mode()
-        z = (mode - self.mean) / self.std
-        return F.pixel_unshuffle(z[None], 2)[0].permute(1, 2, 0)
+        c, rows, columns = mode.shape[0], mode.shape[1] // 2, mode.shape[2] // 2
+        packed = mode.reshape(c, rows, 2, columns, 2).permute(1, 3, 0, 2, 4).reshape(rows, columns, c * 4)
+        return (packed - self.mean) / self.std
 
     @staticmethod
     def example(rows: int = 4, columns: int = 6):
