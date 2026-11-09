@@ -61,6 +61,8 @@ struct Krea2TextMaskQualificationTests {
         let metalAllocatedAfter: Int
         let residentBytesAfter: Int64
         let pixelsSHA256: String
+        /// The footprint ledger after the render: `key: peak / held` in MiB.
+        var ledger: [String] = []
     }
 
     struct Pair: Codable {
@@ -134,11 +136,14 @@ struct Krea2TextMaskQualificationTests {
     ) async throws -> Render {
         let steps = generation.metrics.stepSeconds
         let later = steps.dropFirst()
-        let render = Render(
+        var render = Render(
             label: label, prompt: String(label.split(separator: " ").first ?? ""), rows: rows, metrics: generation.metrics,
             firstStepSeconds: steps.first ?? 0, laterStepMeanSeconds: later.isEmpty ? 0 : later.reduce(0, +) / Double(later.count),
             metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.residentBytes,
             pixelsSHA256: digest(generation.image))
+        render.ledger = pipeline.options.ledger.snapshot.sorted { $0.key.description < $1.key.description }.map {
+            "\($0.key): peak \($0.value.peakBytes >> 20) held \($0.value.heldBytes >> 20)"
+        }
         print("mask: \(label) rows \(rows) total \(generation.metrics.totalSeconds)s step0 \(render.firstStepSeconds)s "
               + "later \(render.laterStepMeanSeconds)s prep \(generation.metrics.denoiserPreparationSeconds)s "
               + "text \(generation.metrics.conditioningSeconds)s loaded \(generation.metrics.loadedRoles) "
@@ -193,7 +198,7 @@ struct Krea2TextMaskQualificationTests {
                 if let earlier = images[name] { report.repeatIdentical = earlier == image }
                 images[name] = images[name] ?? image
             }
-            if mode == "timing" {
+            if mode == "timing", pipeline.wiring.segmentPhases.contains("references") {
                 report.referenceMetalBefore = metal.currentAllocatedSize
                 let text = "The objects from the four pictures arranged on a wooden table."
                 let references = try Self.references()

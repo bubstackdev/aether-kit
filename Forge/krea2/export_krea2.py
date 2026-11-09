@@ -235,7 +235,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
                                   "expectFrequentReshapes": False, "residency": "perStep"}
     references = "vision" in asset_names
-    if masked and references:
+    if masked and references and report.get("referenceBucket", True):
         # Each denoiser's second function: the same weights at the reference bucket's text length.
         for i in range(4):
             segment = graphs[f"denoiser{i}"]
@@ -401,6 +401,9 @@ def main() -> None:
     parser.add_argument("--text-mask", action=argparse.BooleanOptionalAction, default=True,
                         help="denoisers at a fixed text length (512; 1116 for references) with a key-padding mask "
                              "(default); --no-text-mask: the earlier exact-length denoisers")
+    parser.add_argument("--reference-bucket", action=argparse.BooleanOptionalAction, default=True,
+                        help="with --text-mask and reference images: each denoiser's second function at 1116 rows "
+                             "(default); --no-reference-bucket exports the 512-row function only (benchmarking)")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
@@ -457,6 +460,8 @@ def main() -> None:
     }
     # The references bucket is exported when the bundle will have reference images.
     with_references = "vision" in roles or (base is not None and "vision" in base["graphs"])
+    report["referenceBucket"] = (args.reference_bucket if denoisers or base is None
+                                 else "functions" in base["graphs"].get("denoiser0", {}))
     report_path = args.output / "export-report.json"
 
     def save() -> None:
@@ -514,7 +519,7 @@ def main() -> None:
         report["stages"][f"build-{role}"] = log.done(f"build-{role}")
         example, dynamic = segment.example()
         extra = []
-        if args.text_mask and with_references:
+        if args.text_mask and with_references and args.reference_bucket:
             # The same module (its weights stored once) at the reference bucket's static text length.
             ref_example, ref_dynamic = segment.example(text=kg.REFERENCE_FUNCTION_ROWS)
             extra = [(segment, ref_example, ref_dynamic, segment.input_names, segment.output_names,

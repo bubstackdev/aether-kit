@@ -240,3 +240,56 @@ struct LingeringWorkingMemoryAdmissionTests {
         #expect(next.mode == .perPhase)
     }
 }
+
+/// The masked Krea 2 export's traced sequence (2026-11-09, realism, 1024², 8 steps, a 48 GiB budget,
+/// `Krea2TextMaskQualificationTests` timing): prompts of 27, 27, 8 and 258 rows, each encoded with the generation. The
+/// denoisers run at one shape (the 512-row bucket), so admission sees one shape throughout; the text encoder runs each
+/// prompt at its own length (with the reshape hint). Before the fix the repeat measured 6 GB more held with nothing
+/// loaded (Metal 47.1 GB, resident 52 GB, over the 51.5 GB budget) and every later render reloaded every graph.
+@Suite("Lingering working memory admission, one denoiser shape")
+struct OneShapeAdmissionTests {
+    typealias Memory = LingeringWorkingMemoryAdmissionTests.Memory
+    typealias Held = LingeringWorkingMemoryAdmissionTests.Held
+
+    /// At a tenth of a gigabyte: text encoder 78, denoisers 256 (one copy: the bucket's shape never changes), decoder 1;
+    /// a step run's working memory 20, a decode's 115. A generation with every graph resident reaches
+    /// 78 + 256 + 1 + 115 + 20 = 470 above the level before any graph, under a budget of 515 (48 GiB).
+    static let weights: [String: Int64] = ["textEncoder": 78, "denoiser": 256, "vaeDecoder": 1]
+    static let budget: Int64 = 515
+
+    @Test func differentPromptsKeepTheDenoisersLoaded() async throws {
+        let memory = Memory()
+        let admission = try ResidentAdmission(
+            manifest: try LatentDiffusionTests.manifest(), device: LatentDiffusionTests.mac,
+            settings: .init(memory: .bytes(Self.budget), coordinator: nil, ledger: FootprintLedger(), probe: memory.probe),
+            load: { role in
+                Held(Self.weights[role] ?? 0, copy: role == "denoiser" ? 256 : 0,
+                     work: LingeringWorkingMemoryAdmissionTests.working[role] ?? 0, memory: memory)
+            },
+            fileBytes: { Self.weights[$0] ?? 0 })
+        let bucket = 512
+        var residencies: [GraphResidency] = []
+        var loads: [[String]] = []
+        for rows in [27, 27, 8, 258, 27, 100] {
+            let residency = try admission.begin(profile: "1024x1024", shape: bucket)
+            let before = Set(residency.residentRoles)
+            try await residency.beginPhase(.perPrompt)
+            (try await residency.graph("textEncoder") as! Held).run(rows)          // its own length
+            residency.endPhase(.perPrompt)
+            for (phase, role) in [(Manifest.Residency.perStep, "denoiser"), (.perImage, "vaeDecoder")] {
+                try await residency.beginPhase(phase)
+                (try await residency.graph(role) as! Held).run(bucket)
+                residency.endPhase(phase)
+            }
+            #expect(admission.finish())
+            loads.append(Set(residency.residentRoles).subtracting(before).sorted())
+            residencies.append(residency)
+            #expect(residency.mode == .allResident, "\(rows) rows: \(residency.mode)")
+            #expect(admission.residentBytes <= Self.budget, "\(rows) rows: resident \(admission.residentBytes)")
+            #expect(memory.above <= Self.budget)
+        }
+        #expect(loads[0] == ["denoiser", "textEncoder", "vaeDecoder"])
+        #expect(loads.dropFirst().allSatisfy { $0.isEmpty }, "no reloads after the first: \(loads)")
+        #expect(residencies.allSatisfy { $0 === residencies[0] })
+    }
+}

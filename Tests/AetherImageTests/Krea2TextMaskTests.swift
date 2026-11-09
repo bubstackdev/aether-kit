@@ -275,8 +275,6 @@ struct Krea2TextMaskTests {
         var unmasked = try Self.manifest()
         for i in 0..<4 { unmasked.graphs["denoiser\(i)"]?.inputs["textMask"] = nil }
         refuses(unmasked)
-        // Masked with reference images but no references function.
-        refuses(try Self.manifest(phased: false, references: true))
         // A references function without krea2.references.
         refuses(try Self.manifest(phased: true, references: false))
         // One segment with other functions.
@@ -284,6 +282,23 @@ struct Krea2TextMaskTests {
         mixed.graphs["denoiser1"]?.functions = nil
         mixed.graphs["denoiser1"]?.function = "segment"
         refuses(mixed)
+    }
+
+    /// A masked export with reference images but no `references` function (one bucket): reference conditioning that
+    /// fits the text bucket renders; longer reference conditioning is refused with `invalidParameters`.
+    @Test func withoutTheReferenceBucketLongReferenceRowsAreRefused() async throws {
+        let manifest = try Self.manifest(phased: false, references: true)
+        let (pipeline, _) = try Self.pipeline(masked: true, calls: Calls(), manifest: manifest, references: nil)
+        let short = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square])
+        _ = try await pipeline.generate(ImageRequest(prompt: "a cat", seed: 1, steps: 1, width: 32, height: 32), reusing: short)
+        let long = String(repeating: "w", count: 30)
+        let conditioning = try await pipeline.encode(prompt: long, references: [Krea2ReferenceTests.square])
+        await #expect {
+            try await pipeline.generate(ImageRequest(prompt: long, seed: 1, steps: 1, width: 32, height: 32), reusing: conditioning)
+        } throws: { error in
+            guard case .generation(.invalidParameters(let reason))? = error as? AetherError else { return false }
+            return reason.contains("\(conditioning.rows) conditioning rows")
+        }
     }
 
     /// The exporter's masked fixture decodes and passes the contract: `textMask` on every segment, a `references`
@@ -300,5 +315,114 @@ struct Krea2TextMaskTests {
         _ = try Krea2Pipeline(manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
                               options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,
                               load: { _ throws(AetherError) in Krea2Tests.FakeVAE(Calls()) }, fileBytes: { _ in 0 })
+    }
+
+    // MARK: the references bucket's own footprint
+
+    /// Metal as Core AI spends it on a two-function file: nothing at load, each function's own copy of the weights at
+    /// its first run (measured 2026-11-09: 7.08 GB per segment after `segment`, 13.85 GB after `segmentReferences` too).
+    final class Metal: @unchecked Sendable {
+        let level = Mutex<Int64>(0)
+        let peak = Mutex<Int64>(0)
+        func add(_ bytes: Int64) {
+            let now = level.withLock { $0 += bytes; return $0 }
+            peak.withLock { $0 = max($0, now) }
+        }
+        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in level.withLock { $0 } } }
+    }
+
+    /// A segment function that takes `bytes` at its first run and gives them back when released.
+    final class Charged: GraphBackend {
+        let inner: Segment, metal: Metal, bytes: Int64
+        private(set) var charged = false
+        init(_ inner: Segment, metal: Metal, bytes: Int64) { self.inner = inner; self.metal = metal; self.bytes = bytes }
+        deinit { if charged { metal.add(-bytes) } }
+        var signature: GraphSignature { inner.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) {
+            if !charged { charged = true; metal.add(bytes) }
+            try await inner.run(&bindings)
+        }
+    }
+
+    /// A loaded segment file: both functions, recording which ever ran.
+    final class ChargedSet: PhasedGraphBackend {
+        let step: Charged, references: Charged
+        init(step: Charged, references: Charged) { self.step = step; self.references = references }
+        var signature: GraphSignature { step.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) { try await step.run(&bindings) }
+        func function(forPhase phase: String) -> (any GraphBackend)? { phase == "references" ? references : nil }
+        var ranBoth: Bool { step.charged && references.charged }
+    }
+
+    /// Text-only and reference renders alternating on a budget that holds every graph with one function's weights but
+    /// not both: each switch releases the graphs and loads them for the other bucket, never holding both functions'
+    /// weights, and renders in a row at one bucket load nothing.
+    @Test func switchingBucketsSwapsTheFunctionsAndNeverHoldsBoth() async throws {
+        let metal = Metal(), calls = Calls(), loads = Calls()
+        /// Weak: a released segment must give its memory back. Each entry notes whether that set ran both functions.
+        final class Sets: @unchecked Sendable {
+            struct Weak { weak var set: ChargedSet? }
+            var all: [Weak] = []
+            var ranBoth = false
+            func note() { ranBoth = ranBoth || all.contains { $0.set?.ranBoth == true } }
+        }
+        let sets = Sets()
+        // Weights: text encoder 10 and decoder 10 at load, each segment function 20 at its first run. One bucket with
+        // every graph: 100; both buckets' segments: 180. Budget 150.
+        let budget: Int64 = 150
+        let pipeline = try Krea2Pipeline(
+            manifest: try Self.manifest(), device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
+            options: .init(memory: .bytes(budget), gpu: .unadmitted, probe: metal.probe),
+            encodePrompt: Krea2ReferenceTests.encode,
+            load: { role throws(AetherError) in
+                loads.append(role)
+                if role.hasPrefix("denoiser"), let index = Int(role.dropFirst("denoiser".count)) {
+                    let set = ChargedSet(
+                        step: Charged(Segment(index, length: Self.textBucket, calls), metal: metal, bytes: 20),
+                        references: Charged(Segment(index, length: Self.referenceBucket, function: "segmentReferences", calls),
+                                            metal: metal, bytes: 20))
+                    sets.all.append(.init(set: set))
+                    return set
+                }
+                switch role {
+                case "textEncoder": metal.add(10); return Released(Krea2ReferenceTests.PhasedText(calls), metal: metal, bytes: 10)
+                case "vision": return Krea2ReferenceTests.FakeVision(calls)
+                default: metal.add(10); return Released(Krea2Tests.FakeVAE(calls), metal: metal, bytes: 10)
+                }
+            },
+            fileBytes: { ["textEncoder": 10, "vaeDecoder": 10, "denoiser0": 20, "denoiser1": 20, "denoiser2": 20, "denoiser3": 20][$0] ?? 0 })
+        let long = String(repeating: "w", count: 30)
+        func text(_ prompt: String) async throws {
+            _ = try await pipeline.generate(ImageRequest(prompt: prompt, seed: 2, steps: 1, width: 32, height: 32))
+            sets.note()
+        }
+        func reference() async throws {
+            let conditioning = try await pipeline.encode(prompt: long, references: [Krea2ReferenceTests.square])
+            #expect(conditioning.rows > Self.textBucket)
+            _ = try await pipeline.generate(ImageRequest(prompt: long, seed: 2, steps: 1, width: 32, height: 32), reusing: conditioning)
+            sets.note()
+        }
+        func denoiserLoads() -> Int { loads.log.filter { $0 == "denoiser0" }.count }
+        try await text("ab")
+        try await text("abcdefg")
+        #expect(denoiserLoads() == 1, "text-only renders in a row keep the denoisers")
+        try await reference()
+        #expect(denoiserLoads() == 2, "the reference bucket loads its own copy")
+        try await reference()
+        #expect(denoiserLoads() == 2, "reference renders in a row keep it")
+        try await text("abc")
+        #expect(denoiserLoads() == 3, "back to the text bucket")
+        #expect(!sets.ranBoth, "no loaded segment ran both functions")
+        #expect(metal.peak.withLock { $0 } <= budget, "peak \(metal.peak.withLock { $0 }) over \(budget)")
+    }
+
+    /// A graph that gives back `bytes` when released.
+    final class Released: PhasedGraphBackend {
+        let inner: any GraphBackend, metal: Metal, bytes: Int64
+        init(_ inner: any GraphBackend, metal: Metal, bytes: Int64) { self.inner = inner; self.metal = metal; self.bytes = bytes }
+        deinit { metal.add(-bytes) }
+        var signature: GraphSignature { inner.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) { try await inner.run(&bindings) }
+        func function(forPhase phase: String) -> (any GraphBackend)? { (inner as? any PhasedGraphBackend)?.function(forPhase: phase) }
     }
 }

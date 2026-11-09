@@ -47,8 +47,8 @@ public struct Krea2Model: Sendable {
 /// - **Text length:** an export whose denoisers take `textMask` runs them at a fixed text length, as Diffusers does:
 ///   the conditioning's real rows first, zero rows after, and the mask (1 real, 0 padding) keeping the padding out of
 ///   every attention. Each segment's `step` function takes the text-only length (512); a reference prompt longer than
-///   that runs the `references` function (1,116). So every prompt of a kind runs at one shape. An export without the
-///   mask runs at each prompt's own row count, as before.
+///   that runs the `references` function (1,116) when the export has one, and is refused when it doesn't. So every
+///   prompt of a kind runs at one shape. An export without the mask runs at each prompt's own row count, as before.
 /// - **Memory, ordering, cancellation:** as ``LatentDiffusionPipeline``: residency planned from measured footprints
 ///   before each generation (`capacity` before anything loads), one generation at a time, cancellation between graph
 ///   calls, and any failure releases every graph.
@@ -1011,10 +1011,6 @@ extension Krea2Pipeline {
                         field: "graphs.\(krea2.segments[0]).functions.references",
                         reason: "a segment's references function needs the text mask and krea2.references")
                 }
-            } else if textMask != nil, krea2.references != nil {
-                throw .manifestInvalid(
-                    field: "graphs.\(krea2.segments[0]).functions.references",
-                    reason: "a masked export with reference images needs each segment's references function")
             }
         }
     }
