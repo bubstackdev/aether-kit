@@ -274,7 +274,8 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
                                         if "vaeEncoder" in asset_names else {}),
                                      **({"vision": "fp16 weights, fp32 compute",
-                                         "textEncoder": "encode and encodeWithImages share the fp16 weights"}
+                                         "textEncoder": "encode and encodeWithImages share the fp16 weights; encodeWithImages computes in "
+                                                        + report.get("referenceCompute", "float32")}
                                         if references else {})}},
         "license": "LicenseRef-Krea-2-Community-License-1.0",
         "x-license": {"files": ["LICENSE.pdf", "KREA-2-LICENSE.txt", "KREA-2-USE-POLICY.txt", "NOTICE"],
@@ -370,6 +371,10 @@ def main() -> None:
     parser.add_argument("--replace", action="store_true",
                         help="with --base-bundle: re-export --only roles the base already has (their old assets are "
                              "not linked)")
+    parser.add_argument("--reference-compute", choices=["float32", "float16"], default="float32",
+                        help="the text encoder's references function's compute (weights stay fp16 and shared). float32: "
+                             "fp16 conditioning drifted the 8-step closed loop to SSIM 0.917 against the oracle (bar 0.94) "
+                             "while the oracle's conditioning reached 0.987 on the same GPU denoisers")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
@@ -450,7 +455,8 @@ def main() -> None:
         module = kg.TextEncoderGraph.load(checkpoint, strict=not args.allow_unpinned)
         report["stages"]["build-textEncoder"] = log.done("build-textEncoder")
         example, dynamic = module.example()
-        reference = kg.ReferenceTextGraph(module).eval()
+        reference = kg.ReferenceTextGraph(module, compute=getattr(torch, args.reference_compute)).eval()
+        report["referenceCompute"] = args.reference_compute
         ref_example, ref_dynamic = reference.example()
         log.start("export-textEncoder")
         report["conversion"]["textEncoder"] = convert(

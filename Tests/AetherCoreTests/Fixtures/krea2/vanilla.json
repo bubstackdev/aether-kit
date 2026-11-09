@@ -371,7 +371,7 @@
       "vaeDecoder": "fp16 weights, fp32 compute",
       "vaeEncoder": "fp16 weights, fp32 compute",
       "vision": "fp16 weights, fp32 compute",
-      "textEncoder": "encode and encodeWithImages share the fp16 weights"
+      "textEncoder": "encode and encodeWithImages share the fp16 weights; encodeWithImages computes in float32"
     }
   },
   "license": "LicenseRef-Krea-2-Community-License-1.0",
