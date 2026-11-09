@@ -14,6 +14,8 @@ write the pid to `pid.tmp.<pid>` and rename it to `pid`; reclaim a lease whose p
 serialized on this user's single-link, mode-0600 `<name>.reclaim` flock file, by moving it aside, deleting the moved
 copy only if it still names the same dead pid and otherwise restoring it with an exclusive rename; never reclaim a
 lease without a readable pid; release by moving the lease aside, only while it names this process, then deleting it.
+While it waits it holds a shared flock on the lease's `<name>.waiters` file (the same single-link, mode-0600
+checks), so a holder that keeps the GPU between its own jobs can see a waiter (`SharedGPULease.hasWaiters`).
 
 If this process already inherits a hand-off (`AETHER_GPU_LEASE_HOLDER` names a live ancestor that holds the lease),
 the command just runs (exec) under that lease.
@@ -277,33 +279,82 @@ class Signalled(Exception):
         self.signum = signum
 
 
+def _private_sibling(directory, suffix):
+    """This user's single-link regular `<lease><suffix>` file beside the lease, opened (created) private; else None.
+    /tmp is shared: another user's file could be held forever, and a hard link to one of this user's files would pass
+    the uid check (SharedGPULease.privateSibling, step for step)."""
+    parent, name = os.path.split(os.path.normpath(directory))
+    try:
+        descriptor = os.open(os.path.join(parent, name + suffix), os.O_RDONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    except OSError:
+        return None
+    try:
+        owner = os.fstat(descriptor)
+        if stat.S_ISREG(owner.st_mode) and owner.st_uid == os.getuid() and owner.st_nlink == 1:
+            if owner.st_mode & 0o077:
+                os.fchmod(descriptor, 0o600)
+            if not os.fstat(descriptor).st_mode & 0o077:
+                return descriptor
+    except OSError:
+        pass
+    os.close(descriptor)
+    return None
+
+
+def mark_waiting(directory):
+    """A shared lock on the lease's `.waiters` file, held while this waits, so a holder that keeps the GPU between its
+    own jobs can see a waiter (SharedGPULease.hasWaiters) and step aside. The descriptor to close, or None."""
+    if fcntl is None:
+        return None
+    descriptor = _private_sibling(directory, ".waiters")
+    if descriptor is None:
+        return None
+    for _ in range(20):  # a holder's probe holds the exclusive lock only for an instant
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            return descriptor
+        except OSError:
+            time.sleep(0.001)
+    os.close(descriptor)
+    return None
+
+
 def acquire(directory, timeout, quiet, pending, own_ancestors):
-    """Waits for the lease. Returns normally once held; raises Signalled, TimeoutError or OSError."""
+    """Waits for the lease. Returns normally once held; raises Signalled, TimeoutError or OSError. While it waits it
+    is marked in the lease's `.waiters` file (a zero timeout, one attempt, never is); the mark is dropped however the
+    wait ends."""
     start = time.monotonic()
     deadline = None if timeout is None else start + max(0.0, timeout)
     reported = None  # (busy description, monotonic time)
-    while True:
-        if create(directory):
-            return
-        if clear_stale(directory) and create(directory):
-            return
-        if pending:
-            raise Signalled(pending[0])
-        holder = read_holder(directory)
-        if holder is None:
-            busy = "an unidentified holder (no readable pid; if nothing uses the GPU, remove %s by hand)" % directory
-        elif holder in own_ancestors():
-            busy = "pid %d, an ancestor of this process that did not hand off its lease (%s)" % (holder, HOLDER_ENV)
-        else:
-            busy = "pid %d" % holder
-        now = time.monotonic()
-        if reported is None or reported[0] != busy or now - reported[1] >= BUSY_REPORT_INTERVAL:
-            reported = (busy, now)
-            if not quiet:
-                warn("waiting for the GPU lease at %s, held by %s" % (directory, busy))
-        if deadline is not None and now >= deadline:
-            raise TimeoutError(busy)
-        time.sleep(POLL_INTERVAL if deadline is None else min(POLL_INTERVAL, deadline - now))
+    waiting = None
+    try:
+        while True:
+            if create(directory):
+                return
+            if clear_stale(directory) and create(directory):
+                return
+            if waiting is None and (deadline is None or deadline > start):
+                waiting = mark_waiting(directory)
+            if pending:
+                raise Signalled(pending[0])
+            holder = read_holder(directory)
+            if holder is None:
+                busy = "an unidentified holder (no readable pid; if nothing uses the GPU, remove %s by hand)" % directory
+            elif holder in own_ancestors():
+                busy = "pid %d, an ancestor of this process that did not hand off its lease (%s)" % (holder, HOLDER_ENV)
+            else:
+                busy = "pid %d" % holder
+            now = time.monotonic()
+            if reported is None or reported[0] != busy or now - reported[1] >= BUSY_REPORT_INTERVAL:
+                reported = (busy, now)
+                if not quiet:
+                    warn("waiting for the GPU lease at %s, held by %s" % (directory, busy))
+            if deadline is not None and now >= deadline:
+                raise TimeoutError(busy)
+            time.sleep(POLL_INTERVAL if deadline is None else min(POLL_INTERVAL, deadline - now))
+    finally:
+        if waiting is not None:
+            os.close(waiting)
 
 
 # MARK: Main
