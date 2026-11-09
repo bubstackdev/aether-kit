@@ -416,7 +416,7 @@ extension Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfileForEncode, shape: prompt.conditioningRows)
+            let residency = try admission.begin(profile: lastProfileForEncode, shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure,
                !Set([wiring.text.role, rules.vision]).isSubset(of: Set(admission.residentRoles)),
                await pressure.level == .critical {

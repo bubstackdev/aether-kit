@@ -15,12 +15,13 @@ Functions (names, dtypes and dynamic axes are the bundle contract):
                          -> text_embeds fp16 [L - 34, 30720]   (reference images; `ReferenceTextGraph`)
     vision/encode        patches f16 [576, 1536], grid int32 [2] -> image_embeds f32 [144, 2560],
                          deepstack_embeds f32 [3, 144, 2560]   (one reference image; `KreaVisionTower`, static)
-    denoiser0/segment    latents fp16 [N, 64], text_embeds fp16 [T, 30720] (T = 2...1116), sigma f32 [1],
+    denoiser0/segment    latents fp16 [N, 64], text_embeds fp16 [T, 30720], text_mask f32 [T], sigma f32 [1],
                          rope_image f32 [N, 2, 128]
                          -> image_1 f32 [N, 6144], text_1 f32 [T, 6144], cond f32 [8, 6144]
-    denoiser1/segment    image_1, text_1, cond, rope_image -> image_2, text_2
-    denoiser2/segment    image_2, text_2, cond, rope_image -> image_3, text_3
-    denoiser3/segment    image_3, text_3, cond, rope_image -> velocity fp16 [N, 64]
+    denoiser1/segment    image_1, text_1, text_mask, cond, rope_image -> image_2, text_2
+    denoiser2/segment    image_2, text_2, text_mask, cond, rope_image -> image_3, text_3
+    denoiser3/segment    image_3, text_3, text_mask, cond, rope_image -> velocity fp16 [N, 64]
+    denoiser*/segmentReferences   the same at T = 1116 (reference conditioning), sharing the segment's weights
     vaeDecoder/decode    latents fp16 [H/16, W/16, 64] (packed, normalized) -> image f32 [3, H, W] in [-1, 1]
 
 Precision: text encoder and denoiser matmuls and attention run in fp16 with fp16 weights (denoiser block 0 computes in
@@ -29,9 +30,15 @@ modulation, rotary products and the small edge projections (timestep MLP, modula
 in-projections, final layer) run in float32 (edge weights stored fp16, widened). The VAE decoder stores fp16 weights
 and computes in float32.
 
-Text rows are never padded: the 0.0.x prompt rule (render, keep at most 546 tokens with the final five, drop the
-34-token system prefix) produces exactly the real rows of Diffusers' padded `[prefix | prompt | PAD | suffix]` block,
-whose padding is masked as keys everywhere and dropped at the output. So the graphs take no attention mask.
+Text rows: the text encoder runs unpadded (the 0.0.x prompt rule: render, keep at most 546 tokens with the final five,
+drop the 34-token system prefix), which gives exactly the real rows of Diffusers' padded `[prefix | prompt | PAD |
+suffix]` block. The denoisers take a fixed text length, as Diffusers does: `segment` T = 512 (`MASK_TEXT_ROWS`, the
+pipeline's `max_sequence_length`) and `segmentReferences` T = 1116 (`REFERENCE_MAX_TEXT_ROWS`), both static, with the
+host's real rows first and finite padding (zeros) after. `text_mask` [T] is 1 for a real row and 0 for padding, and is
+applied exactly as Diffusers applies `encoder_attention_mask`: a key-padding mask in the text-fusion refiner blocks and
+in all 28 joint blocks (image keys always valid). The layerwise fusion blocks attend over one token's tapped layers, so
+padding can't reach them; text positions are all zero, so the padding shifts no rotary angle. Pad rows' own lanes are
+finite and never read. `masked=False` keeps the earlier exact-length graphs (a dynamic T = 2...1116, no mask).
 
 Rotary: Diffusers rotates interleaved pairs (2i, 2i+1); Kit's table is split halves ([n, 0, :] cos, [n, 1, :] sin;
 pair i rotates dims i and i + 64), as `KreaRotary` in 0.0.x. The export permutes each head's q/k projection rows and
@@ -102,6 +109,11 @@ MROPE_SECTION = (24, 20, 20)
 # 512 text rows + 576 image tokens + each image's label and vision start/end (7 ids) = 1116; L = 1116 + 34 ids.
 REFERENCE_MAX_TEXT_ROWS = MAX_TEXT_ROWS + REFERENCE_MAX_IMAGE_TOKENS + 7 * REFERENCE_MAX_IMAGES
 DENOISER_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS                 # the denoisers take text-only and reference rows
+# The masked denoisers' fixed text lengths: `segment` for text-only prompts (Diffusers' max_sequence_length), and
+# `segmentReferences` for reference prompts (the most rows a reference prompt can have).
+MASK_TEXT_ROWS = MAX_TEXT_ROWS
+REFERENCE_FUNCTION_ROWS = REFERENCE_MAX_TEXT_ROWS
+SEGMENT_FUNCTIONS = {"segment": MASK_TEXT_ROWS, "segmentReferences": REFERENCE_FUNCTION_ROWS}
 
 # Within a head, new dim i takes interleaved dim 2i and new dim i + 64 takes dim 2i + 1.
 HALF_SPLIT = torch.cat([torch.arange(0, HEAD_DIM, 2), torch.arange(1, HEAD_DIM, 2)])
@@ -579,8 +591,8 @@ class Attention(nn.Module):
         super().__init__()
         self.heads, self.kv_heads, self.compute = heads, kv_heads, compute
 
-    def forward(self, x16, cos=None, sin=None, rotated_from: int = 0):
-        # x16: [B, S, D] in compute dtype
+    def forward(self, x16, cos=None, sin=None, rotated_from: int = 0, mask=None):
+        # x16: [B, S, D] in compute dtype; mask: None or a key-padding mask [1, 1, 1, S] (bool, True = attend)
         q = self.to_q(x16).unflatten(-1, (self.heads, HEAD_DIM))
         k = self.to_k(x16).unflatten(-1, (self.kv_heads, HEAD_DIM))
         v = self.to_v(x16).unflatten(-1, (self.kv_heads, HEAD_DIM))
@@ -593,7 +605,8 @@ class Attention(nn.Module):
             k = torch.cat([k[:, :rotated_from], k[:, rotated_from:] * cos + rotate_half(k[:, rotated_from:]) * sin], 1)
         q, k = q.to(self.compute).transpose(1, 2), k.to(self.compute).transpose(1, 2)
         v = v.transpose(1, 2)
-        out = F.scaled_dot_product_attention(q, k, v, scale=HEAD_DIM ** -0.5, enable_gqa=self.kv_heads != self.heads)
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, scale=HEAD_DIM ** -0.5,
+                                             enable_gqa=self.kv_heads != self.heads)
         out = out.transpose(1, 2).flatten(2) * torch.sigmoid(gate)
         return self.to_out(out)
 
@@ -644,14 +657,14 @@ def block_names(p: str) -> list[str]:
 
 
 class FusionBlock(nn.Module):
-    """Krea2TextFusionBlock: pre-norm attention (no rotary, no mask) and SwiGLU."""
+    """Krea2TextFusionBlock: pre-norm attention (no rotary; the refiner's takes the key-padding mask) and SwiGLU."""
 
     def __init__(self, compute: torch.dtype) -> None:
         super().__init__()
         self.compute = compute
 
-    def forward(self, h):
-        h = h + self.attn(rms(h, self.norm1, NORM_EPS).to(self.compute)).float()
+    def forward(self, h, mask=None):
+        h = h + self.attn(rms(h, self.norm1, NORM_EPS).to(self.compute), mask=mask).float()
         return h + self.ff(rms(h, self.norm2, NORM_EPS).to(self.compute)).float()
 
 
@@ -662,21 +675,24 @@ class Block(nn.Module):
         super().__init__()
         self.compute = compute
 
-    def forward(self, h, shared, cos, sin, text_rows):
+    def forward(self, h, shared, cos, sin, text_rows, mask=None):
         mod = shared + self.table                                        # [6, D] float32
         prescale, preshift, pregate, postscale, postshift, postgate = mod.unbind(0)
         x = ((1 + prescale) * rms(h, self.norm1, NORM_EPS) + preshift).to(self.compute)
-        h = h + pregate * self.attn(x, cos, sin, text_rows).float()
+        h = h + pregate * self.attn(x, cos, sin, text_rows, mask).float()
         x = ((1 + postscale) * rms(h, self.norm2, NORM_EPS) + postshift).to(self.compute)
         return h + postgate * self.ff(x).float()
 
 
 class DenoiserSegment(nn.Module):
-    """Blocks [first, last) of the 28; segment 0 also embeds, fuses text and conditions; segment 3 projects out."""
+    """Blocks [first, last) of the 28; segment 0 also embeds, fuses text and conditions; segment 3 projects out.
 
-    def __init__(self, index: int, compute: torch.dtype = torch.float16) -> None:
+    `masked` (the default): a `text_mask` input after the text input, a static text length (`example(text=...)`) and the
+    key-padding mask in the refiner and every joint block. `masked=False`: the exact-length graphs (no mask)."""
+
+    def __init__(self, index: int, compute: torch.dtype = torch.float16, masked: bool = True) -> None:
         super().__init__()
-        self.index, self.compute = index, compute
+        self.index, self.compute, self.masked = index, compute, masked
         self.first, self.last = SEGMENTS[index]
         self.is_first, self.is_last = index == 0, index == len(SEGMENTS) - 1
         self.blocks = nn.ModuleList(Block(torch.float32 if i in FLOAT32_BLOCKS else compute)
@@ -688,9 +704,10 @@ class DenoiserSegment(nn.Module):
 
     @property
     def input_names(self) -> list[str]:
+        mask = ["text_mask"] if self.masked else []
         if self.is_first:
-            return ["latents", "text_embeds", "sigma", "rope_image"]
-        return [f"image_{self.index}", f"text_{self.index}", "cond", "rope_image"]
+            return ["latents", "text_embeds", *mask, "sigma", "rope_image"]
+        return [f"image_{self.index}", f"text_{self.index}", *mask, "cond", "rope_image"]
 
     @property
     def output_names(self) -> list[str]:
@@ -730,10 +747,10 @@ class DenoiserSegment(nn.Module):
 
     @classmethod
     def load(cls, checkpoint: Checkpoint, index: int, adapter: LoKr | None = None, compute=torch.float16,
-             strict: bool = True) -> "DenoiserSegment":
+             strict: bool = True, masked: bool = True) -> "DenoiserSegment":
         cfg = checkpoint.config("transformer")
         cls.check_config(cfg, strict)
-        seg = cls(index, compute)
+        seg = cls(index, compute, masked)
         seg.heads, seg.kv_heads = cfg["num_attention_heads"], cfg["num_key_value_heads"]
         seg.text_heads, seg.text_kv_heads = cfg["text_num_attention_heads"], cfg["text_num_key_value_heads"]
         seg.text_width = cfg["text_hidden_dim"]
@@ -783,32 +800,44 @@ class DenoiserSegment(nn.Module):
         mod = self.time_mod(gelu_tanh(temb)).reshape(6, -1)
         return torch.cat([mod, temb + self.final_table], dim=0)
 
-    def fuse_text(self, text_embeds: torch.Tensor) -> torch.Tensor:
+    def fuse_text(self, text_embeds: torch.Tensor, mask=None) -> torch.Tensor:
         rows = text_embeds.shape[0]
         h = text_embeds.reshape(rows, len(TEXT_TAPS), self.text_width).float()   # batch = token, sequence = tapped layer
         for block in self.layerwise:
-            h = block(h)
+            h = block(h)                                                   # per token: padding can't reach it
         h = (h.permute(0, 2, 1) @ self.projector[0])                       # [T, 2560]
         h = h[None]
         for block in self.refiner:
-            h = block(h)
+            h = block(h, mask)
         h = rms(h, self.txt_norm, NORM_EPS)
         return self.txt_2(gelu_tanh(self.txt_1(h)))                       # [1, T, D] float32
 
-    def forward(self, a, b, c, rope_image):
+    def forward(self, a, b, c, d, e=None):
+        # Masked: (a, b, text_mask, c, rope_image) = (a, b, c, d, e); unmasked: (a, b, c, rope_image) = (a, b, c, d).
+        # Positional, not *args: torch.export takes each argument as one input.
+        if self.masked:
+            text_mask, c, rope_image = c, d, e
+            valid = text_mask > 0.5                                        # [T] bool: True = a real row
+            text_keys = valid[None, None, None, :]                         # Diffusers' (B, 1, 1, L) key-padding mask
+        else:
+            rope_image, text_keys = d, None
         if self.is_first:
             latents, text_embeds, sigma = a, b, c
             cond = self.condition(sigma)
             img = self.img_in(latents)[None]
-            txt = self.fuse_text(text_embeds)
+            txt = self.fuse_text(text_embeds, text_keys)
         else:
             img, txt, cond = a[None], b[None], c
         text_rows = txt.shape[1]
+        joint_keys = None
+        if self.masked:
+            # Image keys are always valid: cat([text mask, ones(N)]), as `Krea2Transformer2DModel.forward`.
+            joint_keys = torch.cat([valid, torch.ones_like(img[0, :, 0], dtype=torch.bool)])[None, None, None, :]
         cos, sin = rope_image[None, :, 0:1, :], rope_image[None, :, 1:2, :]   # [1, N, 1, 128] against [1, N, H, 128]
         h = torch.cat([txt, img], dim=1)
         shared = cond[0:6]
         for block in self.blocks:
-            h = block(h, shared, cos, sin, text_rows)
+            h = block(h, shared, cos, sin, text_rows, joint_keys)
         txt, img = h[0, :text_rows], h[0, text_rows:]
         if self.is_last:
             scale, shift = cond[6], cond[7]
@@ -817,21 +846,44 @@ class DenoiserSegment(nn.Module):
             return img, txt, cond
         return img, txt
 
-    def example(self, tokens: int = 24, text: int = 8):
+    def example(self, tokens: int = 24, text: int | None = None):
+        """Example inputs and dynamic shapes. Masked: `text` rows (default `MASK_TEXT_ROWS`), static, the last third
+        padding; the image tokens stay dynamic. Unmasked: a dynamic text axis (2...1116)."""
         g = torch.Generator().manual_seed(self.index)
         n_dim = torch.export.Dim("image_tokens", min=4, max=MAX_IMAGE_TOKENS)
-        t_dim = torch.export.Dim("text_rows", min=2, max=DENOISER_TEXT_ROWS)
+        text = text or (MASK_TEXT_ROWS if self.masked else 8)
         rope = rotary_table(4, tokens // 4)
         if self.is_first:
-            inputs = (torch.randn(tokens, LATENT_CHANNELS, generator=g).half(),
-                      torch.randn(text, len(TEXT_TAPS) * self.text_width, generator=g).half(), torch.tensor([0.75]), rope)
+            a, b = (torch.randn(tokens, LATENT_CHANNELS, generator=g).half(),
+                    torch.randn(text, len(TEXT_TAPS) * self.text_width, generator=g).half())
+            c = torch.tensor([0.75])
         else:
-            inputs = (torch.randn(tokens, self.hidden, generator=g), torch.randn(text, self.hidden, generator=g),
-                      torch.randn(CONDITION_ROWS, self.hidden, generator=g) * 0.1, rope)
-        return inputs, ({0: n_dim}, {0: t_dim}, None, {0: n_dim})
+            a, b = torch.randn(tokens, self.hidden, generator=g), torch.randn(text, self.hidden, generator=g)
+            c = torch.randn(CONDITION_ROWS, self.hidden, generator=g) * 0.1
+        if not self.masked:
+            t_dim = torch.export.Dim("text_rows", min=2, max=DENOISER_TEXT_ROWS)
+            return (a, b, c, rope), ({0: n_dim}, {0: t_dim}, None, {0: n_dim})
+        mask = text_mask(text - text // 3, text)
+        return (a, b, mask, c, rope), ({0: n_dim}, None, None, None, {0: n_dim})
 
 
 # MARK: host-side recipe pieces (the Swift driver re-implements these; fixtures pin them)
+
+def text_mask(rows: int, length: int) -> torch.Tensor:
+    """The host's `text_mask` [length] float32: 1 for the `rows` real rows (first), 0 for the padding after them."""
+    if not 1 <= rows <= length:
+        raise ValueError(f"{rows} conditioning rows do not fit {length}")
+    mask = torch.zeros(length, dtype=torch.float32)
+    mask[:rows] = 1
+    return mask
+
+
+def pad_rows(rows: torch.Tensor, length: int) -> torch.Tensor:
+    """Real rows first, then zero rows to `length` (finite padding: the mask keeps it out of every attention)."""
+    if rows.shape[0] > length:
+        raise ValueError(f"{rows.shape[0]} conditioning rows do not fit {length}")
+    return torch.cat([rows, rows.new_zeros(length - rows.shape[0], *rows.shape[1:])])
+
 
 def rotary_table(rows: int, columns: int) -> torch.Tensor:
     """Kit's split-halves image table `[rows * columns, 2, 128]` for positions (t=0, row, column), as 0.0.x

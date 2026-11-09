@@ -44,6 +44,11 @@ public struct Krea2Model: Sendable {
 /// - **Prompt:** `krea2.prompt.systemPrefix + prompt + suffix`, tokenized without added specials and never padded. A
 ///   rendering longer than `maxTokens` keeps its first `maxTokens − keepTrailingTokens` ids and its last
 ///   `keepTrailingTokens` (the suffix's). The text encoder drops the `dropLeadingRows` prefix rows from its output.
+/// - **Text length:** an export whose denoisers take `textMask` runs them at a fixed text length, as Diffusers does:
+///   the conditioning's real rows first, zero rows after, and the mask (1 real, 0 padding) keeping the padding out of
+///   every attention. Each segment's `step` function takes the text-only length (512); a reference prompt longer than
+///   that runs the `references` function (1,116). So every prompt of a kind runs at one shape. An export without the
+///   mask runs at each prompt's own row count, as before.
 /// - **Memory, ordering, cancellation:** as ``LatentDiffusionPipeline``: residency planned from measured footprints
 ///   before each generation (`capacity` before anything loads), one generation at a time, cancellation between graph
 ///   calls, and any failure releases every graph.
@@ -248,7 +253,7 @@ public actor Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: prompt.conditioningRows)
+            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure, !admission.residentRoles.contains(wiring.text.role),
                await pressure.level == .critical {
                 admission.release()
@@ -428,7 +433,7 @@ public actor Krea2Pipeline {
             meter.lap(into: \.waitSeconds)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
             let profile = "\(size.width)x\(size.height)"
-            let residency = try admission.begin(profile: profile, shape: source.rows)
+            let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: source.rows))
             lastProfile = profile
             // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't
             // fit beside the others, or a profile change), and then they all load again.
@@ -507,9 +512,11 @@ public actor Krea2Pipeline {
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> [Float] {
         let tokens = grid.rows * grid.columns, count = tokens * latent.channels
-        let dims = Dimensions(textRows: textRows, imageTokens: tokens)
-        var graphs: [any GraphBackend] = []
-        for segment in wiring.segments { graphs.append(try await residency.graph(segment.role)) }
+        var loaded: [any GraphBackend] = []
+        for segment in wiring.segments { loaded.append(try await residency.graph(segment.role)) }
+        // The functions this prompt runs and their text length: the rows themselves, or a masked bucket's fixed length.
+        let (graphs, length) = try textLayout(rows: textRows, graphs: loaded)
+        let dims = Dimensions(textRows: length, imageTokens: tokens)
         let first = graphs[0]
         let sample = try first.makeBuffer(for: wiring.latents, role: .input, dimensions: [tokens], in: arena)
         let sigma = try first.makeBuffer(for: wiring.sigma, role: .input, dimensions: [], in: arena)
@@ -519,27 +526,27 @@ public actor Krea2Pipeline {
                 field: "latent.channels", expected: "denoiser latents [\(tokens), \(latent.channels)]", found: "\(sample.shape)")
         }
         try imageRotary.write(Krea2Rotary.image(rows: grid.rows, columns: grid.columns, rotary: krea2.rotary))
-        let conditioning: TensorBuffer
-        switch source {
-        case .buffer(let buffer):
-            conditioning = buffer
-        case .reused(let value):
-            conditioning = try first.makeBuffer(
-                for: wiring.conditioning, role: .input, dimensions: [value.rows], in: arena)
-            guard conditioning.scalarType == value.scalarType, conditioning.shape == [value.rows, value.columns],
-                  conditioning.storageByteCount == value.bytes.count else {
+        let conditioning = try conditioningBuffer(source, rows: textRows, length: length, graph: first, dims: dims, arena: arena)
+        var textMask: TensorBuffer?
+        if let name = wiring.textMask {
+            let mask = try first.makeBuffer(for: name, role: .input, dimensions: dims.of("textMask", in: first, name: name), in: arena)
+            guard mask.shape == [length] else {
                 throw AetherError.manifestMismatch(
-                    field: "graphs.\(wiring.segments[0].role).inputs.conditioning",
-                    expected: "\(value.scalarType) [\(value.rows), \(value.columns)] (the text encoder's output)",
-                    found: "\(conditioning.scalarType) \(conditioning.shape)")
+                    field: "graphs.\(wiring.segments[0].role).inputs.textMask", expected: "[\(length)]", found: "\(mask.shape)")
             }
-            try conditioning.writeBytes(value.bytes)
+            let values = Krea2TextMask.values(rows: textRows, length: length)
+            switch mask.scalarType {
+            case .float16: try mask.write(Float16.self, count: length) { Float16(values[$0]) }
+            default: try mask.write(values)
+            }
+            textMask = mask
         }
         var outputs: [String: TensorBuffer] = [:]
         for (segment, graph) in zip(wiring.segments, graphs) {
             for output in segment.outputs {
                 outputs[output.ref] = try graph.makeBuffer(
-                    for: output.name, role: .output, dimensions: dims.of(output.role), in: arena)
+                    for: output.name, role: .output, dimensions: dims.of(output.role, in: graph, name: output.name, output: true),
+                    in: arena)
             }
         }
         let velocity = outputs[wiring.velocity]!
@@ -553,6 +560,7 @@ public actor Krea2Pipeline {
             case .conditioning: conditioning
             case .sigma: sigma
             case .imageRotary: imageRotary
+            case .textMask: textMask!
             case .output(let ref): outputs[ref]!
             }
         }
@@ -587,6 +595,80 @@ public actor Krea2Pipeline {
             }
         }
         return latents
+    }
+
+    /// The segments' functions for `rows` conditioning rows and the text length they run at. Without the mask: each
+    /// segment's own (`step`) function at the rows themselves. With it: the first phase (`step`, then `references`)
+    /// whose static text length holds the rows, the same function of every segment. A masked export whose text axis is
+    /// dynamic runs at the rows (the mask all ones).
+    private func textLayout(rows: Int, graphs: [any GraphBackend]) throws(AetherError) -> (graphs: [any GraphBackend], length: Int) {
+        guard wiring.textMask != nil else { return (graphs, rows) }
+        var lengths: [String] = []
+        for phase in wiring.segmentPhases {
+            var functions: [any GraphBackend] = []
+            for (segment, graph) in zip(wiring.segments, graphs) {
+                if phase == "step" {
+                    functions.append(graph)
+                } else if let function = (graph as? any PhasedGraphBackend)?.function(forPhase: phase) {
+                    functions.append(function)
+                } else {
+                    throw .manifestInvalid(
+                        field: "graphs.\(segment.role).functions.\(phase)", reason: "the loaded segment has no such function")
+                }
+            }
+            guard let spec = functions[0].signature.input(wiring.conditioning), spec.rank == 2 else {
+                throw .tensor(name: wiring.conditioning, reason: .unknownName)
+            }
+            let length = spec.shape[0]
+            if length == TensorSpec.dynamic { return (functions, rows) }
+            if rows <= length { return (functions, length) }
+            lengths.append("\(phase) \(length)")
+        }
+        throw .generation(.invalidParameters(
+            "\(rows) conditioning rows exceed this export's denoiser text lengths (\(lengths.joined(separator: ", ")))"))
+    }
+
+    /// The first segment's conditioning input: the text encoder's buffer as it is when it already has the run's
+    /// length, else the rows copied into a `[length, columns]` buffer whose rows after them are zero (finite padding,
+    /// kept out of attention by the mask).
+    private func conditioningBuffer(
+        _ source: Conditioning, rows: Int, length: Int, graph: any GraphBackend, dims: Dimensions, arena: TensorArena
+    ) throws(AetherError) -> TensorBuffer {
+        let columns = krea2.conditioning.columns
+        let real: TensorBuffer
+        switch source {
+        case .buffer(let buffer):
+            if buffer.shape == [length, columns] { return buffer }
+            real = buffer
+        case .reused(let value):
+            if length == value.rows {
+                let input = try graph.makeBuffer(
+                    for: wiring.conditioning, role: .input, dimensions: dims.of("conditioning", in: graph, name: wiring.conditioning),
+                    in: arena)
+                guard input.scalarType == value.scalarType, input.shape == [value.rows, value.columns],
+                      input.storageByteCount == value.bytes.count else {
+                    throw .manifestMismatch(
+                        field: "graphs.\(wiring.segments[0].role).inputs.conditioning",
+                        expected: "\(value.scalarType) [\(value.rows), \(value.columns)] (the text encoder's output)",
+                        found: "\(input.scalarType) \(input.shape)")
+                }
+                try input.writeBytes(value.bytes)
+                return input
+            }
+            real = try arena.allocate(name: "\(wiring.conditioning).rows", shape: [value.rows, value.columns], scalarType: value.scalarType)
+            try real.writeBytes(value.bytes)
+        }
+        let padded = try graph.makeBuffer(
+            for: wiring.conditioning, role: .input, dimensions: dims.of("conditioning", in: graph, name: wiring.conditioning), in: arena)
+        guard padded.scalarType == real.scalarType, padded.shape == [length, columns], real.shape == [rows, columns] else {
+            throw .manifestMismatch(
+                field: "graphs.\(wiring.segments[0].role).inputs.conditioning",
+                expected: "\(real.scalarType) [\(length), \(columns)] holding \(rows) rows",
+                found: "\(padded.scalarType) \(padded.shape) from \(real.shape)")
+        }
+        try padded.zero()
+        try padded.copyRegion(from: real)
+        return padded
     }
 
     private func decode(
@@ -795,7 +877,7 @@ extension Krea2Pipeline {
         }
     }
 
-    /// Which dynamic dimension each role's tensors have: text-side tensors the conditioning rows, image-side ones the
+    /// Which dynamic dimension each role's tensors have: text-side tensors the run's text length, image-side ones the
     /// generated token count.
     struct Dimensions {
         var textRows: Int
@@ -803,18 +885,36 @@ extension Krea2Pipeline {
 
         func of(_ role: String) -> [Int] {
             switch role {
-            case "carryText", "conditioning": [textRows]
+            case "carryText", "conditioning", "textMask": [textRows]
             case "carryImage", "imageRotary", "latents", "velocity": [imageTokens]
             default: []
             }
         }
+
+        /// ``of(_:)`` for tensor `name` of `graph`: only as many values as the tensor has dynamic axes (a masked
+        /// export's text axis is static, so its text-side tensors take none).
+        func of(_ role: String, in graph: any GraphBackend, name: String, output: Bool = false) -> [Int] {
+            let wanted = of(role)
+            guard let spec = output ? graph.signature.output(name) : graph.signature.input(name) else { return wanted }
+            return Array(wanted.prefix(spec.dynamicAxes.count))
+        }
+    }
+
+    /// The admission shape of a generation with `rows` conditioning rows: the rows (each count its own denoiser
+    /// specialization) or, with the text mask, the text length of the bucket they fall in (the conditioning range's
+    /// upper bound, else the references range's), so a masked export's prompts share one shape.
+    nonisolated func denoiserShape(rows: Int) -> Int {
+        guard wiring.textMask != nil else { return rows }
+        let text = krea2.conditioning.rowRange?.upperBound ?? rows
+        if rows <= text { return text }
+        return krea2.references?.rowRange?.upperBound ?? rows
     }
 
     /// The manifest's tensor names and how each segment input is fed, checked once at load: an input chained with
     /// `source.from` must name the text encoder's conditioning or an earlier segment's output, and only the last
     /// segment emits `velocity`.
     struct Wiring: Sendable {
-        enum Source: Sendable, Hashable { case latents, conditioning, sigma, imageRotary, output(String) }
+        enum Source: Sendable, Hashable { case latents, conditioning, sigma, imageRotary, textMask, output(String) }
         struct Input: Sendable { var role: String; var name: String; var source: Source }
         struct Output: Sendable { var role: String; var name: String; var ref: String }
         struct Segment: Sendable { var role: String; var inputs: [Input]; var outputs: [Output] }
@@ -828,6 +928,10 @@ extension Krea2Pipeline {
         var latents: String, sigma: String, imageRotary: String, conditioning: String
         /// `role.name` of the last segment's velocity.
         var velocity: String
+        /// The first segment's `textMask` input name, when the segments take the text mask (all four do, or none).
+        var textMask: String?
+        /// The segments' phases in the order a prompt tries them: `step`, then `references` when they have it.
+        var segmentPhases: [String]
 
         init(manifest: Manifest, krea2: Manifest.Krea2) throws(AetherError) {
             let textGraph = manifest.graphs["textEncoder"]!, vae = manifest.graphs["vaeDecoder"]!
@@ -863,6 +967,7 @@ extension Krea2Pipeline {
                         case "latents": source = .latents
                         case "sigma": source = .sigma
                         case "imageRotary": source = .imageRotary
+                        case "textMask": source = .textMask
                         default:
                             throw .manifestInvalid(field: "\(field).source", reason: "must be chained with source.from")
                         }
@@ -889,7 +994,37 @@ extension Krea2Pipeline {
             imageRotary = first.inputs["imageRotary"]!.name
             conditioning = first.inputs["conditioning"]!.name
             velocity = segments.last!.outputs.first { $0.role == "velocity" }!.ref
+            // The text mask and the segments' functions: every segment alike.
+            let masked = krea2.segments.map { manifest.graphs[$0]!.inputs["textMask"] != nil }
+            guard Set(masked).count == 1 else {
+                throw .manifestInvalid(field: "graphs.\(krea2.segments[0]).inputs.textMask", reason: "every segment takes the text mask, or none")
+            }
+            textMask = masked[0] ? first.inputs["textMask"]!.name : nil
+            let phases = krea2.segments.map { Set(manifest.graphs[$0]!.phases.keys) }
+            guard Set(phases).count == 1 else {
+                throw .manifestInvalid(field: "graphs.\(krea2.segments[0]).functions", reason: "every segment has the same functions")
+            }
+            segmentPhases = ["step", "references"].filter { phases[0].contains($0) }
+            if segmentPhases.contains("references") {
+                guard textMask != nil, krea2.references != nil else {
+                    throw .manifestInvalid(
+                        field: "graphs.\(krea2.segments[0]).functions.references",
+                        reason: "a segment's references function needs the text mask and krea2.references")
+                }
+            } else if textMask != nil, krea2.references != nil {
+                throw .manifestInvalid(
+                    field: "graphs.\(krea2.segments[0]).functions.references",
+                    reason: "a masked export with reference images needs each segment's references function")
+            }
         }
+    }
+}
+
+/// Krea 2's host text mask (`textMask`): 1 for each of the `rows` real conditioning rows, which come first, then 0 for
+/// the padding to `length`; Diffusers' `encoder_attention_mask` as the graphs apply it, a key-padding mask.
+enum Krea2TextMask {
+    static func values(rows: Int, length: Int) -> [Float] {
+        [Float](repeating: 1, count: rows) + [Float](repeating: 0, count: max(0, length - rows))
     }
 }
 

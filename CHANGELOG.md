@@ -4,6 +4,17 @@
 
 ### New
 
+- **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers as upstream Diffusers runs them:
+  the text padded to 512 rows with its key-padding mask, applied in the text-fusion refiner and all 28 joint blocks
+  (`--text-mask`, the default; `--no-text-mask` keeps the exact-length graphs). The text axis is static. Bundles with
+  reference images give each segment a second function, `segmentReferences`, at 1,116 rows (the most a reference prompt
+  has), in the same file and sharing its weights. `krea2@1` gains the optional `textMask` input (on all four segments
+  or none) and the segments' optional `references` phase. `Krea2Pipeline` writes the real conditioning rows first and
+  zero rows after, passes the mask, runs the first function whose length holds the rows, and keys admission on that
+  length, so prompts of every length share one denoiser shape. `prepare(prompt:)`, the metrics and `Krea2Conditioning`
+  still report the real rows. Exact-length exports load and run as before. `check_krea2.py` pads and masks for masked
+  bundles and saves its closed-loop image for `--compare-image`. No public API changes. MEASUREMENTS_PLACEHOLDER
+
 - **Krea 2 progress and metrics** for hosts: `Krea2Pipeline.generate(_:observing:)` reports
   `ImageProgress` in order (conditioning ready with its row count, denoisers ready, each step with a copy of its packed
   latents, decoded) and returns an `ImageGeneration`: the image and its `ImageGenerationMetrics`. The metrics cover the
