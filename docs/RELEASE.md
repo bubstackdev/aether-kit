@@ -67,7 +67,9 @@ scripts/coreai-cache prune --stale --source ../lab/models --source ../forge-outp
 use), `--other-os-builds` or `--stale` (no export under the `--source` folders has the entry's model). Selectors
 combine with AND, and a `--keep NAME` bucket is never deleted from. It skips any entry a process holds, never follows
 a symlink, and refuses a root that doesn't look like a Core AI cache. `AETHER_GATES=1 scripts/ci.sh` prunes the test
-runners' buckets after its gate step, pass or fail; `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them.
+runners' buckets after its gate step, pass or fail, while holding the GPU lease (`scripts/gpu-lease`), so a load in
+another leased run can't start mid-prune; `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them. An executable's bucket follows
+its bundle identifier (from an embedded Info.plist), else its file name.
 
 What the cache keys on, measured on macOS 27 (26B123) with the `Fixtures/chain` graph (the script's docstring has
 the details):

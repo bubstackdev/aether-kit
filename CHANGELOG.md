@@ -67,7 +67,7 @@
   its selectors pick (`--bucket`, `--older-than DAYS`, `--other-os-builds`, `--stale --source DIR`), never a
   `--keep` bucket. It is a dry run without `--yes`, skips entries a process holds, never follows symlinks and refuses
   a root that isn't a Core AI cache. `AETHER_GATES=1 scripts/ci.sh` now prunes the test runners' buckets
-  (`swiftpm-testing-helper`, `com.apple.dt.xctest.tool`) after the gates, which used to leave tens of GB behind;
+  (`swiftpm-testing-helper`, `com.apple.dt.xctest.tool`) after the gates, under the GPU lease, which used to leave tens of GB behind;
   `AETHER_CI_KEEP_COMPILE_CACHE=1` keeps them. docs/RELEASE.md records what the cache keys on (the export's
   `main.hash`, the specialization options and the process's bundle identifier or executable name). It also records
   that `GraphOptions.Cache.appGroup` has no cache to open for an unsigned or ad-hoc signed tool or under `swift test`.

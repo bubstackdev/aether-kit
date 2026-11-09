@@ -66,8 +66,9 @@ if [[ "${AETHER_GATES:-0}" == "1" ]]; then
     # for the large models. `swift test` runs Swift Testing in swiftpm-testing-helper and XCTest in xctest
     # (com.apple.dt.xctest.tool). Prune those buckets whether or not the gates passed; an entry a running process
     # holds is skipped. Every package's `swift test` on this Mac shares them, so another run recompiles what it loads.
-    step "compile cache: prune the test runners' buckets (AETHER_CI_KEEP_COMPILE_CACHE=1 keeps them)"
-    scripts/coreai-cache prune --bucket swiftpm-testing-helper --bucket com.apple.dt.xctest.tool --yes \
+    # The prune holds the GPU lease, so a load in another leased run can't start while it deletes.
+    step "compile cache: prune the test runners' buckets under the GPU lease (AETHER_CI_KEEP_COMPILE_CACHE=1 keeps them)"
+    scripts/gpu-lease -- scripts/coreai-cache prune --bucket swiftpm-testing-helper --bucket com.apple.dt.xctest.tool --yes \
       || echo "warning: scripts/coreai-cache prune failed; the gates' result stands" >&2
   fi
   if [[ $gates -ne 0 ]]; then exit "$gates"; fi
