@@ -165,9 +165,11 @@
     above what the residency already holds is its transient.
   - Memory that comes back during a phase is taken off the held bytes of the phases before it (the one that ran last
     first), and a load is measured from the lowest level its phase reached.
-  - Admission records the peak a generation with every graph resident actually reached, per profile and
-    specialization count. When the phases' sum doesn't fit but that measured peak does, the graphs stay resident, or a
-    per-phase residency returns to all resident.
+  - Admission records the peak an all-resident generation actually reached, per profile, specialization count and
+    the graphs resident (an export's graphs a request never uses aren't loaded). When the phases' sum doesn't fit but
+    such a measured peak does, the graphs stay resident, or a per-phase residency returns to all resident. A
+    measurement counts only if it held at least the graphs resident now and a graph of every phase the plan counts (an
+    encode alone doesn't).
   No public API changes.
 - **Krea 2 metrics and the pressure gate see admission's release.** `loadedRoles` and the `PipelineOptions.pressure`
   check now read the resident graphs after admission plans. When it released them, the generation reports, and gates

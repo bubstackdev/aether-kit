@@ -219,4 +219,24 @@ struct LingeringWorkingMemoryAdmissionTests {
         let again = try await renders.render(shape: 14, encode: false)
         #expect(again === back && renders.loads.last == [])
     }
+
+    /// A generation measured with only some phases' graphs (an encode on its own, 78) says nothing about one that loads
+    /// the rest: when the phases' sum doesn't fit, it plans per phase rather than all resident at 78.
+    @Test func anEncodeAloneDoesntMeasureAWholeGeneration() async throws {
+        let memory = Memory()
+        let admission = try Self.admission(memory: memory)
+        let renders = Renders(admission, memory)
+        renders.lastProfile = "512x512"
+        let residency = try admission.begin(profile: "512x512", shape: 14)
+        try await residency.beginPhase(.perPrompt)
+        (try await residency.graph("textEncoder") as! Held).run(14)
+        residency.endPhase(.perPrompt)
+        admission.finish()
+        for (phase, footprint) in [(Manifest.Residency.perStep, PhaseFootprint(peakBytes: 340, heldBytes: 330)),
+                                   (.perImage, PhaseFootprint(peakBytes: 180, heldBytes: 150))] {
+            admission.settings.ledger.record(.init(model: admission.modelKey, profile: "512x512", phase: phase), footprint)
+        }
+        let next = try await renders.render(shape: 14, encode: false)
+        #expect(next.mode == .perPhase)
+    }
 }

@@ -476,11 +476,6 @@ public final class GraphResidency {
     /// The lowest level a phase began at with no graph loaded (nil until one did).
     package var levelBeforeGraphs: Int64? { unloadedLevel }
 
-    /// Whether every graph of the manifest is loaded now.
-    package var holdsEveryGraph: Bool {
-        let roles = Set(loaded.keys.map { Self.parse($0).role })
-        return residency.keys.allSatisfy(roles.contains)
-    }
 
     /// Starts measuring `phase`. A phase still open is ended first. After graphs were released (per phase, or by a
     /// profile change), the phase measures from the level before they loaded: their memory comes back seconds late,
