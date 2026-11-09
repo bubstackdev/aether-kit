@@ -41,6 +41,20 @@
   refused for another export's conditioning or another prompt. An encode plans memory against the last generation's
   canvas, so the denoisers that generation kept stay loaded. Additive; the `AetherImage` API baseline records it.
 
+### Fixed
+
+- **Admission counts each shape specialization a pipeline keeps.** Graphs loaded without the reshape hint keep one
+  specialization per shape (Krea 2's denoisers per prompt row count: about 27 GB each for the realism export, measured
+  on a 64 GB Mac). The ledger kept one footprint per phase whatever the number of shapes behind it, so a second shape
+  was planned at one shape's size and ran past the budget into swap. After that, every plan at that canvas counted
+  both shapes and was refused even with one. Footprints are now keyed by the specializations held
+  (`FootprintLedger.Key.specializations`, `estimate(_:)` for counts not measured, a full extra copy each when only one
+  is). A new shape that doesn't fit beside the others with every graph resident releases the graphs and reloads for it
+  alone; only a shape that doesn't fit alone is refused.
+- **Krea 2 metrics and the pressure gate see admission's release.** `loadedRoles` and the `PipelineOptions.pressure`
+  check now read the resident graphs after admission plans. When it released them, the generation reports, and gates
+  on, loading them all.
+
 ## 0.1.0 — 2026-11-07
 
 A from-scratch re-architecture of AetherKit on Apple's Core AI. 0.0.x continues at the `0.0.7` tag and on

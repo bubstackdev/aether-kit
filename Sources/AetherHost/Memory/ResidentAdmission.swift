@@ -108,9 +108,14 @@ public final class ResidentAdmission {
 
     /// The plan's inputs for `profile`.
     public func inputs(profile: String) -> ResidencyPlan.Inputs {
+        inputs(profile: profile, specializations: 1)
+    }
+
+    /// The plan's inputs for `profile` with `specializations` shapes resident.
+    public func inputs(profile: String, specializations: Int) -> ResidencyPlan.Inputs {
         ResidencyPlan.inputs(
             manifest: manifest, ledger: settings.ledger, model: modelKey, profile: profile,
-            unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes)
+            specializations: specializations, unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes)
     }
 
     /// The budget a plan must fit now.
@@ -127,21 +132,41 @@ public final class ResidentAdmission {
 
     /// Plans and reserves one generation at `profile` (and, for graphs whose shape varies with the request, `shape`),
     /// returning the residency to run it in. Refuses with `capacity` before anything loads, releasing what was loaded.
+    ///
+    /// Each shape kept resident is planned as its own specialization (``FootprintLedger/Key/specializations``). A new
+    /// shape whose added specialization doesn't fit with every graph resident releases the graphs and plans again
+    /// with this shape alone (they reload from the specialization cache); only that plan failing refuses.
     public func begin(profile: String, shape: Int? = nil) throws(AetherError) -> GraphResidency {
         if lease == nil, let bundle { lease = try bundle.readLease() }
         if let shape, !shapes.contains(shape), shapes.count >= settings.maximumShapes { release() }
-        let plan: ResidencyPlan
+        let current = residency.map { $0.profile == profile } ?? false ? shapes : []
+        var count = max(1, current.count + (shape.map { current.contains($0) ? 0 : 1 } ?? 0))
+        var plan: ResidencyPlan
         do {
-            plan = try ResidencyPlan.choose(inputs(profile: profile), budget: budget())
+            // Keeping the shapes resident must fit with every graph resident: per phase, graphs are released at each
+            // phase's end, so no specialization outlives its generation and keeping them buys nothing.
+            let kept = count > 1
+                ? try? ResidencyPlan.choose(inputs(profile: profile, specializations: count), budget: budget()) : nil
+            if let kept, kept.mode == .allResident {
+                plan = kept
+            } else {
+                if count > 1 {
+                    // The new shape's specialization doesn't fit beside the others: start over with this shape alone.
+                    release()
+                    count = 1
+                }
+                plan = try ResidencyPlan.choose(inputs(profile: profile, specializations: 1), budget: budget())
+            }
             try reserve(plan.peakBytes)
         } catch {
             release()
             throw error
         }
         if let shape { shapes.insert(shape) }
-        let overlap = ResidencyPlan.overlap(inputs(profile: profile).phases)
+        let overlap = ResidencyPlan.overlap(inputs(profile: profile, specializations: count).phases)
         if let residency, residency.mode == plan.mode, residency.profile == profile {
             residency.overlapAllowance = overlap
+            residency.specializations = count
             return residency
         }
         if let old = residency {
@@ -153,6 +178,7 @@ public final class ResidentAdmission {
             manifest: manifest, mode: plan.mode, ledger: settings.ledger, model: modelKey, profile: profile, probe: settings.probe,
             releasedBaseline: releasedFloor, releases: releases, load: load)
         fresh.overlapAllowance = overlap
+        fresh.specializations = 1
         releasedFloor = nil
         residency = fresh
         return fresh
@@ -174,7 +200,8 @@ public final class ResidentAdmission {
         }
         switch residency.mode {
         case .allResident:
-            residentBytes = inputs(profile: residency.profile).phases.values.reduce(0) { $0 + $1.heldBytes }
+            residentBytes = inputs(profile: residency.profile, specializations: residency.specializations).phases.values
+                .reduce(0) { $0 + $1.heldBytes }
         case .perPhase:
             residentBytes = 0
         }

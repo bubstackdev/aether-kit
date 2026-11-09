@@ -21147,6 +21147,79 @@
         "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV5phase0A4Core8ManifestV9ResidencyOvp"
        },
        {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivp",
+        "moduleName": "AetherRuntime",
+        "name": "specializations",
+        "printedName": "specializations",
+        "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV15specializationsSivp"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
@@ -21181,6 +21254,48 @@
         "name": "init",
         "printedName": "init(model:profile:phase:)",
         "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV5model7profile5phaseAESS_SS0A4Core8ManifestV9ResidencyOtcfc"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Key",
+          "printedName": "AetherRuntime.FootprintLedger.Key",
+          "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Residency",
+          "printedName": "AetherCore.Manifest.Residency",
+          "usr": "s:10AetherCore8ManifestV9ResidencyO"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Constructor",
+        "init_kind": "Designated",
+        "kind": "Constructor",
+        "mangledName": "$s13AetherRuntime15FootprintLedgerC3KeyV5model7profile5phase15specializationsAESS_SS0A4Core8ManifestV9ResidencyOSitcfc",
+        "moduleName": "AetherRuntime",
+        "name": "init",
+        "printedName": "init(model:profile:phase:specializations:)",
+        "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV5model7profile5phase15specializationsAESS_SS0A4Core8ManifestV9ResidencyOSitcfc"
        },
        {
         "accessors": [
@@ -21462,6 +21577,54 @@
       "name": "footprint",
       "printedName": "footprint(_:)",
       "usr": "s:13AetherRuntime15FootprintLedgerC9footprintyAA05PhaseC0VSgAC3KeyVF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "PhaseFootprint",
+            "printedName": "AetherRuntime.PhaseFootprint",
+            "usr": "s:13AetherRuntime14PhaseFootprintV"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Tuple",
+          "printedName": "(footprint: AetherRuntime.PhaseFootprint, measured: Swift.Bool)"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "(footprint: AetherRuntime.PhaseFootprint, measured: Swift.Bool)?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Key",
+        "printedName": "AetherRuntime.FootprintLedger.Key",
+        "usr": "s:13AetherRuntime15FootprintLedgerC3KeyV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime15FootprintLedgerC8estimateyAA05PhaseC0V9footprint_Sb8measuredtSgAC3KeyVF",
+      "moduleName": "AetherRuntime",
+      "name": "estimate",
+      "printedName": "estimate(_:)",
+      "usr": "s:13AetherRuntime15FootprintLedgerC8estimateyAA05PhaseC0V9footprint_Sb8measuredtSgAC3KeyVF"
      },
      {
       "accessors": [
@@ -22619,6 +22782,93 @@
       "printedName": "inputs(manifest:ledger:model:profile:unphasedPhase:fileBytes:)",
       "static": true,
       "usr": "s:13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile13unphasedPhase9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSAO0C0Os5Int64VSSXEtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Inputs",
+        "printedName": "AetherRuntime.ResidencyPlan.Inputs",
+        "usr": "s:13AetherRuntime13ResidencyPlanV6InputsV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "FootprintLedger",
+        "printedName": "AetherRuntime.FootprintLedger",
+        "usr": "s:13AetherRuntime15FootprintLedgerC"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.String?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Residency",
+        "printedName": "AetherCore.Manifest.Residency",
+        "usr": "s:10AetherCore8ManifestV9ResidencyO"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(Swift.String) -> Swift.Int64",
+        "typeAttributes": [
+         "noescape"
+        ]
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile15specializations13unphasedPhase9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSSiAP0C0Os5Int64VSSXEtFZ",
+      "moduleName": "AetherRuntime",
+      "name": "inputs",
+      "printedName": "inputs(manifest:ledger:model:profile:specializations:unphasedPhase:fileBytes:)",
+      "static": true,
+      "usr": "s:13AetherRuntime13ResidencyPlanV6inputs8manifest6ledger5model7profile15specializations13unphasedPhase9fileBytesAC6InputsV0A4Core8ManifestV_AA15FootprintLedgerCSSSgSSSiAP0C0Os5Int64VSSXEtFZ"
      },
      {
       "children": [
@@ -23807,6 +24057,82 @@
       "name": "overlapAllowance",
       "printedName": "overlapAllowance",
       "usr": "s:13AetherRuntime14GraphResidencyC16overlapAllowanceSDy0A4Core8ManifestV0D0Os5Int64VGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime14GraphResidencyC15specializationsSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime14GraphResidencyC15specializationsSivg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime14GraphResidencyC15specializationsSivs",
+        "moduleName": "AetherRuntime",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:13AetherRuntime14GraphResidencyC15specializationsSivs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "Final",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime14GraphResidencyC15specializationsSivp",
+      "moduleName": "AetherRuntime",
+      "name": "specializations",
+      "printedName": "specializations",
+      "usr": "s:13AetherRuntime14GraphResidencyC15specializationsSivp"
      },
      {
       "accessors": [

@@ -239,11 +239,12 @@ public actor Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
+            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: prompt.conditioningRows)
             if let pressure = options.pressure, !admission.residentRoles.contains(wiring.text.role),
                await pressure.level == .critical {
+                admission.release()
                 throw AetherError.memoryPressure
             }
-            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: prompt.conditioningRows)
             do {
                 try await residency.beginPhase(.perPrompt)
                 let rows = try await encode(prompt, with: try await residency.graph(wiring.text.role), in: TensorArena())
@@ -315,15 +316,18 @@ public actor Krea2Pipeline {
             // The prompt's row count shapes the text encoder's output and every segment's text carry, and those segments
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
-            let residentAtStart = Set(admission.residentRoles)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
-            // Under critical pressure, run only on graphs already resident: loading is what pressure can't afford.
-            if let pressure = options.pressure, !Set(used).isSubset(of: residentAtStart), await pressure.level == .critical {
-                throw AetherError.memoryPressure
-            }
             let profile = "\(size.width)x\(size.height)"
             let residency = try admission.begin(profile: profile, shape: source.rows)
             lastProfile = profile
+            // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't
+            // fit beside the others, or a profile change), and then they all load again.
+            let residentAtStart = Set(admission.residentRoles)
+            // Under critical pressure, run only on graphs already resident: loading is what pressure can't afford.
+            if let pressure = options.pressure, !Set(used).isSubset(of: residentAtStart), await pressure.level == .critical {
+                admission.release()
+                throw AetherError.memoryPressure
+            }
             meter.update {
                 $0.conditioningRows = source.rows
                 $0.imageTokens = grid.rows * grid.columns

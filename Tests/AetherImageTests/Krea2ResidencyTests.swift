@@ -139,4 +139,17 @@ struct Krea2ResidencyTests {
         _ = try await pipeline.generate(Self.request)
         await pipeline.unload()
     }
+
+    /// A generation whose admission released the graphs (here a fifth row count past `maximumShapes`) reports every
+    /// role as loaded. Before: the resident roles were read before admission planned, so it reported none.
+    @Test func aReleaseByAdmissionCountsAsLoading() async throws {
+        let (pipeline, loads) = try Krea2Tests.pipeline(calls: LatentDiffusionTests.Calls())
+        var last: ImageGenerationMetrics?
+        for prompt in ["a", "ab", "abc", "abcd", "abcde"] {
+            last = try await pipeline.generate(
+                ImageRequest(prompt: prompt, seed: 1, steps: 1, width: 32, height: 32), observing: nil).metrics
+        }
+        #expect(loads.log.count == 12)
+        #expect(last?.loadedRoles == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder"])
+    }
 }
