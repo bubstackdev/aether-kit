@@ -74,6 +74,20 @@
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
   `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
+- **Our own Qwen3 language-model exports:** `Forge/qwen3/` exports any pinned Qwen3 dense decoder checkpoint in
+  Hugging Face format (`Qwen3ForCausalLM`; the architecture comes from its config.json, and sliding windows, rope
+  scaling, attention bias and MoE are refused) as a local `decoder-lm@1` bundle that `ChatSession` and `Generator` open
+  from its folder through `InstalledBundle(ref:url:isStale:)`. The graph runs the running contract (in-place KV
+  states, last-row logits, prefill chunks up to 512 tokens, up to 32,768 positions) with the 0.0.x Qwen3 recipe:
+  float16 weights, KV, residual stream and head, float32 attention, norm statistics and rotary angles. The first pin
+  is `huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated@c9bd464` (Apache-2.0; 8.06 GB bundle, exported in 26 s, peak
+  RSS 27 GB). `selftest_qwen3.py` checks the graph against transformers' own Qwen3 on small random checkpoints (tied
+  and untied heads; rel. L2 ≤ 7e-7 one-shot and over chunks). The gate (`DecoderLMExportGateTests`) compares greedy
+  replies with the 0.0.7 export of the same checkpoint on nine synthetic chat turns (system + user and user only,
+  `maxTokens` limits, prompts up to 719 tokens, several requests on one opened model, an open-only pre-warm): 7 of 9
+  token-exact, and the other two fork where the 0.0.7 reference itself is tied in float16 (logit margins 0 and one
+  ulp; the near-tie rule). Teacher-forced on the reference's replies, 541 of 543 positions take its token, and the
+  two that don't are those ties. No kit API changes.
 
 ### Fixed
 
