@@ -77,10 +77,18 @@ public final class ResidentAdmission {
     /// The lowest phase baseline of graphs released since the next residency began: their memory returns seconds
     /// late, so the next phase is measured from here (an overestimate, the direction admission prefers).
     private var releasedFloor: Int64?
-    /// The highest level above the process's level before any graph loaded that a generation reached with every graph
-    /// resident, per profile and specialization count. The phases' sum can count working memory twice (held while it
-    /// lingers after its phase, then transient when the next run takes it again); this is what was actually reached.
-    private var measuredAllResident: [String: Int64] = [:]
+    /// The highest level above the process's level before any graph loaded that an all-resident generation reached,
+    /// per profile, specialization count and the graphs resident at its end (an export's graphs a request never uses,
+    /// Krea 2's image encoder for a text-only render, are never loaded). The phases' sum can count working memory twice
+    /// (held while it lingers after its phase, then transient when the next run takes it again); this is what was
+    /// actually reached.
+    private var measuredAllResident: [MeasuredKey: Int64] = [:]
+
+    private struct MeasuredKey: Hashable {
+        let profile: String
+        let specializations: Int
+        let roles: Set<String>
+    }
 
     /// `bundle` is the installed bundle the graphs load from, if any: its reader lease is taken here (see above).
     public init(
@@ -199,18 +207,29 @@ public final class ResidentAdmission {
             phased = try ResidencyPlan.choose(inputs, budget: budget)
             if phased.mode == .allResident { return phased }
         } catch {
-            if let measured = measuredAllResident[Self.measuredKey(profile, specializations)], measured <= budget {
+            if let measured = measuredPeak(profile: profile, specializations: specializations), measured <= budget {
                 return ResidencyPlan(mode: .allResident, peakBytes: measured, isMeasured: true)
             }
             throw error
         }
-        if let measured = measuredAllResident[Self.measuredKey(profile, specializations)], measured <= budget {
+        if let measured = measuredPeak(profile: profile, specializations: specializations), measured <= budget {
             return ResidencyPlan(mode: .allResident, peakBytes: measured, isMeasured: true)
         }
         return phased
     }
 
-    private static func measuredKey(_ profile: String, _ specializations: Int) -> String { "\(profile)#\(specializations)" }
+    /// The largest measured all-resident peak at `profile` and `specializations` whose generation held at least the
+    /// graphs resident now and a graph of every phase the plan counts (an encode alone measures only the prompt's);
+    /// nil when none was measured.
+    private func measuredPeak(profile: String, specializations: Int) -> Int64? {
+        let now = Set(residentRoles.map { GraphResidency.parse($0).role })
+        let phases = Set(inputs(profile: profile, specializations: specializations).phases.keys)
+        return measuredAllResident.filter { key, _ in
+            let covered = Set(key.roles.compactMap { manifest.graphs[$0]?.residency })
+            return key.profile == profile && key.specializations == specializations && now.isSubset(of: key.roles)
+                && phases.isSubset(of: covered)
+        }.values.max()
+    }
 
     /// After a generation that succeeded: the reservation is resized to what stays resident, as measured by the
     /// generation that just ran.
@@ -226,9 +245,10 @@ public final class ResidentAdmission {
             release()
             return false
         }
-        if residency.mode == .allResident, residency.holdsEveryGraph, let peak = residency.windowPeak,
+        if residency.mode == .allResident, !residency.residentRoles.isEmpty, let peak = residency.windowPeak,
            let before = residency.levelBeforeGraphs {
-            let key = Self.measuredKey(residency.profile, residency.specializations)
+            let key = MeasuredKey(profile: residency.profile, specializations: residency.specializations,
+                                  roles: Set(residency.residentRoles.map { GraphResidency.parse($0).role }))
             measuredAllResident[key] = max(measuredAllResident[key] ?? 0, peak - before)
         }
         switch residency.mode {
