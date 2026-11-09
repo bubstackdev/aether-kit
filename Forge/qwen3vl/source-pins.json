@@ -1,9 +1,16 @@
 {
  "repository": "Qwen/Qwen3-VL-2B-Instruct",
  "revision": "89644892e4d85e24eaac8bacfd4f463576704203",
+ "baseModel": "Qwen/Qwen3-VL-2B-Instruct",
  "license": "Apache-2.0",
  "gated": false,
  "comment": "Alibaba Qwen's Qwen3-VL 2B Instruct checkpoint (Qwen3VLForConditionalGeneration, bf16 safetensors, 4.26 GB). SHA-256 of every snapshot file the harness reads (model.safetensors equals the Hub's LFS hash at this revision), pinned 2026-11-06; the same revision the 0.0.x prototype qualified. The model card's front matter gives `license: apache-2.0`; the repository carries no LICENSE file, so the Apache-2.0 text the bundle ships is the one in Qwen's own Qwen3-VL code repository (upstreamLicense). The network code is transformers' Qwen3-VL at the version Forge/uv.lock pins.",
+ "bundle": {
+  "id": "qwen3-vl-2b",
+  "title": "Qwen3-VL 2B Instruct",
+  "assetPrefix": "qwen3_vl_2b",
+  "hfRepo": "aether-models/aether-kit-qwen3-vl-2b"
+ },
  "files": {
   "config.json": "bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b",
   "generation_config.json": "1e241830b48b397cb0900101421df5450baddc7adf01e5fc86b5615865f3bae4",

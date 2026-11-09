@@ -12,8 +12,8 @@ PATCH_CAPACITY * 256, min_pixels its default 65536), so upstream sizes each imag
                                   per-step top-2 margins, SHA-256 of every file
     <case>/pixel_values.f32       the processor's patches [h*w, 1536] (block-major, C,T,py,px), unpadded
     <case>/input_ids.i32          the processor's prompt [1, L] (one <|image_pad|> per image token)
-    <case>/image_embeds.f32       upstream's tower output [h*w/4, 2048]
-    <case>/deepstack_embeds.f32   upstream's DeepStack features [3, h*w/4, 2048]
+    <case>/image_embeds.f32       upstream's tower output [h*w/4, H]
+    <case>/deepstack_embeds.f32   upstream's DeepStack features [3, h*w/4, H]
     <case>/rope_positions.i32     upstream's get_rope_index for the prompt [3, L] (the host M-RoPE contract)
     <case>/greedy.i32             upstream's greedy continuation [K] (K = STEPS, EOS not stopping it; its first
                                   CROSSCHECK tokens equal upstream's own generate())
@@ -95,10 +95,15 @@ def greedy(model, inputs, steps: int) -> tuple[np.ndarray, np.ndarray]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    qg.pins_argument(ap)
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--snapshot", type=Path, default=qg.DEFAULT_SNAPSHOT)
+    ap.add_argument("--snapshot", type=Path)
     ap.add_argument("--cases", help="comma-separated subset")
     args = ap.parse_args()
+    qg.use_pins(args.pins)
+    args.snapshot = args.snapshot or qg.DEFAULT_SNAPSHOT
+    if "referenceImages" not in qg.PINS:
+        raise SystemExit("these pins carry no reference photographs (the 2B pins do)")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     verified = qg.verify_sources(args.snapshot)

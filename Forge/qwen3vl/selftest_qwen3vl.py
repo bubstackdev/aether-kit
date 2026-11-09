@@ -7,7 +7,8 @@
 For every image case of reference_qwen3vl.py:
 - the host contract the Swift driver implements reproduces upstream exactly: `smart_resize` with the bundle's budget
   gives the processor's grid; the graph's M-RoPE positions, synthesized from the extension ids, the running positions,
-  `image_rc` and the rope shift (`mrope_positions`), equal upstream's `get_rope_index` for every prompt token;
+  and the static inputs `plan_images` writes (`mrope_positions`), equal upstream's `get_rope_index` for every
+  prompt token;
 - `VisionTower` in float32 with float32 weights (the padded static shape, the in-graph positional tables and key mask)
   matches upstream's tower on the zero-padded patches: cosine >= 0.9999999 for the image embeddings and each DeepStack
   level, padding rows exactly zero;
@@ -17,6 +18,7 @@ For `--decoder-case` (default the first image case): `Decoder` in float32 with f
 outputs, gives upstream's first-token logits (rel L2 <= 1e-4, same argmax) in one prefill, and the same logits again when
 the prompt is fed in two chunks and the KV state carries over. Also: `smart_resize` against transformers' own over a
 sweep of sizes, and the sample manifest's roles. Exits nonzero when a check fails. CPU only; a few minutes.
+Several images per prompt are checked hermetically on a tiny random model by test_qwen3vl_graphs.py.
 """
 
 from __future__ import annotations
@@ -40,12 +42,15 @@ LOGITS_BAR = 1e-4
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    qg.pins_argument(ap)
     ap.add_argument("--reference", type=Path, required=True)
     ap.add_argument("--report", type=Path)
-    ap.add_argument("--snapshot", type=Path, default=qg.DEFAULT_SNAPSHOT)
+    ap.add_argument("--snapshot", type=Path)
     ap.add_argument("--decoder-case")
     ap.add_argument("--precision", action="store_true", help="also measure the tower's precision alternatives")
     args = ap.parse_args()
+    qg.use_pins(args.pins)
+    args.snapshot = args.snapshot or qg.DEFAULT_SNAPSHOT
     qg.verify_sources(args.snapshot)
     torch.set_grad_enabled(False)
     checks: list[dict] = []
@@ -65,8 +70,10 @@ def main() -> None:
 
     index = json.loads((args.reference / "references.json").read_text())
     vocab = index["vocab"]
-    slots = qg.PATCH_CAPACITY // 4
+    slots = qg.IMAGE_SLOTS
+    tower_tokens = qg.PATCH_CAPACITY // 4
     model = qg.upstream_model(args.snapshot)
+    hidden = model.config.text_config.hidden_size
     tower = qg.VisionTower(model.model.visual, dtype=torch.float32, storage=torch.float32).eval()
     variants = {}
     if args.precision:
@@ -91,25 +98,25 @@ def main() -> None:
         ids = qg.read_i32(folder / "input_ids.i32", [1, case["promptTokens"]])[0]
         ext = qg.extension_ids(ids, vocab)
         p = torch.arange(len(ids), dtype=torch.int32)
-        pos = qg.mrope_positions(torch.from_numpy(ext), p, torch.from_numpy(qg.image_rc(h, w)),
-                                 torch.tensor([case["ropeShiftStart"]], dtype=torch.int32),
-                                 torch.tensor([case["ropeShiftAmount"]], dtype=torch.int32), vocab, slots)
+        planned = [torch.from_numpy(a) for a in qg.plan_images([case["imageStart"]], [(h, w)])]
+        pos = qg.mrope_positions(torch.from_numpy(ext), p, *planned, vocab, slots)
         want = qg.read_i32(folder / "rope_positions.i32", [3, len(ids)])
         exact = np.array_equal(torch.stack(pos).numpy(), want)
         record(f"{name}.mropePositions.exact", float(exact), 1.0, exact)
 
         n = h * w // 4
         pv = qg.read_f32(folder / "pixel_values.f32", [h * w, 1536])
-        want_img = qg.read_f32(folder / "image_embeds.f32", [n, 2048])
-        want_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, 2048])
+        want_img = qg.read_f32(folder / "image_embeds.f32", [n, hidden])
+        want_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, hidden])
         feeds = (torch.from_numpy(qg.pad_patches(pv)), torch.tensor([h, w], dtype=torch.int32))
         img, deep = (t.numpy() for t in tower(*feeds))
         c = qg.cosine(img[:n], want_img)
         record(f"{name}.tower.float32.imageEmbeds.cosine", c, TOWER_BAR, c >= TOWER_BAR)
+        t = tower_tokens
         for k in range(3):
-            ck = qg.cosine(deep[k * slots:k * slots + n], want_deep[k])
+            ck = qg.cosine(deep[k * t:k * t + n], want_deep[k])
             record(f"{name}.tower.float32.deepstack{k}.cosine", ck, TOWER_BAR, ck >= TOWER_BAR)
-        zero = not img[n:].any() and not any(deep[k * slots + n:(k + 1) * slots].any() for k in range(3))
+        zero = not img[n:].any() and not any(deep[k * t + n:(k + 1) * t].any() for k in range(3))
         record(f"{name}.tower.paddingZero", float(zero), 1.0, zero)
         for label, variant in variants.items():
             vi, vd = (t.numpy() for t in variant(*feeds))
@@ -120,7 +127,7 @@ def main() -> None:
                        True, gated=False)
                 record(f"{name}.tower.{label}.imageEmbeds.relL2", qg.rel_l2(vi[:n], want_img), None, True,
                        gated=False)
-                worst_deep = min(qg.cosine(vd[k * slots:k * slots + n], want_deep[k]) for k in range(3))
+                worst_deep = min(qg.cosine(vd[k * t:k * t + n], want_deep[k]) for k in range(3))
                 record(f"{name}.tower.{label}.deepstack.worstOneMinusCosine", 1 - worst_deep, None, True,
                        gated=False)
     del tower, variants
@@ -129,17 +136,17 @@ def main() -> None:
     folder = args.reference / case["name"]
     _, h, w = case["gridTHW"]
     n = h * w // 4
-    decoder = qg.Decoder(model, dtype=torch.float32, attention=torch.float32, storage=torch.float32).eval()
+    decoder = qg.Decoder(model, dtype=torch.float32, attention=torch.float32, storage=torch.float32,
+                         statics=torch.float32).eval()
     ids = qg.read_i32(folder / "input_ids.i32", [1, case["promptTokens"]])[0]
     ext = torch.from_numpy(qg.extension_ids(ids, vocab))[None]
-    image = torch.zeros(slots, 2048)
-    image[:n] = torch.from_numpy(qg.read_f32(folder / "image_embeds.f32", [n, 2048]))
-    deep = torch.zeros(3 * slots, 2048)
-    ref_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, 2048])
+    image = torch.zeros(slots, hidden)
+    image[:n] = torch.from_numpy(qg.read_f32(folder / "image_embeds.f32", [n, hidden]))
+    deep = torch.zeros(3 * slots, hidden)
+    ref_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, hidden])
     for k in range(3):
         deep[k * slots:k * slots + n] = torch.from_numpy(ref_deep[k])
-    statics = (image, deep, torch.from_numpy(qg.image_rc(h, w)), torch.tensor([case["ropeShiftStart"]],
-               dtype=torch.int32), torch.tensor([case["ropeShiftAmount"]], dtype=torch.int32))
+    statics = (image, deep, *(torch.from_numpy(a) for a in qg.plan_images([case["imageStart"]], [(h, w)])))
     want = qg.read_f32(folder / "logits.f32", [index["steps"], vocab])[0]
     length = ext.shape[1]
     kc, vc = decoder.empty_state(length + 4)
@@ -162,7 +169,7 @@ def main() -> None:
              and g["vision"]["outputs"] == {"imageEmbeds": "image_embeds", "deepstackEmbeds": "deepstack_embeds"}
              and list(dec_inputs.values()) == export_qwen3vl.DECODER_INPUTS
              and all(g["decoder"]["inputs"][r]["binding"] == "static" for r in
-                     ("imageEmbeds", "deepstackEmbeds", "imageRC", "ropeShiftStart", "ropeShiftAmount"))
+                     ("imageEmbeds", "deepstackEmbeds", "imagePositions", "ropeShiftStart", "ropeShiftAmount"))
              and g["decoder"]["outputs"]["logits"] == {"name": "logits", "rows": "last"}
              and g["decoder"]["states"]["sequence"][0] == {"tensors": ["keyCache", "valueCache"], "kind": "kv",
                                                            "seqAxis": 3}

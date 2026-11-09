@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-"""Export Qwen3-VL 2B Instruct (Qwen/Qwen3-VL-2B-Instruct, Apache-2.0) as an Aether-Kit `vlm-static-inject@1` bundle.
+"""Export a Qwen3-VL checkpoint (Apache-2.0; 2B Instruct by default) as an Aether-Kit `vlm-static-inject@1` bundle.
 
     uv sync --frozen --project Forge
-    Forge/.venv/bin/python -I Forge/qwen3vl/fetch_upstream.py        # pinned checkpoint, license text, photos; once
-    Forge/.venv/bin/python -I Forge/qwen3vl/export_qwen3vl.py --output <new bundle dir>
+    Forge/.venv/bin/python -I Forge/qwen3vl/fetch_upstream.py        # pinned 2B checkpoint, license text, photos; once
+    Forge/.venv/bin/python -I Forge/qwen3vl/export_qwen3vl.py --output <new bundle dir> [--pins <source pins>]
     Forge/.venv/bin/python -I Forge/qwen3vl/export_qwen3vl.py --sample-manifest
 
-Nothing is downloaded: every file read is verified against `source-pins.json`. Conversion runs on the CPU (about 9 GB
-for the float32 upstream build plus the converter). The output directory is laid out as an installed revision root:
+`--pins` selects the source checkpoint: `source-pins.json` (Qwen/Qwen3-VL-2B-Instruct, the default) or another pins
+file beside it, such as `source-pins-4b-abliterated.json` (a 4B fine-tune read from the local Hugging Face cache, a
+local Forge input). Nothing is downloaded: every file read is verified against the pins. Every size comes from the
+checkpoint's config. Conversion runs on the CPU (the float32 upstream build plus the converter: about 9 GB for 2B,
+20 GB for 4B). The output directory is laid out as an installed revision root (`<prefix>` from the pins):
 
     OUTPUT/
       .aether/aether.json                 the Aether manifest (MANIFEST.md §1.2 `vlm-static-inject@1`, §2)
-      qwen3_vl_2b_vision.aimodel          vision-tower@1: patches f32 [2048,1536], grid i32 [2] -> image_embeds f32
-                                          [512,2048], deepstack_embeds f32 [1536,2048]
-      qwen3_vl_2b_decoder.aimodel         decoder-lm@1 + static image inputs; states keyCache/valueCache f16
-                                          [28,1,8,C,128]; logits f32 [1,1,151936]
+      <prefix>_vision.aimodel             vision-tower@1: patches f32 [2048,1536], grid i32 [2] -> image_embeds f16
+                                          [512,H], deepstack_embeds f16 [1536,H]
+      <prefix>_decoder.aimodel            decoder-lm@1 + static image inputs (image_embeds f16 [N,H], deepstack_embeds
+                                          f16 [3N,H], image_positions i32 [N,3], rope_shift_start/amount i32 [M]);
+                                          states keyCache/valueCache f16 [layers,1,8,C,128]; logits f32 [1,1,vocab]
       tokenizer/                          upstream's tokenizer.json, tokenizer_config.json, vocab.json, merges.txt,
-                                          chat_template.jinja (from chat_template.json)
+                                          chat_template.jinja
       LICENSE                             Apache-2.0 (QwenLM/Qwen3-VL's text)
       NOTICE                              attribution and the modification notice
-      README.md                           the model card for aether-models/aether-kit-qwen3-vl-2b
+      README.md                           the model card
       SHA256SUMS, export-report.json, forge-log.jsonl
 
 The graphs and their contracts are documented in qwen3vl_graphs.py. Precision (measured, see export-report.json and
@@ -62,12 +66,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import qwen3vl_graphs as qg  # noqa: E402
 
-ID = "qwen3-vl-2b"
-HF_REPO = "aether-models/aether-kit-qwen3-vl-2b"
-VISION_ASSET, DECODER_ASSET = "qwen3_vl_2b_vision.aimodel", "qwen3_vl_2b_decoder.aimodel"
 FUNCTION = "main"
 VISION_INPUTS, VISION_OUTPUTS = ["patches", "grid"], ["image_embeds", "deepstack_embeds"]
-DECODER_INPUTS = ["input_ids", "position_ids", "image_embeds", "deepstack_embeds", "image_rc", "rope_shift_start",
+DECODER_INPUTS = ["input_ids", "position_ids", "image_embeds", "deepstack_embeds", "image_positions", "rope_shift_start",
                   "rope_shift_amount"]
 DECODER_STATES, DECODER_OUTPUTS = ["keyCache", "valueCache"], ["logits"]
 TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt")
@@ -78,6 +79,9 @@ VISION_COMPUTE = "float32"
 DECODER_COMPUTE = "float16"
 DECODER_ATTENTION = "float32"
 WEIGHTS = "float16"
+# The tower's outputs and the decoder's image statics: the decoder casts its embeddings to its float16 residual stream,
+# so float16 statics lose nothing and halve what is bound on every step.
+IMAGE_DTYPE = "float16"
 CREATION_DATE = "2026-11-06T00:00:00+00:00"
 STOP_IDS = {151645: "<|im_end|>", 151643: "<|endoftext|>"}   # generation_config.eos_token_id (both tokenizer eos)
 
@@ -100,6 +104,15 @@ class Log:
         seconds = round(time.monotonic() - self.started.pop(stage), 2)
         self.event(stage, "done", seconds=seconds, peakRSSGB=peak_rss_gb(), **fields)
         return seconds
+
+
+class Bundle:
+    """The bundle's names, from the pins (`bundle`)."""
+
+    def __init__(self, pins: dict) -> None:
+        b = pins["bundle"]
+        self.id, self.title, self.hf_repo = b["id"], b["title"], b.get("hfRepo")
+        self.vision, self.decoder = f"{b['assetPrefix']}_vision.aimodel", f"{b['assetPrefix']}_decoder.aimodel"
 
 
 def peak_rss_gb() -> float:
@@ -190,11 +203,14 @@ def convert(module, example: tuple, dynamic, path: Path, creation_date: int, inp
 # MARK: the manifest (MANIFEST.md §1.2 vlm-static-inject@1, §2.3 graphs, §2.5 preprocess, §2.6 image)
 
 def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dict, capacity: int = qg.PATCH_CAPACITY,
-             template_sha: str = "0" * 64) -> dict:
+             template_sha: str = "0" * 64, slots: int = qg.IMAGE_SLOTS, images: int = qg.MAX_IMAGES,
+             vocab: int = 151936) -> dict:
     tokens = capacity // 4
+    names = Bundle(qg.PINS)
+    VISION_ASSET, DECODER_ASSET = names.vision, names.decoder
     return {
         "schema": 1,
-        "id": ID,
+        "id": names.id,
         "task": "image-text-to-text",
         "driver": "vlm-static-inject@1",
         "variant": {"platform": platform_name},
@@ -210,7 +226,8 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                             "block-major rows first and zeros after; grid int32 [2] is (h, w) in patches (both even, "
                             f"h*w <= {capacity}). Padding rows are masked as keys in the graph and the output rows past "
                             "h*w/4 are zero. Positional tables (bilinear position-table resampling, 2-D rotary) are "
-                            "computed in the graph from grid, as upstream computes them from grid_thw."),
+                            "computed in the graph from grid, as upstream computes them from grid_thw. One image per "
+                            "call; the host copies its rows into the decoder's static slots."),
             },
             "decoder": {
                 "file": f"main:{DECODER_ASSET}", "function": FUNCTION,
@@ -218,11 +235,11 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                     "tokens": "input_ids", "positions": "position_ids",
                     "imageEmbeds": {"name": "image_embeds", "binding": "static"},
                     "deepstackEmbeds": {"name": "deepstack_embeds", "binding": "static"},
-                    "imageRC": {"name": "image_rc", "binding": "static"},
+                    "imagePositions": {"name": "image_positions", "binding": "static"},
                     "ropeShiftStart": {"name": "rope_shift_start", "binding": "static"},
                     "ropeShiftAmount": {"name": "rope_shift_amount", "binding": "static"},
                 },
-                "inputEncodings": {"tokens": {"extensionIds": {"base": 151936, "count": tokens}}},
+                "inputEncodings": {"tokens": {"extensionIds": {"base": vocab, "count": slots}}},
                 "outputs": {"logits": {"name": "logits", "rows": "last"}},
                 "states": {"sequence": [{"tensors": DECODER_STATES, "kind": "kv", "seqAxis": 3}]},
                 "limits": {"maxContext": qg.CONTEXT_MAX, "prefillChunk": qg.PREFILL_MAX},
@@ -230,8 +247,9 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                 "x-notes": ("Running contract: input_ids [1,S] (S 1..512), position_ids [1,T] = 0..T-1 (the last S are "
                             "the fed tokens'), keyCache/valueCache written in place at rows T-S..T-1; logits are the "
                             "last fed row only. maxContext is the graph's KV axis bound (upstream declares 262144). "
-                            "Static inputs are rewritten per attached image and set to the textOnly values "
-                            "otherwise."),
+                            f"Image tokens are extension ids vocab + slot, packed over the prompt's images ({slots} "
+                            f"slots, {images} images); the static inputs hold each slot's rows and rotary positions "
+                            "and each image's rope shift (image.rope)."),
             },
         },
         "tokenizer": {
@@ -245,20 +263,17 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
         },
         "preprocess": {
             "image": {
-                "resize": {"mode": "x-smartResize", "filter": "torchUint8Bicubic"},
+                "resize": {"mode": "smartResize", "filter": "torchUint8Bicubic", "factor": 32, "minPixels": 65536,
+                           "maxPixels": capacity * 256},
                 "colorSpace": "deviceRGB", "channelOrder": "RGB", "scale": 1 / 255,
                 "mean": [0.5, 0.5, 0.5], "std": [0.5, 0.5, 0.5],
                 "layout": "patches",
                 "patchify": {"patch": 16, "temporal": 2, "merge": 2, "rowOrder": "blockMajor", "withinPatch": "C,T,py,px"},
                 "hostDType": "float32",
-                "x-smartResize": {"factor": 32, "minPixels": 65536, "maxPixels": capacity * 256,
-                                  "rule": ("upstream smart_resize (transformers qwen2_vl image processing): sides "
-                                           "rounded to multiples of factor; if the area exceeds maxPixels, both sides "
-                                           "scale by sqrt(H*W/maxPixels) and floor to factor; below minPixels, scale "
-                                           "up and ceil. Then resize to exactly that size (upstream's fast "
-                                           "processor: torchvision uint8 bicubic, antialias).")},
-                "x-notes": (f"maxPixels is the tower's capacity ({capacity} patches); upstream's own default "
-                            "longest_edge is 16777216 pixels, the bundle's budget is the graph's."),
+                "x-notes": ("smartResize is upstream's smart_resize (transformers qwen2_vl image processing), then a "
+                            "resize to exactly that size (upstream's fast processor: torchvision uint8 bicubic, "
+                            f"antialias). maxPixels is the tower's capacity ({capacity} patches); upstream's own "
+                            "default longest_edge is 16777216 pixels, the bundle's budget is the graph's."),
             },
         },
         "image": {
@@ -266,49 +281,54 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                      {"from": "vision.deepstackEmbeds", "to": "decoder.deepstackEmbeds"}],
             "tokens": {"pad": "<|image_pad|>", "padId": qg.IMAGE_PAD_ID, "open": "<|vision_start|>",
                        "openId": qg.VISION_START_ID, "close": "<|vision_end|>", "closeId": qg.VISION_END_ID,
-                       "count": "gridH*gridW", "idBase": 151936},
-            "rope": {"start": "imageStart + count", "amount": "count - max(gridH, gridW)", "frameTail": 0,
+                       "count": "gridH*gridW", "idBase": vocab},
+            "rope": {"rule": "qwen3vl-mrope",
                      "textOnly": {"start": qg.TEXT_ONLY_SHIFT_START, "amount": 0, "zeroStatics": True}},
-            "deepstack": {"rowsPerToken": qg.DEEPSTACK_LEVELS, "x-layout": "levelMajor"},
-            "maxImages": 1,
-            "x-grid": {"source": "preprocess", "patchGrid": "grid input (h, w)",
-                       "merged": "gridH = h/2, gridW = w/2; count = gridH*gridW <= " + str(tokens)},
-            "x-imageRC": "int32 [count capacity, 2]: (k // gridW, k % gridW) for slot k < count, zero after",
+            "deepstack": {"rowsPerToken": qg.DEEPSTACK_LEVELS, "layout": "levelMajor"},
+            "maxImages": images,
+            "slots": slots,
             "x-notes": ("The chat template renders one <|vision_start|><|image_pad|><|vision_end|> per image; the host "
-                        "expands the single pad to count pads (as upstream's processor does), then rewrites them to "
-                        "idBase + slot. imageStart is the position of the first pad."),
+                        "expands image k's pad to count_k = gridH*gridW pads (gridH, gridW the merged grid, at most "
+                        f"{tokens} a picture), rewritten to idBase + base_k + i with base_k the earlier images' counts. "
+                        "qwen3vl-mrope: with start_k its first pad's position and shift_k the earlier images' amounts, "
+                        "imagePositions[base_k + i] = (s0, s0 + i // gridW, s0 + i % gridW) for s0 = start_k - "
+                        "shift_k; ropeShiftStart[k] = start_k + count_k; ropeShiftAmount[k] = count_k - max(gridH, "
+                        "gridW); a text token at p takes p minus the amounts whose start <= p."),
         },
         "precision": prec,
         "license": "Apache-2.0",
         "x-license": {"files": ["LICENSE", "NOTICE"], "modified": True},
         "provenance": {
-            "source": qg.REPO, "sourceRevision": qg.REVISION,
+            "source": qg.REPO, "sourceRevision": qg.REVISION, "baseModel": qg.PINS.get("baseModel", qg.REPO),
             "producer": "aether-kit Forge/qwen3vl/export_qwen3vl.py",
             "exportScript": report["scriptSHA256"]["export_qwen3vl.py"],
             "refs": {"tokenizer.stop": f"{qg.REPO}@{qg.REVISION} generation_config.json#/eos_token_id",
                      "tokenizer.source": f"{qg.REPO}@{qg.REVISION} " + ", ".join(TOKENIZER_FILES),
-                     "tokenizer.chatTemplate": f"{qg.REPO}@{qg.REVISION} chat_template.json#/chat_template",
+                     "tokenizer.chatTemplate": f"{qg.REPO}@{qg.REVISION} " + (
+                         "chat_template.jinja" if "chat_template.jinja" in qg.PINS["files"]
+                         else "chat_template.json#/chat_template"),
                      "preprocess.image": f"{qg.REPO}@{qg.REVISION} preprocessor_config.json",
                      "forgeLockSHA256": report["forgeLockSHA256"], "exportReport": "export-report.json"},
         },
     }
 
 
-def precision(vision: str, decoder: str, attention: str, weights: str) -> dict:
+def precision(vision: str, decoder: str, attention: str, weights: str, image: str = IMAGE_DTYPE) -> dict:
     short = {"float16": "fp16", "float32": "fp32"}
     return {"weights": short[weights], "activations": f"vision {short[vision]}, decoder {short[decoder]}",
             "kv": "fp16" if weights == "float16" else "fp32", "logits": "fp32",
             "components": {
                 "vision": (f"{short[weights]} weights, {short[vision]} compute; LayerNorm statistics, rotary and "
-                           "position resampling fp32; outputs fp32"),
+                           f"position resampling fp32; outputs {short[image]}"),
                 "decoder": (f"{short[weights]} weights and KV, {short[decoder]} residual stream and matmuls, "
                             f"{short[attention]} attention; RMSNorm statistics, M-RoPE angles and the tied head fp32"),
-                "io": ("patches f32, grid i32; image/deepstack embeds f32; tokens, positions, image_rc and rope "
-                       "shifts i32; logits f32")}}
+                "io": (f"patches f32, grid i32; image/deepstack embeds {short[image]}; tokens, positions, "
+                       "image_positions and rope shifts i32; logits f32")}}
 
 
 def sample_manifest(platform_name: str) -> dict:
-    files = {f"{a}/{n}": {"bytes": 1, "sha256": "0" * 64} for a in (VISION_ASSET, DECODER_ASSET)
+    names = Bundle(qg.PINS)
+    files = {f"{a}/{n}": {"bytes": 1, "sha256": "0" * 64} for a in (names.vision, names.decoder)
              for n in ("main.hash", "main.mlirb", "metadata.json")}
     files.update({f"tokenizer/{n}": {"bytes": 1, "sha256": "0" * 64}
                   for n in (*TOKENIZER_FILES, "chat_template.jinja")})
@@ -318,11 +338,14 @@ def sample_manifest(platform_name: str) -> dict:
 
 
 def notice(weights: str) -> str:
+    base = qg.PINS.get("baseModel", qg.REPO)
+    origin = ("by the Qwen team, Alibaba Cloud," if base == qg.REPO
+              else f"a fine-tune of {base} (by the Qwen team, Alibaba Cloud),")
     return "\n".join([
-        "Qwen3-VL-2B-Instruct (Aether-Kit Core AI export)",
+        f"{Bundle(qg.PINS).title} (Aether-Kit Core AI export)",
         "",
         f"This bundle is a modified version of {qg.REPO} at revision {qg.REVISION},",
-        "by the Qwen team, Alibaba Cloud, licensed under the Apache License, Version 2.0 (LICENSE).",
+        f"{origin} licensed under the Apache License, Version 2.0 (LICENSE).",
         "",
         "Modifications: Aether-Kit's Forge exporter (Forge/qwen3vl/) re-expressed the vision tower as one static Core AI",
         f"graph over a fixed {qg.PATCH_CAPACITY}-patch buffer (the positional tables computed in the graph from the",
@@ -331,13 +354,15 @@ def notice(weights: str) -> str:
         "gate/up projections are concatenated, "
         + ("and the weights were rounded from bfloat16 to float16." if weights == "float16"
            else "and the weights were widened from bfloat16 to float32."),
-        "The tokenizer files are upstream's, unmodified; chat_template.jinja is upstream's chat_template.json value.",
+        "The tokenizer files are upstream's, unmodified; chat_template.jinja is upstream's chat template.",
         "It is not an official release of the Qwen team or Alibaba Cloud.",
         "",
     ])
 
 
 def readme(platform_names: list[str]) -> str:
+    names = Bundle(qg.PINS)
+    VISION_ASSET, DECODER_ASSET = names.vision, names.decoder
     return "\n".join([
         "---",
         "license: apache-2.0",
@@ -346,7 +371,7 @@ def readme(platform_names: list[str]) -> str:
         "tags: [aether-kit, core-ai, vision-language, qwen3-vl]",
         "---",
         "",
-        "# Qwen3-VL 2B Instruct for Aether-Kit (Core AI)",
+        f"# {names.title} for Aether-Kit (Core AI)",
         "",
         f"[{qg.REPO}](https://huggingface.co/{qg.REPO}) at revision `{qg.REVISION[:8]}`, exported by",
         "[Aether-Kit](https://github.com/bubstackdev/aether-kit)'s Forge exporter (`Forge/qwen3vl/`) as two Core AI",
@@ -355,9 +380,9 @@ def readme(platform_names: list[str]) -> str:
         f"- `{VISION_ASSET}`: the vision tower (24 ViT blocks, 2x2 merger, DeepStack mergers) over a fixed",
         f"  {qg.PATCH_CAPACITY}-patch buffer, so any image up to {qg.PATCH_CAPACITY * 256:,} pixels (sized with",
         f"  upstream's smart resize) runs on one static shape; up to {qg.PATCH_CAPACITY // 4} image tokens.",
-        f"- `{DECODER_ASSET}`: the Qwen3 text decoder with in-place KV states; the image's embeddings and DeepStack",
-        "  features are static inputs, image tokens are extension ids (`151936 + slot`) and the 3-axis M-RoPE",
-        "  positions are computed in the graph.",
+        f"- `{DECODER_ASSET}`: the Qwen3 text decoder with in-place KV states; the images' embeddings and DeepStack",
+        "  features are static inputs, image tokens are extension ids (`151936 + slot`, packed over a prompt's",
+        "  images) and the 3-axis M-RoPE positions are computed in the graph.",
         "",
         "Weights are stored float16. The tower computes in float32, the decoder in float16 with float32 attention.",
         f"Load it with Aether-Kit (`vlm-static-inject@1`, {' and '.join(platform_names)}); the manifest is",
@@ -372,10 +397,12 @@ def readme(platform_names: list[str]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    qg.pins_argument(parser)
     parser.add_argument("--output", type=Path, help="new bundle directory")
     parser.add_argument("--platform", choices=["macos", "ios"], default="macos")
     parser.add_argument("--sample-manifest", action="store_true")
-    parser.add_argument("--snapshot", type=Path, default=qg.DEFAULT_SNAPSHOT)
+    parser.add_argument("--snapshot", type=Path, help="the checkpoint snapshot (default: the pins' revision in the "
+                        "Hugging Face cache)")
     parser.add_argument("--extras", type=Path, default=Path.home() / ".cache/aether-kit/qwen3vl",
                         help="fetch_upstream.py's output (LICENSE)")
     parser.add_argument("--graphs", default="vision,decoder", help="comma-separated subset (measurement exports)")
@@ -383,9 +410,16 @@ def main() -> None:
     parser.add_argument("--decoder-compute", choices=["float16", "float32"], default=DECODER_COMPUTE)
     parser.add_argument("--decoder-attention", choices=["float16", "float32"], default=DECODER_ATTENTION)
     parser.add_argument("--weights", choices=["float16", "float32"], default=WEIGHTS)
+    parser.add_argument("--image-dtype", choices=["float16", "float32"], default=IMAGE_DTYPE,
+                        help="the tower's outputs and the decoder's image statics")
+    parser.add_argument("--slots", type=int, default=qg.IMAGE_SLOTS, help="the decoder's image slots N")
+    parser.add_argument("--images", type=int, default=qg.MAX_IMAGES, help="the decoder's rope-shift entries M")
     parser.add_argument("--layers", type=int, help="debug: keep only the first N decoder layers")
     parser.add_argument("--creation-date", default=CREATION_DATE)
     args = parser.parse_args()
+    qg.use_pins(args.pins)
+    args.snapshot = args.snapshot or qg.DEFAULT_SNAPSHOT
+    names = Bundle(qg.PINS)
     if args.sample_manifest:
         print(json.dumps(sample_manifest(args.platform), indent=2))
         return
@@ -403,9 +437,10 @@ def main() -> None:
     torch.manual_seed(0)
     torch.set_grad_enabled(False)
     weights = qg.DTYPES[args.weights]
-    prec = precision(args.vision_compute, args.decoder_compute, args.decoder_attention, args.weights)
+    image_dtype = qg.DTYPES[args.image_dtype]
+    prec = precision(args.vision_compute, args.decoder_compute, args.decoder_attention, args.weights, args.image_dtype)
     report = {
-        "schema": 1, "id": ID, "command": sys.argv,
+        "schema": 1, "id": names.id, "command": sys.argv, "pins": args.pins.name,
         "exportedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "creationDate": args.creation_date,
         "host": {"os": subprocess.run(["sw_vers", "-buildVersion"], capture_output=True, text=True).stdout.strip(),
                  "machine": platform.machine(), "python": platform.python_version()},
@@ -420,6 +455,7 @@ def main() -> None:
         "precisionArgs": {"vision": args.vision_compute, "decoder": args.decoder_compute,
                           "attention": args.decoder_attention, "weights": args.weights},
         "patchCapacity": qg.PATCH_CAPACITY, "prefillMax": qg.PREFILL_MAX, "contextMax": qg.CONTEXT_MAX,
+        "imageSlots": args.slots, "maxImages": args.images, "imageDType": args.image_dtype,
         "compute": COMPUTE, "conversion": {}, "stages": {},
     }
     report_path = args.output / "export-report.json"
@@ -441,6 +477,12 @@ def main() -> None:
 
     log.start("load-upstream")
     model = qg.upstream_model(args.snapshot)
+    vocab = model.config.text_config.vocab_size
+    hidden = model.config.text_config.hidden_size
+    report["model"] = {"vocab": vocab, "hidden": hidden, "layers": model.config.text_config.num_hidden_layers,
+                       "kvHeads": model.config.text_config.num_key_value_heads,
+                       "headDim": model.config.text_config.head_dim,
+                       "visionDepth": model.config.vision_config.depth}
     if args.layers:
         del model.model.language_model.layers[args.layers:]
         report["debugLayers"] = args.layers
@@ -448,11 +490,13 @@ def main() -> None:
 
     if "vision" in graphs:
         log.start("export-vision")
-        tower = qg.VisionTower(model.model.visual, dtype=qg.DTYPES[args.vision_compute], storage=weights).eval()
-        description = (f"Qwen3-VL 2B vision tower ({qg.REPO}@{qg.REVISION[:12]}): patches f32 [{qg.PATCH_CAPACITY},1536]"
-                       " (block-major, zero-padded), grid i32 [2] -> image_embeds f32 [512,2048], deepstack_embeds f32 "
-                       "[1536,2048].")
-        report["conversion"]["vision"] = convert(tower, tower.example(), None, args.output / VISION_ASSET,
+        tower = qg.VisionTower(model.model.visual, dtype=qg.DTYPES[args.vision_compute], storage=weights,
+                               output=image_dtype).eval()
+        t = qg.PATCH_CAPACITY // 4
+        description = (f"{names.title} vision tower ({qg.REPO}@{qg.REVISION[:12]}): patches f32 [{qg.PATCH_CAPACITY},"
+                       f"1536] (block-major, zero-padded), grid i32 [2] -> image_embeds [{t},{hidden}], "
+                       f"deepstack_embeds [{3 * t},{hidden}] ({args.image_dtype}).")
+        report["conversion"]["vision"] = convert(tower, tower.example(), None, args.output / names.vision,
                                                  creation_date, VISION_INPUTS, VISION_OUTPUTS, [], description)
         del tower
         gc.collect()
@@ -461,14 +505,15 @@ def main() -> None:
 
     if "decoder" in graphs:
         log.start("export-decoder")
-        decoder = qg.Decoder(model, dtype=qg.DTYPES[args.decoder_compute],
-                             attention=qg.DTYPES[args.decoder_attention], storage=weights).eval()
+        decoder = qg.Decoder(model, slots=args.slots, images=args.images, dtype=qg.DTYPES[args.decoder_compute],
+                             attention=qg.DTYPES[args.decoder_attention], storage=weights, statics=image_dtype).eval()
         del model
         gc.collect()
         example, dynamic = decoder.example()
-        description = (f"Qwen3-VL 2B text decoder ({qg.REPO}@{qg.REVISION[:12]}): input_ids, position_ids i32 with "
-                       "static image inputs and in-place keyCache/valueCache states -> last-row logits f32 [1,1,151936].")
-        report["conversion"]["decoder"] = convert(decoder, example, dynamic, args.output / DECODER_ASSET,
+        description = (f"{names.title} text decoder ({qg.REPO}@{qg.REVISION[:12]}): input_ids, position_ids i32 with "
+                       f"static image inputs ({args.slots} slots, {args.images} images) and in-place keyCache/valueCache "
+                       f"states -> last-row logits f32 [1,1,{vocab}].")
+        report["conversion"]["decoder"] = convert(decoder, example, dynamic, args.output / names.decoder,
                                                   creation_date, DECODER_INPUTS, DECODER_OUTPUTS, DECODER_STATES,
                                                   description)
         del decoder
@@ -482,8 +527,7 @@ def main() -> None:
     (args.output / "tokenizer").mkdir()
     for name in TOKENIZER_FILES:
         shutil.copyfile(args.snapshot / name, args.output / "tokenizer" / name)
-    template = json.loads((args.snapshot / "chat_template.json").read_text())["chat_template"]
-    (args.output / "tokenizer/chat_template.jinja").write_text(template)
+    (args.output / "tokenizer/chat_template.jinja").write_text(qg.chat_template(args.snapshot))
     shutil.copyfile(license_path, args.output / "LICENSE")
     (args.output / "NOTICE").write_text(notice(args.weights))
     (args.output / "README.md").write_text(readme(["macOS"]))
@@ -491,14 +535,15 @@ def main() -> None:
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in NOT_BUNDLE}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
     report["assetBytes"] = {name: tree_bytes(args.output / asset) for name, asset in
-                            (("vision", VISION_ASSET), ("decoder", DECODER_ASSET), ("tokenizer", "tokenizer"))
+                            (("vision", names.vision), ("decoder", names.decoder), ("tokenizer", "tokenizer"))
                             if (args.output / asset).exists()}
     report["stages"]["package"] = log.done("package")
     save()
     (args.output / ".aether").mkdir()
     manifest_path = args.output / ".aether/aether.json"
     doc = manifest(files, report, args.platform, prec,
-                   template_sha=qg.sha256_file(args.output / "tokenizer/chat_template.jinja"))
+                   template_sha=qg.sha256_file(args.output / "tokenizer/chat_template.jinja"), slots=args.slots,
+                   images=args.images, vocab=vocab)
     manifest_path.write_text(json.dumps(doc, indent=2) + "\n")
     report["aetherJSONSHA256"] = qg.sha256_file(manifest_path)
     save()

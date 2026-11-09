@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The Qwen3-VL 2B gate: the exported Core AI graphs (GPU) against the upstream CPU float32 references.
+"""The Qwen3-VL gate (the 2B photo references of reference_qwen3vl.py): the exported Core AI graphs (GPU) against the upstream CPU float32 references.
 
     Forge/.venv/bin/python -I Forge/qwen3vl/check_qwen3vl.py --bundle <bundle dir> --reference <reference dir> \
         --report <new check-report.json> [--vision-from <bundle dir>] [--graphs vision,decoder]
@@ -119,30 +119,25 @@ class DecoderRun:
         return logits.reshape(-1).astype(np.float32)
 
 
-def statics_for(spec: dict, case: dict, image: np.ndarray | None, deep: np.ndarray | None, slots: int) -> dict:
-    """The decoder's static inputs for one case (image or text-only), by the manifest's role names."""
+def statics_for(spec: dict, image_block: dict, case: dict, image: np.ndarray | None, deep: np.ndarray | None,
+                hidden: int, dtype) -> dict:
+    """The decoder's static inputs for one case (one image or text-only), by the manifest's role names: the image's
+    rows packed at slot 0 (`image` [n, H] and `deep` [3, n, H], the tower's real rows), its rotary statics."""
     names = {role: (b["name"] if isinstance(b, dict) else b) for role, b in spec["inputs"].items()}
+    slots, images = image_block["slots"], image_block["maxImages"]
+    packed = np.zeros((slots, hidden), dtype)
+    packed_deep = np.zeros((qg.DEEPSTACK_LEVELS * slots, hidden), dtype)
+    starts, grids = [], []
     if case.get("image"):
         _, h, w = case["gridTHW"]
-        rc = qg.image_rc(h, w, slots=slots)
-        start, amount = case["ropeShiftStart"], case["ropeShiftAmount"]
-    else:
-        image = np.zeros((slots, 2048), np.float32)
-        deep = np.zeros((qg.DEEPSTACK_LEVELS * slots, 2048), np.float32)
-        rc = np.zeros((slots, 2), np.int32)
-        start, amount = qg.TEXT_ONLY_SHIFT_START, 0
-    return {names["imageEmbeds"]: image, names["deepstackEmbeds"]: deep, names["imageRC"]: rc,
-            names["ropeShiftStart"]: np.array([start], np.int32), names["ropeShiftAmount"]: np.array([amount], np.int32)}
-
-
-def pad_reference(image: np.ndarray, deep: np.ndarray, slots: int) -> tuple[np.ndarray, np.ndarray]:
-    n = image.shape[0]
-    pi = np.zeros((slots, image.shape[1]), np.float32)
-    pi[:n] = image
-    pd = np.zeros((qg.DEEPSTACK_LEVELS * slots, image.shape[1]), np.float32)
-    for k in range(qg.DEEPSTACK_LEVELS):
-        pd[k * slots:k * slots + n] = deep[k]
-    return pi, pd
+        n = h * w // 4
+        packed[:n] = image[:n]
+        for k in range(qg.DEEPSTACK_LEVELS):
+            packed_deep[k * slots:k * slots + n] = deep[k][:n]
+        starts, grids = [case["imageStart"]], [(h, w)]
+    positions, start, amount = qg.plan_images(starts, grids, slots=slots, images=images)
+    return {names["imageEmbeds"]: packed, names["deepstackEmbeds"]: packed_deep, names["imagePositions"]: positions,
+            names["ropeShiftStart"]: start, names["ropeShiftAmount"]: amount}
 
 
 def merge(paths: list[Path], report: Path) -> None:
@@ -198,7 +193,9 @@ def main() -> None:
     index = json.loads((args.reference / "references.json").read_text())
     vocab, steps = index["vocab"], index["steps"]
     capacity = index["patchCapacity"]
-    slots = capacity // 4
+    tower_tokens = capacity // 4
+    image_block = manifest["image"]
+    slots = image_block["slots"]
     dump = args.report.with_suffix("")
     checks: list[dict] = []
 
@@ -214,10 +211,13 @@ def main() -> None:
     load = {"vision": round(time.monotonic() - t0, 2)}
     vd = vision.descriptor()
     vi, vo = vspec["inputs"], vspec["outputs"]
+    out_spec = vd["outputs"][vo["imageEmbeds"]]
+    hidden, image_dtype = out_spec["shape"][1], out_spec["dtype"]
+    np_image = np.float16 if "16" in image_dtype else np.float32
     ok = (vd["inputs"][vi["patches"]] == {"dtype": "float32", "shape": [capacity, 1536]}
           and vd["inputs"][vi["grid"]] == {"dtype": "int32", "shape": [2]}
-          and vd["outputs"][vo["imageEmbeds"]] == {"dtype": "float32", "shape": [slots, 2048]}
-          and vd["outputs"][vo["deepstackEmbeds"]] == {"dtype": "float32", "shape": [3 * slots, 2048]}
+          and out_spec["shape"] == [tower_tokens, hidden]
+          and vd["outputs"][vo["deepstackEmbeds"]] == {"dtype": image_dtype, "shape": [3 * tower_tokens, hidden]}
           and not vd["states"])
     record("vision.descriptor", float(ok), 1.0, ok, descriptor=vd)
     wanted = set(args.cases.split(",")) if args.cases else None
@@ -236,8 +236,8 @@ def main() -> None:
             _, h, w = case["gridTHW"]
             n = h * w // 4
             pv = qg.read_f32(folder / "pixel_values.f32", [h * w, 1536])
-            want_img = qg.read_f32(folder / "image_embeds.f32", [n, 2048])
-            want_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, 2048])
+            want_img = qg.read_f32(folder / "image_embeds.f32", [n, hidden])
+            want_deep = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, hidden])
             feeds = {vi["patches"]: qg.pad_patches(pv, capacity), vi["grid"]: np.array([h, w], np.int32)}
             t0 = time.monotonic()
             out = vision(feeds)
@@ -248,20 +248,22 @@ def main() -> None:
                    relL2=qg.rel_l2(image[:n], want_img),
                    minTokenCosine=float(qg.row_cosines(image[:n], want_img).min()), tokens=n)
             row.update({"imageEmbedsCosine": c, "imageEmbedsRelL2": qg.rel_l2(image[:n], want_img)})
+            t = tower_tokens
             for k in range(qg.DEEPSTACK_LEVELS):
-                got = deep[k * slots:k * slots + n]
+                got = deep[k * t:k * t + n]
                 ck = qg.cosine(got, want_deep[k])
                 record(f"{name}.vision.deepstack{k}.cosine", round(ck, 10), COSINE_BAR, ck >= COSINE_BAR,
                        relL2=qg.rel_l2(got, want_deep[k]), minTokenCosine=float(qg.row_cosines(got, want_deep[k]).min()))
                 row[f"deepstack{k}Cosine"], row[f"deepstack{k}RelL2"] = ck, qg.rel_l2(got, want_deep[k])
             pad_zero = bool(not image[n:].any()
-                            and not any(deep[k * slots + n:(k + 1) * slots].any() for k in range(qg.DEEPSTACK_LEVELS)))
+                            and not any(deep[k * t + n:(k + 1) * t].any() for k in range(qg.DEEPSTACK_LEVELS)))
             record(f"{name}.vision.paddingZero", float(pad_zero), 1.0, pad_zero)
             again = vision(feeds)
             same = all(np.array_equal(again[k], out[k]) for k in out)
             record(f"{name}.vision.repeat.exact", float(same), 1.0, same)
             qg.write_f32(out_dir / "image_embeds.f32", image)
             qg.write_f32(out_dir / "deepstack_embeds.f32", deep)
+            deep = deep.reshape(qg.DEEPSTACK_LEVELS, t, hidden)
         encoded[name] = (image, deep)
         rows[name] = row
 
@@ -278,16 +280,17 @@ def main() -> None:
         dd = decoder.descriptor()
         names = {role: (b["name"] if isinstance(b, dict) else b) for role, b in dspec["inputs"].items()}
         expect = {names["tokens"]: ("int32", [1, -1]), names["positions"]: ("int32", [1, -1]),
-                  names["imageEmbeds"]: ("float32", [slots, 2048]),
-                  names["deepstackEmbeds"]: ("float32", [3 * slots, 2048]),
-                  names["imageRC"]: ("int32", [slots, 2]), names["ropeShiftStart"]: ("int32", [1]),
-                  names["ropeShiftAmount"]: ("int32", [1])}
+                  names["imageEmbeds"]: (image_dtype, [slots, hidden]),
+                  names["deepstackEmbeds"]: (image_dtype, [3 * slots, hidden]),
+                  names["imagePositions"]: ("int32", [slots, 3]),
+                  names["ropeShiftStart"]: ("int32", [image_block["maxImages"]]),
+                  names["ropeShiftAmount"]: ("int32", [image_block["maxImages"]])}
         ok = (all(dd["inputs"].get(n) == {"dtype": t, "shape": s} for n, (t, s) in expect.items())
               and len(dd["inputs"]) == len(expect)
               and dd["outputs"].get(dspec["outputs"]["logits"]["name"]) == {"dtype": "float32",
                                                                            "shape": [1, 1, vocab]}
-              and all(dd["states"].get(n, {}).get("shape") == [28, 1, 8, -1, 128]
-                      for n in dspec["states"]["sequence"][0]["tensors"])
+              and all(len(dd["states"].get(n, {}).get("shape", [])) == 5
+                      and dd["states"][n]["shape"][3] == -1 for n in dspec["states"]["sequence"][0]["tensors"])
               and dspec["inputEncodings"]["tokens"]["extensionIds"] == {"base": vocab, "count": slots})
         record("decoder.descriptor", float(ok), 1.0, ok, descriptor=dd)
 
@@ -305,7 +308,7 @@ def main() -> None:
         ref_greedy = qg.read_i32(folder / "greedy.i32", [steps])
         ref_logits = qg.read_f32(folder / "logits.f32", [steps, vocab])
         cap = len(tokens) + steps + 8
-        statics = statics_for(dspec, case, image, deep, slots)
+        statics = statics_for(dspec, image_block, case, image, deep, hidden, np_image)
         run = DecoderRun(decoder, dspec, statics, cap)
         t0 = time.monotonic()
         first = run.feed(tokens)
@@ -343,9 +346,9 @@ def main() -> None:
             if case.get("image"):
                 _, h, w = case["gridTHW"]
                 n = h * w // 4
-                ri, rd = pad_reference(qg.read_f32(folder / "image_embeds.f32", [n, 2048]),
-                                       qg.read_f32(folder / "deepstack_embeds.f32", [3, n, 2048]), slots)
-                run = DecoderRun(decoder, dspec, statics_for(dspec, case, ri, rd, slots), cap)
+                ri = qg.read_f32(folder / "image_embeds.f32", [n, hidden])
+                rd = qg.read_f32(folder / "deepstack_embeds.f32", [3, n, hidden])
+                run = DecoderRun(decoder, dspec, statics_for(dspec, image_block, case, ri, rd, hidden, np_image), cap)
                 alone = run.feed(tokens)
                 record(f"{name}.decoder.referenceEmbeds.firstLogits.relL2",
                        round(qg.rel_l2(alone, ref_logits[0]), 6), None, True, gated=False,
