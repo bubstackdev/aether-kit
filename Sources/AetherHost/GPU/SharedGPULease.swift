@@ -168,7 +168,7 @@ public final class SharedGPULease: Sendable {
 
     /// The legacy wrapper lock the lab's `with-gpu-lock.sh` holds exclusively while a job waits in its queue.
     public static var legacyWrapperLock: URL {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cache/aether-kit/gpu.lock")
+        URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true).appendingPathComponent(".cache/aether-kit/gpu.lock")
     }
 
     /// Whether another process is waiting for the lease at `directory`: a waiting ``acquire(_:timeout:onBusy:)`` or
