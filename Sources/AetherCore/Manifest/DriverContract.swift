@@ -298,8 +298,8 @@ extension DriverContract {
     /// denoiser segments chained by their carries (`denoiser0` in `latents`, `conditioning` from the text encoder,
     /// `sigma`, `imageRotary`, out `carryImage`, `carryText`, `condition`; `denoiser1` and `denoiser2` in the previous
     /// carries, `condition` and `imageRotary`, out the carries; `denoiser3` the same inputs, out `velocity`);
-    /// `vaeDecoder` in `latents`, out `image`. The driver also requires a tokenizer and the `schedule`, `latent` and
-    /// `krea2` blocks (checked when it loads).
+    /// `vaeDecoder` in `latents`, out `image`; an optional `vaeEncoder` (refine) in `pixels`, out `latents`. The driver
+    /// also requires a tokenizer and the `schedule`, `latent` and `krea2` blocks (checked when it loads).
     public static let krea2 = DriverContract(
         driver: .krea2,
         graphs: [
@@ -324,6 +324,11 @@ extension DriverContract {
             "vaeDecoder": stateless(
                 inputs: ["latents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
                 outputs: ["image": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
+        ],
+        optionalGraphs: [
+            "vaeEncoder": stateless(
+                inputs: ["pixels": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)],
+                outputs: ["latents": RoleSpec(required: true, rank: 3, scalar: .floatingPoint)]),
         ],
         requiresTokenizer: false)
 

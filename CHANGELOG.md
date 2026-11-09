@@ -40,6 +40,13 @@
   at any seed and size without loading or running the text encoder, pixel for pixel what `generate(_:)` renders. It is
   refused for another export's conditioning or another prompt. An encode plans memory against the last generation's
   canvas, so the denoisers that generation kept stay loaded. Additive; the `AetherImage` API baseline records it.
+- **Krea 2 refine (image-to-image)** for exports with the optional `vaeEncoder` graph (`DriverContract.krea2` now
+  lists it; `supportsRefine` says whether an export has it). `encode(image:job:)` packs a planar RGB image on [-1, 1]
+  into the decoder's `[rows, columns, 64]` latents. `generate(_:refining:reusing:noise:observing:)` runs from a
+  `Krea2RefineStart`: a start step (`(1 − σ) · x0 + σ · noise`, then the remaining steps) or an off-grid last-step
+  sigma. It optionally takes reused conditioning (one encode for every tile of a picture) and caller noise (tiles cut
+  from one canvas-wide field). `FlowMatchSchedule` gains `replacingLastSigma(_:trainTimesteps:)` and
+  `refineStart(x0:noise:step:)`. Additive; the `AetherRuntime` and `AetherImage` API baselines record it.
 
 ### Fixed
 

@@ -49,8 +49,9 @@ public struct Krea2Model: Sendable {
 ///   calls, and any failure releases every graph.
 /// - **Noise:** the seed draws the packed initial latents from Kit's ``SeededGaussianNoise`` (not PyTorch's generator),
 ///   so a seed gives the same image here and in the Forge reference.
-/// - Reference images and refine (reserved for `krea2@1`) are not implemented: the first export has no vision graph
-///   or VAE encoder.
+/// - **Refine** (image-to-image) needs the export's optional `vaeEncoder`: ``encode(image:job:)`` gives an image's
+///   packed latents, and ``generate(_:refining:reusing:noise:observing:)`` runs the steps from a start step.
+/// - Reference images (reserved for `krea2@1`) are not implemented: no export has the vision graph yet.
 public actor Krea2Pipeline {
     public typealias Options = ImagePipelineOptions
     public typealias Request = ImageRequest
@@ -158,7 +159,7 @@ public actor Krea2Pipeline {
     public func generate(
         _ request: Request, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> ImageGeneration {
-        try await generate(request, source: nil, observing: onProgress)
+        try await generate(request, source: nil, refine: nil, observing: onProgress)
     }
 
     /// Generates one image from conditioning ``encode(prompt:job:)`` made, without loading or running the text
@@ -177,11 +178,12 @@ public actor Krea2Pipeline {
         guard conditioning.prompt == request.prompt else {
             throw AetherError.generation(.invalidParameters("the request's prompt is not the conditioning's"))
         }
-        return try await generate(request, source: conditioning, observing: onProgress)
+        return try await generate(request, source: conditioning, refine: nil, observing: onProgress)
     }
 
     private func generate(
-        _ request: Request, source reused: Krea2Conditioning?, observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
+        _ request: Request, source reused: Krea2Conditioning?, refine: Refine?,
+        observing onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> ImageGeneration {
         pending += 1
         defer { pending -= 1 }
@@ -192,7 +194,11 @@ public actor Krea2Pipeline {
             throw AetherError.generation(.invalidParameters("Krea 2 has no default size; pass width and height"))
         }
         let grid = try latent.tokenGrid(width: size.width, height: size.height)
-        let table = try FlowMatchSchedule(schedule, steps: request.steps, imageTokens: grid.rows * grid.columns)
+        var table = try FlowMatchSchedule(schedule, steps: request.steps, imageTokens: grid.rows * grid.columns)
+        var plan: RefinePlan?
+        if let refine {
+            plan = try refine.plan(grid: grid, schedule: &table, trainTimesteps: schedule.trainTimesteps)
+        }
         let source: ConditioningSource = if let reused {
             .reused(reused)
         } else {
@@ -204,8 +210,8 @@ public actor Krea2Pipeline {
         meter.lap(into: \.promptReviewSeconds)
         try Task.checkCancellation()
 
-        let image = try await render(source, seed: request.seed, schedule: table, grid: grid, size: size, job: request.job,
-                                     meter: meter, onProgress: onProgress)
+        let image = try await render(source, seed: request.seed, schedule: table, refine: plan, grid: grid, size: size,
+                                     job: request.job, meter: meter, onProgress: onProgress)
         _ = meter.lap()
         try await filter.requireAllowed(image: image, prompt: request.prompt)
         meter.lap(into: \.imageReviewSeconds)
@@ -264,6 +270,106 @@ public actor Krea2Pipeline {
         }
     }
 
+    /// Whether the export has the VAE encoder that refine needs.
+    public nonisolated var supportsRefine: Bool { wiring.encoder != nil }
+
+    /// Encodes `image` (planar RGB on [-1, 1], as ``GeneratedImage`` holds it; each side a multiple of
+    /// `latent.pixelsPerToken`, at most `latent.maxImageTokens` tokens) into the packed latents a refine starts from:
+    /// `[rows, columns, channels]`, as the decoder takes them. Runs only the export's `vaeEncoder` (absent:
+    /// `unsupportedOperation`), in the prompt phase, after the GPU grant and this pipeline's turn, and plans against
+    /// the last generation's canvas, as ``encode(prompt:job:)`` does. The content filter isn't consulted: nothing is
+    /// generated, and the refine that uses the latents reviews its prompt and its image.
+    public func encode(image: GeneratedImage, job: GPUJob? = nil) async throws -> ImageLatents {
+        guard let encoder = wiring.encoder else {
+            throw AetherError.unsupportedOperation("this Krea 2 export has no vaeEncoder, which refine needs")
+        }
+        pending += 1
+        defer { pending -= 1 }
+        try Task.checkCancellation()
+        let grid = try latent.tokenGrid(width: image.width, height: image.height)
+        let grant = try await options.gpu.admit(job: job)
+        defer { grant.release() }
+        return try await gate.withTurn {
+            let residency = try admission.begin(profile: lastProfile ?? "\(image.width)x\(image.height)")
+            if let pressure = options.pressure, !admission.residentRoles.contains(encoder.role),
+               await pressure.level == .critical {
+                admission.release()
+                throw AetherError.memoryPressure
+            }
+            do {
+                let arena = TensorArena()
+                try await residency.beginPhase(.perPrompt)
+                let graph = try await residency.graph(encoder.role)
+                let pixels = try graph.makeBuffer(
+                    for: encoder.pixels, role: .input, dimensions: [image.height, image.width], in: arena)
+                let packed = try graph.makeBuffer(
+                    for: encoder.latents, role: .output, dimensions: [grid.rows, grid.columns], in: arena)
+                guard pixels.shape == [3, image.height, image.width],
+                      packed.shape == [grid.rows, grid.columns, latent.channels] else {
+                    throw AetherError.manifestMismatch(
+                        field: "graphs.\(encoder.role)",
+                        expected: "[3, \(image.height), \(image.width)] → [\(grid.rows), \(grid.columns), \(latent.channels)]",
+                        found: "\(pixels.shape) → \(packed.shape)")
+                }
+                let planar = image.planarRGB
+                switch pixels.scalarType {
+                case .float16: try pixels.write(Float16.self, count: planar.count) { Float16(planar[$0]) }
+                default: try pixels.write(planar)
+                }
+                var bindings = Bindings(arena: arena)
+                try bindings.bindInput(encoder.pixels, to: pixels)
+                try bindings.bindOutput(encoder.latents, to: packed)
+                try await graph.run(&bindings)
+                residency.sample()
+                let values = try packed.readFloats()
+                residency.endPhase(.perPrompt)
+                guard values.allSatisfy(\.isFinite) else {
+                    throw AetherError.tensor(name: encoder.latents, reason: .unsupported("the encoder returned a non-finite latent"))
+                }
+                try Task.checkCancellation()
+                admission.finish()
+                if retention == .releaseAfterEachGeneration { admission.release() }
+                return ImageLatents(rows: grid.rows, columns: grid.columns, channels: latent.channels, values: values)
+            } catch {
+                admission.release()
+                throw error
+            }
+        }
+    }
+
+    /// Refines: generates `request` from `start`'s latents instead of pure noise, running only the steps from its
+    /// start (see ``Krea2RefineStart``), with the content filter's reviews as for any generation. `start.latents` must
+    /// be the request's canvas (`[height / pixelsPerToken, width / pixelsPerToken, channels]`). With `conditioning`
+    /// (from ``encode(prompt:job:)``, for `request.prompt`), the text encoder neither loads nor runs, so tiles of one
+    /// picture share one encode. `noise` (`rows · columns · channels` finite values in packed-token order, as
+    /// ``ImageLatents/values``) replaces the seed's: tiles cut from one canvas-wide field get matching noise where they
+    /// overlap. The start latents are `(1 − σ) · x0 + σ · noise` at the start step's sigma.
+    public func generate(
+        _ request: Request, refining start: Krea2RefineStart, reusing conditioning: Krea2Conditioning? = nil,
+        noise: [Float]? = nil, observing onProgress: (@Sendable (ImageProgress) throws -> Void)? = nil
+    ) async throws -> ImageGeneration {
+        if let conditioning {
+            guard conditioning.export == export else {
+                throw AetherError.generation(.invalidParameters("the Krea 2 conditioning was encoded by another export"))
+            }
+            guard conditioning.prompt == request.prompt else {
+                throw AetherError.generation(.invalidParameters("the request's prompt is not the conditioning's"))
+            }
+        }
+        let x0 = start.latents
+        guard x0.channels == latent.channels, x0.values.count == x0.rows * x0.columns * x0.channels else {
+            throw AetherError.generation(.invalidParameters(
+                "refine latents must be [rows, columns, \(latent.channels)], as encode(image:) returns them"))
+        }
+        if let noise {
+            guard noise.count == x0.values.count, noise.allSatisfy(\.isFinite) else {
+                throw AetherError.generation(.invalidParameters(
+                    "refine noise must be \(x0.values.count) finite values (rows · columns · channels)"))
+            }
+        }
+        return try await generate(request, source: conditioning, refine: Refine(start: start, noise: noise), observing: onProgress)
+    }
+
     /// The text encoder's conditioning rows for `prompt` (`[rows, taps · width]` row-major; the gate's text check).
     /// Loads the text encoder for the call and releases it; nothing is measured and the filter isn't consulted.
     func conditioningRows(for prompt: String) async throws -> [Float] {
@@ -305,7 +411,7 @@ public actor Krea2Pipeline {
     // MARK: - The generation
 
     private func render(
-        _ source: ConditioningSource, seed: UInt64, schedule: FlowMatchSchedule, grid: (rows: Int, columns: Int),
+        _ source: ConditioningSource, seed: UInt64, schedule: FlowMatchSchedule, refine: RefinePlan?, grid: (rows: Int, columns: Int),
         size: (width: Int, height: Int), job: GPUJob?, meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
@@ -334,7 +440,7 @@ public actor Krea2Pipeline {
                 $0.loadedRoles = Set(used).subtracting(residentAtStart).sorted()
             }
             do {
-                let image = try await run(residency, source: source, seed: seed, schedule: schedule, grid: grid, size: size,
+                let image = try await run(residency, source: source, seed: seed, schedule: schedule, refine: refine, grid: grid, size: size,
                                           meter: meter, onProgress: onProgress)
                 admission.finish()
                 if retention == .releaseAfterEachGeneration { admission.release() }
@@ -351,7 +457,7 @@ public actor Krea2Pipeline {
     /// phase), nothing else keeps them alive into the next phase.
     private func run(
         _ residency: GraphResidency, source: ConditioningSource, seed: UInt64, schedule: FlowMatchSchedule,
-        grid: (rows: Int, columns: Int), size: (width: Int, height: Int), meter: ImageGenerationMeter,
+        refine: RefinePlan?, grid: (rows: Int, columns: Int), size: (width: Int, height: Int), meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> GeneratedImage {
         let arena = TensorArena()
@@ -375,7 +481,7 @@ public actor Krea2Pipeline {
         // Steps: every segment loads, then each step writes the latents and sigma and runs the segments in order.
         try await residency.beginPhase(.perStep)
         let latents = try await denoise(
-            conditioning: conditioning, textRows: source.rows, seed: seed, schedule: schedule, grid: grid,
+            conditioning: conditioning, textRows: source.rows, seed: seed, schedule: schedule, refine: refine, grid: grid,
             residency: residency, arena: arena, meter: meter, onProgress: onProgress)
         residency.endPhase(.perStep)
         try Task.checkCancellation()
@@ -392,7 +498,7 @@ public actor Krea2Pipeline {
     }
 
     private func denoise(
-        conditioning source: Conditioning, textRows: Int, seed: UInt64, schedule: FlowMatchSchedule,
+        conditioning source: Conditioning, textRows: Int, seed: UInt64, schedule: FlowMatchSchedule, refine: RefinePlan?,
         grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena, meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> [Float] {
@@ -447,13 +553,14 @@ public actor Krea2Pipeline {
             }
         }
 
-        var latents = try SeededGaussianNoise.generate(seed: seed, count: count)
+        var latents = try refine?.noise ?? SeededGaussianNoise.generate(seed: seed, count: count)
+        if let refine { latents = try schedule.refineStart(x0: refine.x0, noise: latents, step: refine.startStep) }
         // Host buffers reused across steps: the velocity is read into `v`, and each update goes into `next` in one
         // validating pass before the two swap.
         var v = [Float](repeating: 0, count: count), next = [Float](repeating: 0, count: count)
         meter.lap(into: \.denoiserPreparationSeconds)
         try onProgress?(.denoisersReady)
-        for step in 0..<schedule.steps {
+        for step in (refine?.startStep ?? 0)..<schedule.steps {
             try latents.withUnsafeBufferPointer { x throws(AetherError) in
                 try sample.write(Float16.self, count: count) { Float16(x[$0]) }
             }
@@ -558,9 +665,85 @@ public struct Krea2Conditioning: Sendable, Hashable {
     public var byteCount: Int { bytes.count }
 }
 
+/// Where a refine starts (``Krea2Pipeline/generate(_:refining:reusing:noise:observing:)``): an image's packed latents
+/// (``Krea2Pipeline/encode(image:job:)``) and the step the run begins at. The start latents are
+/// `(1 − σ) · x0 + σ · noise` at that step's sigma, so a later step keeps more of the image (Turbo, 8 steps: σ ≈ 0.31 at
+/// step 7, 0.51 at step 6, 0.66 at step 5).
+public struct Krea2RefineStart: Sendable, Hashable {
+    public enum Start: Sendable, Hashable {
+        /// Steps `step…steps − 1` of the schedule run; `step` 0 would ignore the image, so it's refused.
+        case step(Int)
+        /// One step from `sigma` to 0: the schedule's last step with its sigma replaced. Gentler than the last grid
+        /// step; it must lie below that step's sigma. Turbo is distilled at its grid sigmas, so qualify an off-grid
+        /// start before relying on it.
+        case lastStepFrom(sigma: Float)
+    }
+
+    public let latents: ImageLatents
+    public let start: Start
+
+    /// Fails unless the latents are non-empty and finite, and the step is at least 1 (or the sigma finite in (0, 1)).
+    /// The request's schedule checks the rest when the refine runs.
+    public init(latents: ImageLatents, start: Start) throws(AetherError) {
+        guard latents.rows > 0, latents.columns > 0, latents.channels > 0,
+              latents.values.count == latents.rows * latents.columns * latents.channels,
+              latents.values.allSatisfy(\.isFinite) else {
+            throw .generation(.invalidParameters("refine latents must be non-empty, finite [rows, columns, channels]"))
+        }
+        switch start {
+        case .step(let step):
+            guard step >= 1 else { throw .generation(.invalidParameters("a refine starts at step 1 or later")) }
+        case .lastStepFrom(let sigma):
+            guard sigma.isFinite, sigma > 0, sigma < 1 else {
+                throw .generation(.invalidParameters("an off-grid refine sigma must be in (0, 1)"))
+            }
+        }
+        self.latents = latents
+        self.start = start
+    }
+}
+
 // MARK: - Host pieces
 
 extension Krea2Pipeline {
+    /// A refine as requested: its start and any caller noise.
+    struct Refine: Sendable {
+        var start: Krea2RefineStart
+        var noise: [Float]?
+
+        /// Checks the start against the request's canvas and schedule; an off-grid start replaces `schedule`'s last
+        /// sigma.
+        func plan(grid: (rows: Int, columns: Int), schedule: inout FlowMatchSchedule, trainTimesteps: Int) throws(AetherError) -> RefinePlan {
+            guard start.latents.rows == grid.rows, start.latents.columns == grid.columns else {
+                throw .generation(.invalidParameters(
+                    "refine latents are \(start.latents.rows)x\(start.latents.columns) tokens; the request is \(grid.rows)x\(grid.columns)"))
+            }
+            let step: Int
+            switch start.start {
+            case .step(let value):
+                guard value < schedule.steps else {
+                    throw .generation(.invalidParameters("a refine start step must be below the \(schedule.steps) steps"))
+                }
+                step = value
+            case .lastStepFrom(let sigma):
+                guard schedule.steps >= 2, sigma < schedule.sigmas[schedule.steps - 1] else {
+                    throw .generation(.invalidParameters(
+                        "an off-grid refine sigma must lie below the last grid sigma (\(schedule.sigmas[max(0, schedule.steps - 1)]))"))
+                }
+                schedule = try schedule.replacingLastSigma(sigma, trainTimesteps: trainTimesteps)
+                step = schedule.steps - 1
+            }
+            return RefinePlan(x0: start.latents.values, startStep: step, noise: noise)
+        }
+    }
+
+    /// A checked refine: the start latents, the first step to run and any caller noise.
+    struct RefinePlan: Sendable {
+        var x0: [Float]
+        var startStep: Int
+        var noise: [Float]?
+    }
+
     /// Where a generation's conditioning comes from: the text encoder now, or an earlier ``encode(prompt:job:)``.
     enum ConditioningSource: Sendable {
         case encode(Prompt)
@@ -633,6 +816,8 @@ extension Krea2Pipeline {
         var text: (role: String, tokens: String, positions: String, conditioning: String)
         var segments: [Segment]
         var decoder: (role: String, latents: String, image: String)
+        /// The optional VAE encoder (refine).
+        var encoder: (role: String, pixels: String, latents: String)?
         /// The first segment's names for the host-fed inputs, and for its conditioning input.
         var latents: String, sigma: String, imageRotary: String, conditioning: String
         /// `role.name` of the last segment's velocity.
@@ -644,6 +829,7 @@ extension Krea2Pipeline {
             text = ("textEncoder", textGraph.inputs["tokens"]!.name, textGraph.inputs["positions"]!.name,
                     textGraph.outputs["conditioning"]!.name)
             decoder = ("vaeDecoder", vae.inputs["latents"]!.name, vae.outputs["image"]!.name)
+            encoder = manifest.graphs["vaeEncoder"].map { ("vaeEncoder", $0.inputs["pixels"]!.name, $0.outputs["latents"]!.name) }
             let contracted = Set(DriverContract.krea2.graphs.keys.filter { $0.hasPrefix("denoiser") })
             guard Set(krea2.segments) == contracted, krea2.segments.count == contracted.count,
                   krea2.segments == contracted.sorted() else {

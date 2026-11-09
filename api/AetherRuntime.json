@@ -18742,6 +18742,99 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "FlowMatchSchedule",
+        "printedName": "AetherRuntime.FlowMatchSchedule",
+        "usr": "s:13AetherRuntime17FlowMatchScheduleV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Float",
+        "printedName": "Swift.Float",
+        "usr": "s:Sf"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime17FlowMatchScheduleV18replacingLastSigma_14trainTimestepsACSf_Sit0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "replacingLastSigma",
+      "printedName": "replacingLastSigma(_:trainTimesteps:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime17FlowMatchScheduleV18replacingLastSigma_14trainTimestepsACSf_Sit0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Float",
+          "printedName": "Swift.Float",
+          "usr": "s:Sf"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.Float]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime17FlowMatchScheduleV11refineStart2x05noise4stepSaySfGAH_AHSit0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherRuntime",
+      "name": "refineStart",
+      "printedName": "refineStart(x0:noise:step:)",
+      "throwing": true,
+      "usr": "s:13AetherRuntime17FlowMatchScheduleV11refineStart2x05noise4stepSaySfGAH_AHSit0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Void",
         "printedName": "()"
        },
