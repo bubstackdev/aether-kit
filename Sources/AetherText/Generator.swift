@@ -246,7 +246,17 @@ public actor Generator {
             if let images { keep = min(keep, images.plan.reusableLimit(bound: await images.engine.boundImages)) }
             try await engine.rewind(to: keep)
             mirror = Array(prompt.prefix(keep))
-            if let images { try await images.engine.bindImages(images.plan, prepared: images.prepared) }
+            if let images {
+                do {
+                    try await images.engine.bindImages(images.plan, prepared: images.prepared)
+                } catch {
+                    // A failed bind leaves no image bound, and the engine refuses to feed on a state that holds
+                    // images: start the next request from an empty state.
+                    try? await engine.reset()
+                    mirror = []
+                    throw error
+                }
+            }
             let logits = try await engine.prefill(Array(prompt[keep...]), logits: .last)!
             mirror = prompt
             return (logits, keep)

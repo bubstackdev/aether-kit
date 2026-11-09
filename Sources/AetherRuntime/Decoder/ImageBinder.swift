@@ -39,7 +39,7 @@ final class ImageBinder {
         tower: any GraphBackend, vision: Manifest.Graph, decoder: Manifest.Graph, decoderSignature: GraphSignature,
         image: Manifest.ImageBlock, preprocess: Manifest.ImagePreprocess
     ) throws(AetherError) {
-        guard vision.kind == nil || vision.kind == .visionTower else {
+        guard vision.kind == .visionTower else {
             throw .manifestMismatch(field: "graphs.vision.kind", expected: DriverID.visionTower.description,
                                     found: vision.kind?.description ?? "none")
         }
@@ -260,12 +260,20 @@ extension DecoderEngine: ImageConditionedEngine {
             guard plan.images.isEmpty else { throw .unsupportedOperation("this model takes no images") }
             return
         }
-        let statics = try core.withStatics { $0 }
-        do {
-            try await binder.bind(plan, prepared: prepared, statics)
-        } catch {
-            try? binder.clear(statics)
-            throw error
+        // Held as the engine's operation across the tower calls: no prefill, decode, rewind or second bind runs while
+        // a bind is suspended.
+        let core = core
+        try await core.withStatics(operation: "an image bind") { statics throws(AetherError) in
+            let previous = binder.bound
+            do throws(AetherError) {
+                try await binder.bind(plan, prepared: prepared, statics)
+            } catch {
+                try? binder.clear(statics)
+                // What the state fed after the images it held took their rotary shifts, which the statics no longer
+                // hold: refuse to feed on it until a rewind before them or a reset.
+                if let first = previous.first { core.markImageStateStale(from: first.start) }
+                throw error
+            }
         }
     }
 }

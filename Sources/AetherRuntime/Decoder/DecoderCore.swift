@@ -84,6 +84,10 @@ final class DecoderCore {
     /// point is refused: the actor is re-entrant at each `await`, and the core's state and buffers belong to the
     /// operation until it returns.
     private var operation: String?
+    /// Set by a failed image bind while the state holds tokens from this position on that were fed with images the
+    /// static inputs no longer hold (their rotary inputs are text-only again). Feeding, decoding and snapshots are
+    /// refused until a rewind to at most this position, a reset or a restore.
+    private(set) var imageStateStaleFrom: Int?
     /// Diagnostics: host seconds per greedy phase (bindings, encode, argmax commit, waiting for a token).
     var timings = DecoderEngine.GreedyTimings()
     private var tokenIterator: AsyncStream<(Int, Result<Int32, AetherError>)>.Iterator?
@@ -314,6 +318,7 @@ final class DecoderCore {
 
     /// The feed itself; the caller holds `operation`.
     private func feedTokens(_ tokens: [Int32], select: LogitsSelection) async throws(AetherError) -> Logits? {
+        try requireImageStateConsistent("feeding tokens")
         guard !stateAhead else {
             throw .unsupportedOperation("the recurrent state ran past position \(position) (a pipelined stop); restore a snapshot or reset")
         }
@@ -458,6 +463,30 @@ final class DecoderCore {
         return try body(statics.mapValues(\.buffer))
     }
 
+    /// The static input buffers for an asynchronous write (an image bind and its tower calls): holds `operation` as
+    /// `name` until `body` returns, so no feed, decode, rewind or other write is accepted while it is suspended.
+    func withStatics<R>(
+        operation name: String, _ body: ([String: TensorBuffer]) async throws(AetherError) -> R
+    ) async throws(AetherError) -> R {
+        try requireIdle(name)
+        operation = name
+        defer { operation = nil }
+        return try await body(statics.mapValues(\.buffer))
+    }
+
+    /// After a failed image bind: the state from `start` on was fed with images the statics no longer hold. Nothing
+    /// to refuse when the position is already at or before it.
+    func markImageStateStale(from start: Int) {
+        if position > start { imageStateStaleFrom = min(start, imageStateStaleFrom ?? start) }
+    }
+
+    private func requireImageStateConsistent(_ request: String) throws(AetherError) {
+        if let start = imageStateStaleFrom {
+            throw .unsupportedOperation(
+                "\(request) after a failed image bind: positions \(start)..<\(position) were fed with images the static inputs no longer hold; rewind to \(start) or less, reset, or restore a snapshot")
+        }
+    }
+
     // MARK: - Rewind, snapshot
 
     func rewind(to target: Int) throws(AetherError) {
@@ -472,6 +501,7 @@ final class DecoderCore {
                 "partial rewind of recurrent states \(recurrentNames) (to \(target) from \(position)); restore a snapshot instead")
         }
         position = target
+        if let start = imageStateStaleFrom, target <= start { imageStateStaleFrom = nil }
     }
 
     func reset() throws(AetherError) {
@@ -479,10 +509,12 @@ final class DecoderCore {
         try states.zero()
         position = 0
         stateAhead = false
+        imageStateStaleFrom = nil
     }
 
     func snapshot() throws(AetherError) -> DecoderEngine.Snapshot {
         try requireIdle("snapshot")
+        try requireImageStateConsistent("snapshot")
         guard !stateAhead else { throw .unsupportedOperation("snapshot of a state that ran past its position") }
         // Sequence states only up to the position: a snapshot costs what the prompt holds, not the capacity.
         var regions: [String: [Int]] = [:]
@@ -520,6 +552,7 @@ final class DecoderCore {
         }
         position = snapshot.position
         stateAhead = false
+        imageStateStaleFrom = nil
     }
 
     // MARK: - Greedy decode
@@ -543,6 +576,7 @@ final class DecoderCore {
     /// `depth` steps stay in flight on the GPU (encode mode); `0` decodes on the host (`run` + CPU argmax).
     func beginGreedy(first: Int32, limit: Int, depth: Int, delay: UInt32 = 0, sentinels: [Int32]? = nil) throws(AetherError) {
         try requireIdle("greedy decode")
+        try requireImageStateConsistent("greedy decode")
         guard !stateAhead else { throw .unsupportedOperation("the recurrent state ran past its position; restore or reset") }
         let limit = max(0, min(limit, maxCapacity - position))
         var s = GreedySession(start: position, limit: limit, depth: depth, delay: delay, last: first)

@@ -15,6 +15,44 @@ public final class RopeLog: Sendable {
     public func positions(_ count: Int) -> [[Int32]] { storage.withLock { s in (0..<count).map { s[$0] ?? [] } } }
 }
 
+/// Holds the fake tower's first `holds` calls until ``open()`` (``entered`` yields as each one waits), and fails
+/// every call while ``failing`` is set.
+public final class TowerGate: Sendable {
+    private let holds: Mutex<Int>
+    private let fail = Mutex(false)
+    public let entered: AsyncStream<Void>
+    private let enteredContinuation: AsyncStream<Void>.Continuation
+    private let released: AsyncStream<Void>
+    private let releaseContinuation: AsyncStream<Void>.Continuation
+
+    public init(holds: Int = 0) {
+        self.holds = Mutex(holds)
+        (entered, enteredContinuation) = AsyncStream.makeStream()
+        (released, releaseContinuation) = AsyncStream.makeStream()
+    }
+
+    public var failing: Bool {
+        get { fail.withLock { $0 } }
+        set { fail.withLock { $0 = newValue } }
+    }
+
+    /// Lets one held call through.
+    public func open() { releaseContinuation.yield() }
+
+    func pass() async throws(AetherError) {
+        let hold = holds.withLock { n in
+            guard n > 0 else { return false }
+            n -= 1
+            return true
+        }
+        if hold {
+            enteredContinuation.yield()
+            for await _ in released { break }
+        }
+        if failing { throw .unsupportedOperation("the fake tower failed (TowerGate.failing)") }
+    }
+}
+
 /// A toy `vlm-static-inject@1` model behind ``GraphBackend``: a vision tower and a decoder that reads its static
 /// image inputs by the `qwen3vl-mrope` rule (docs/VLM.md §3.1), small enough for CPU tests.
 ///
@@ -83,10 +121,10 @@ public enum FakeVLM {
     /// A VLM engine over the fakes: `patchRows` tower rows (`patchRows / 4` tokens an image), `slots` and `images`.
     public static func engine(
         patchRows: Int = 16, slots: Int = 24, images: Int = 4, prefillChunk: Int = 512, capacity: Int = 1024,
-        towerLog: CallLog? = nil, rope: RopeLog? = nil
+        towerLog: CallLog? = nil, rope: RopeLog? = nil, towerGate: TowerGate? = nil
     ) async throws -> DecoderEngine {
         let decoder = FakeVLMDecoder(slots: slots, images: images, rope: rope)
-        let tower = FakeVisionTower(rows: patchRows, log: towerLog)
+        let tower = FakeVisionTower(rows: patchRows, log: towerLog, gate: towerGate)
         return try await DecoderEngine(
             step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk), vision: tower,
             visionGraph: visionGraph(), image: try imageBlock(slots: slots, images: images),
@@ -118,10 +156,12 @@ public final class FakeVisionTower: GraphBackend {
     public let signature: GraphSignature
     let rows: Int
     let log: CallLog?
+    let gate: TowerGate?
 
-    public init(rows: Int, log: CallLog? = nil) {
+    public init(rows: Int, log: CallLog? = nil, gate: TowerGate? = nil) {
         self.rows = rows
         self.log = log
+        self.gate = gate
         let t = rows / (FakeVLM.merge * FakeVLM.merge)
         signature = GraphSignature(
             function: "main",
@@ -138,6 +178,7 @@ public final class FakeVisionTower: GraphBackend {
               let embeds = bindings.output("image_embeds"), let deep = bindings.output("deepstack_embeds") else {
             throw .tensor(name: "patches", reason: .unbound)
         }
+        try await gate?.pass()
         log?.append(1)
         let g = try grid.read(Int32.self)
         let tokens = Int(g[0]) * Int(g[1]) / 4, t = rows / 4, h = FakeVLM.hidden
@@ -249,8 +290,10 @@ public struct VLMByteRenderer: PromptRenderer {
 
 extension FakeVLM {
     /// A Generator over a fake VLM engine with the byte-level test tokenizer.
-    public static func generator(towerLog: CallLog? = nil, slots: Int = 64, images: Int = 4) async throws -> Generator {
-        let engine = try await engine(slots: slots, images: images, towerLog: towerLog)
+    public static func generator(
+        towerLog: CallLog? = nil, slots: Int = 64, images: Int = 4, towerGate: TowerGate? = nil
+    ) async throws -> Generator {
+        let engine = try await engine(slots: slots, images: images, towerLog: towerLog, towerGate: towerGate)
         return Generator(engine: engine, decoder: ByteDecoding(), renderer: VLMByteRenderer(), stopTokens: [ByteVocab.imEnd],
                          profile: ByteVocab.profile, gpu: .unadmitted)
     }

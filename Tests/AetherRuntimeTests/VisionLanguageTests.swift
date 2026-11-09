@@ -307,6 +307,69 @@ struct VisionLanguageTests {
         #expect(try await Self.decode(engine, text, steps: 5) == reused)
     }
 
+    @Test func aBindIsTheEnginesOperationUntilItEnds() async throws {
+        let gate = TowerGate(holds: 1)
+        let engine = try await FakeVLM.engine(towerGate: gate)
+        let (plan, prepared) = try Self.plan(engine, [(8, 8, 1)])
+        let bind = Task { try await engine.bindImages(plan, prepared: prepared) }
+        for await _ in gate.entered { break }                                        // suspended in the tower
+        await #expect(throws: AetherError.self) { _ = try await engine.prefill([1, 2]) }
+        await #expect(throws: AetherError.self) { try await engine.beginGreedy(first: 1, limit: 2) }
+        await #expect(throws: AetherError.self) { try await engine.bindImages(plan, prepared: prepared) }
+        await #expect(throws: AetherError.self) { try await engine.reset() }
+        await #expect(throws: AetherError.self) { _ = try await engine.snapshot() }
+        #expect(await engine.position == 0)
+        gate.open()
+        try await bind.value
+        #expect(await engine.boundImages == plan.images)
+        let held = try await Self.decode(engine, plan.tokens, steps: 4)
+        #expect(held == (try await Self.fresh([(8, 8, 1)], steps: 4)))
+    }
+
+    @Test func aFailedBindRefusesToFeedOnImagesUntilARewindOrReset() async throws {
+        let gate = TowerGate()
+        let engine = try await FakeVLM.engine(towerGate: gate)
+        let (first, prepared) = try Self.plan(engine, [(8, 8, 1)])
+        try await engine.bindImages(first, prepared: prepared)
+        _ = try await engine.prefill(first.tokens)
+        // The next turn keeps the first image and adds one; its encode fails.
+        let (second, other) = try Self.plan(engine, [(8, 8, 1), (8, 8, 2)])
+        let keep = min(Generatorless.commonPrefix(first.tokens, second.tokens), second.reusableLimit(bound: await engine.boundImages))
+        let start = first.images[0].start
+        #expect(keep > first.images[0].end)
+        try await engine.rewind(to: keep)
+        gate.failing = true
+        await #expect(throws: AetherError.self) { try await engine.bindImages(second, prepared: other) }
+        gate.failing = false
+        #expect(await engine.boundImages.isEmpty)
+        // The state still holds the first image's tokens and the text fed after it with its shift.
+        await #expect(throws: AetherError.self) { _ = try await engine.prefill([65]) }
+        await #expect(throws: AetherError.self) { _ = try await engine.step(65) }
+        await #expect(throws: AetherError.self) { try await engine.beginGreedy(first: 65, limit: 2) }
+        await #expect(throws: AetherError.self) { _ = try await engine.snapshot() }
+        try await engine.rewind(to: start + 1)                                       // still inside the image
+        await #expect(throws: AetherError.self) { _ = try await engine.prefill([65]) }
+        // A rewind to the image's start: text from there equals a fresh text run.
+        try await engine.rewind(to: start)
+        let text = Array(first.tokens[..<start]) + (0..<Int32(20)).map { 70 + $0 }
+        let reused = try await Self.decode(engine, text, from: start, steps: 4)
+        #expect(reused == (try await Self.decode(try await FakeVLM.engine(), text, steps: 4)))
+        // A reset clears it too.
+        try await engine.reset()
+        try await engine.bindImages(first, prepared: prepared)
+        _ = try await engine.prefill(first.tokens)
+        try await engine.rewind(to: keep)
+        gate.failing = true
+        await #expect(throws: AetherError.self) { try await engine.bindImages(second, prepared: other) }
+        await #expect(throws: AetherError.self) { _ = try await engine.prefill([65]) }
+        try await engine.reset()
+        _ = try await engine.prefill([1, 2])
+        // A failed bind on a state that holds no image refuses nothing.
+        await #expect(throws: AetherError.self) { try await engine.bindImages(first, prepared: prepared) }
+        _ = try await engine.prefill([3])
+        gate.failing = false
+    }
+
     @Test func extensionIdsOutsideTheSlotsAreRefused() async throws {
         let engine = try await FakeVLM.engine(slots: 8)
         await #expect(throws: AetherError.self) { _ = try await engine.prefill([1, Int32(FakeVLM.vocab + 8)]) }
@@ -323,6 +386,17 @@ struct VisionLanguageTests {
         let image = try Self.prepared(width: 8, height: 8, seed: 1, spec: spec)
         let plan = try ImagePromptPlan(rendered: Self.rendered(images: 1), images: [image], spec: spec)
         await #expect(throws: AetherError.self) { try await engine.bindImages(plan, prepared: [image]) }
+    }
+
+    @Test func theVisionGraphMustDeclareItsKind() async throws {
+        var vision = FakeVLM.visionGraph()
+        vision.kind = nil
+        await #expect(throws: AetherError.self) {
+            _ = try await DecoderEngine(
+                step: FakeVLMDecoder(slots: 24, images: 4), graph: FakeVLM.decoderGraph(slots: 24), vision: FakeVisionTower(rows: 16),
+                visionGraph: vision, image: try FakeVLM.imageBlock(slots: 24, images: 4),
+                preprocess: FakeVLM.preprocess(patchRows: 16), device: DecoderEngineTests.mac, options: DecoderEngineTests.options())
+        }
     }
 
     @Test func theTowerAndStaticsMustAgree() async throws {

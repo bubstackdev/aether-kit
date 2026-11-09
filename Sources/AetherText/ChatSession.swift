@@ -82,7 +82,10 @@ public actor ChatSession {
 
     /// Sends a user turn with images (rendered before its text) to a model that takes images, as
     /// ``respond(to:)``. The images stay in the history with the turn; a later turn that renders them at the same
-    /// place reuses their encoding.
+    /// place reuses their encoding. Every turn renders the whole history, so its images count against the model's
+    /// per-context limits (`ImageInputSpec.maxImages` images and `slots` image tokens; 16 and 4,096 for the Qwen3-VL
+    /// exports): once the history holds that many, every later turn, text-only included, is refused
+    /// (`AetherError.generation(.invalidParameters)`) until ``clearHistory()``.
     public func respond(to text: String, images: [ChatImage]) -> AsyncThrowingStream<GenerationEvent, any Error> {
         respond(to: .user(text, images: images))
     }

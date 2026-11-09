@@ -79,6 +79,24 @@ struct VisionGeneratorTests {
         #expect(summary?.promptTokens == rendered.tokens.count - 2 + 6)
     }
 
+    @Test func aFailedEncodeLeavesTheGeneratorUsable() async throws {
+        let gate = TowerGate()
+        let generator = try await FakeVLM.generator(towerGate: gate)
+        let a = Self.image(1), b = Self.image(2, 16, 8)
+        let first: [ChatMessage] = [.user("Look.", images: [a])]
+        let one = try await Self.reply(generator, first)
+        // The follow-up adds a picture whose encode fails: the turn fails and the state holding the first is dropped.
+        let history = first + [.assistant(ByteChat.text(one.tokens.dropLast().map { $0 }))]
+        gate.failing = true
+        await #expect(throws: AetherError.self) { _ = try await Self.reply(generator, history + [.user("And this?", images: [b])]) }
+        gate.failing = false
+        // Text-only, then the same turn again: each equals a fresh generator's reply.
+        let text: [ChatMessage] = history + [.user("Only words.")]
+        #expect(try await Self.reply(generator, text).tokens == (try await Self.reply(try await FakeVLM.generator(), text)).tokens)
+        let again = history + [.user("And this?", images: [b])]
+        #expect(try await Self.reply(generator, again).tokens == (try await Self.reply(try await FakeVLM.generator(), again)).tokens)
+    }
+
     @Test func refusals() async throws {
         let generator = try await FakeVLM.generator(images: 2)
         await #expect(throws: AetherError.self) {

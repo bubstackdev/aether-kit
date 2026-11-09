@@ -237,6 +237,9 @@ public protocol ImageConditionedEngine: LanguageEngine {
     var boundImages: [ImagePromptPlan.Image] { get }
     /// Binds `plan`'s images before its prompt is fed: encodes each image the statics don't already hold at its slots
     /// (`prepared[k]` is plan image k), then writes the rotary inputs. Call it after rewinding to at most
-    /// `plan.reusableLimit(bound: boundImages)`. Refused during an operation. A failure leaves no image bound.
+    /// `plan.reusableLimit(bound: boundImages)`. The bind is the engine's operation until it returns: a feed, decode,
+    /// rewind, reset or second bind meanwhile is refused. A failure leaves no image bound; if the state then still
+    /// holds tokens fed with images bound before (its position is past the first one's start), feeding, decoding and
+    /// snapshots are refused until a rewind to at most that start, a reset or a restore.
     func bindImages(_ plan: ImagePromptPlan, prepared: [PreparedPromptImage]) async throws(AetherError)
 }
