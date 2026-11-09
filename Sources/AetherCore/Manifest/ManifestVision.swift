@@ -51,6 +51,12 @@ extension Manifest {
                 /// Scaled down so the longer side is ``Resize/maxSide`` (aspect kept, the other side floored, at least 1);
                 /// an image already within it is left as is. The tensor's size follows the image.
                 case fitLongSide
+                /// Qwen-VL's `smart_resize`: each side rounded to a multiple of ``Resize/factor`` (ties to even), then
+                /// scaled into ``Resize/minPixels``…``Resize/maxPixels`` with the aspect kept (above: both sides
+                /// divided by √(HW / max) and floored to the factor, at least one factor; below: multiplied by
+                /// √(min / HW) and ceiled). An aspect ratio over 200 is refused. The tensor's size follows the image
+                /// (a `patches` layout pads its rows to the graph's).
+                case smartResize
             }
 
             /// Where a letterboxed image sits on its canvas.
@@ -98,6 +104,12 @@ extension Manifest {
             /// default 0. A bare number in the JSON is the one-value form (`114` is `[114]`).
             public var padValue: [Int]?
             public var filter: Filter
+            /// `smartResize` only: the multiple each side rounds to (patch · merge).
+            public var factor: Int?
+            /// `smartResize` only: the pixel budget's lower bound.
+            public var minPixels: Int?
+            /// `smartResize` only: the pixel budget's upper bound (a vision tower's rows · patch²).
+            public var maxPixels: Int?
 
             public init(mode: Mode, size: Size? = nil, maxSide: Int? = nil, shortestSide: Int? = nil, anchor: Anchor? = nil,
                         padValue: [Int]? = nil, filter: Filter) {
@@ -123,6 +135,33 @@ extension Manifest {
                     padValue = try c.decodeIfPresent([Int].self, forKey: .padValue)
                 }
                 filter = try c.decode(Filter.self, forKey: .filter)
+                factor = try c.decodeIfPresent(Int.self, forKey: .factor)
+                minPixels = try c.decodeIfPresent(Int.self, forKey: .minPixels)
+                maxPixels = try c.decodeIfPresent(Int.self, forKey: .maxPixels)
+            }
+
+            /// `smartResize`'s target (width, height) for a `width` × `height` image; nil for the other modes. Throws
+            /// `invalidInput` for an empty image or an aspect ratio over 200.
+            public func smartSize(width: Int, height: Int) throws(AetherError) -> (width: Int, height: Int)? {
+                guard mode == .smartResize, let factor, let minPixels, let maxPixels else { return nil }
+                guard width > 0, height > 0 else { throw .invalidInput("an empty image") }
+                guard Double(max(width, height)) / Double(min(width, height)) <= 200 else {
+                    throw .invalidInput("a \(width)x\(height) image: its aspect ratio is over 200")
+                }
+                let f = Double(factor), h = Double(height), w = Double(width)
+                // Python's round: ties to even (80 / 32 = 2.5 rounds to 2).
+                var hb = (h / f).rounded(.toNearestOrEven) * f
+                var wb = (w / f).rounded(.toNearestOrEven) * f
+                if hb * wb > Double(maxPixels) {
+                    let beta = (h * w / Double(maxPixels)).squareRoot()
+                    hb = max(f, (h / beta / f).rounded(.down) * f)
+                    wb = max(f, (w / beta / f).rounded(.down) * f)
+                } else if hb * wb < Double(minPixels) {
+                    let beta = (Double(minPixels) / (h * w)).squareRoot()
+                    hb = (h * beta / f).rounded(.up) * f
+                    wb = (w * beta / f).rounded(.up) * f
+                }
+                return (Int(wb), Int(hb))
             }
         }
 
@@ -242,6 +281,18 @@ extension Manifest {
                     guard let maxSide = resize.maxSide else { throw .manifestInvalid(field: "\(p).maxSide", reason: "required by fitLongSide") }
                     try require(maxSide > 0, "\(p).maxSide", "must be positive")
                     try require(resize.size == nil, "\(p).size", "fitLongSide takes maxSide, not size")
+                case .smartResize:
+                    guard let factor = resize.factor, let minPixels = resize.minPixels, let maxPixels = resize.maxPixels else {
+                        throw .manifestInvalid(field: "\(p).factor", reason: "smartResize requires factor, minPixels and maxPixels")
+                    }
+                    try require(factor > 0 && minPixels > 0 && maxPixels >= factor * factor && minPixels <= maxPixels,
+                                "\(p).maxPixels", "needs factor > 0 and 0 < minPixels <= maxPixels, at least factor²")
+                    try require(resize.size == nil && resize.maxSide == nil, "\(p).size", "smartResize takes neither size nor maxSide")
+                    try require(layout == .patches, "\(p).mode", "smartResize sizes patch rows: the patches layout only")
+                }
+                if resize.mode != .smartResize {
+                    try require(resize.factor == nil && resize.minPixels == nil && resize.maxPixels == nil, "\(p).factor",
+                                "only smartResize takes factor, minPixels and maxPixels")
                 }
                 if resize.mode != .letterbox {
                     try require(resize.anchor == nil && resize.padValue == nil, "\(p).anchor", "only letterbox takes anchor and padValue")

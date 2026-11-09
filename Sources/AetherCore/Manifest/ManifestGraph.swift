@@ -69,6 +69,9 @@ extension Manifest {
         public var residency: Residency?
         /// §5.8: the inputs bound per block from a weight table (a graph that serves many blocks).
         public var weights: GraphWeights?
+        /// §1.2: the graph kind this graph implements (`vision-tower@1`), one of ``DriverCatalog/graphKinds``. A
+        /// driver that embeds a kind requires it on that graph.
+        public var kind: DriverID?
 
         public init(
             file: GraphFile, function: String? = nil, functions: [String: String]? = nil,
@@ -562,6 +565,10 @@ extension Manifest.Graph {
         }
         let modes = [function != nil, functions != nil, functionFamily != nil].filter { $0 }.count
         try require(modes == 1, "\(prefix).function", "exactly one of function, functions, functionFamily is required")
+        if let kind {
+            try require(DriverCatalog.graphKinds.contains(kind), "\(prefix).kind",
+                        "'\(kind)' is not a graph kind; known: \(DriverCatalog.graphKinds.map(\.description).sorted().joined(separator: ", "))")
+        }
         if let function { try require(!function.isEmpty, "\(prefix).function", "must not be empty") }
         if let functions {
             try require(!functions.isEmpty, "\(prefix).functions", "must name at least one phase")

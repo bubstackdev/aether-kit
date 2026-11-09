@@ -20,7 +20,7 @@ public enum DriverCatalog {
         DriverContract.kokoro.driver: .kokoro, DriverContract.minimaxH3.driver: .minimaxH3,
         DriverContract.depthEstimator.driver: .depthEstimator, DriverContract.textEmbedder.driver: .textEmbedder,
         DriverContract.detectorDense.driver: .detectorDense, DriverContract.detectorDetr.driver: .detectorDetr,
-        DriverContract.clipJoint.driver: .clipJoint,
+        DriverContract.clipJoint.driver: .clipJoint, DriverContract.vlmStaticInject.driver: .vlmStaticInject,
     ]
 
     /// `.unknownDriver` unless `id` is a driver this build knows.
@@ -207,6 +207,45 @@ extension DriverContract {
                 inputs: [
                     "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
                     "positions": RoleSpec(required: true, rank: 2, scalar: .integer),
+                ],
+                allowsStaticSourcedInputs: true,
+                outputs: [
+                    "logits": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "hidden": RoleSpec(required: false, rank: 3, scalar: .floatingPoint),
+                ],
+                minimumSequenceStates: 1, allowsRecurrent: true, phases: ["step", "prefill"],
+                allowsFunctionFamily: false, requiresMaxContext: true),
+        ],
+        requiresTokenizer: true)
+}
+
+extension DriverContract {
+    /// `vlm-static-inject@1` (MANIFEST.md §1.2): a `vision` graph (kind `vision-tower@1`: in `patches` [rows, dim]
+    /// and an optional `grid` [2], out `imageEmbeds`, optional `deepstackEmbeds`; stateless, one function) and a
+    /// `decoder` with `decoder-lm@1`'s roles plus static image inputs: `imageEmbeds` (required) and the optional
+    /// `deepstackEmbeds`, `imagePositions` [slots, 3], `ropeShiftStart` and `ropeShiftAmount` [images]. The driver also
+    /// requires the `image` block, `preprocess.image` (`patches` layout) and `vision.kind` (checked when it loads).
+    public static let vlmStaticInject = DriverContract(
+        driver: .vlmStaticInject,
+        graphs: [
+            "vision": stateless(
+                inputs: [
+                    "patches": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "grid": RoleSpec(required: false, rank: 1, scalar: .integer),
+                ],
+                outputs: [
+                    "imageEmbeds": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "deepstackEmbeds": RoleSpec(required: false, rank: 2, scalar: .floatingPoint),
+                ]),
+            "decoder": GraphContract(
+                inputs: [
+                    "tokens": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "positions": RoleSpec(required: true, rank: 2, scalar: .integer),
+                    "imageEmbeds": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
+                    "deepstackEmbeds": RoleSpec(required: false, rank: 2, scalar: .floatingPoint),
+                    "imagePositions": RoleSpec(required: false, rank: 2, scalar: .integer),
+                    "ropeShiftStart": RoleSpec(required: false, rank: 1, scalar: .integer),
+                    "ropeShiftAmount": RoleSpec(required: false, rank: 1, scalar: .integer),
                 ],
                 allowsStaticSourcedInputs: true,
                 outputs: [

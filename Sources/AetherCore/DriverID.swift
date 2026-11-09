@@ -59,6 +59,11 @@ public struct DriverID: Hashable, Sendable, Codable, CustomStringConvertible, Ex
 extension DriverID {
     /// Causal decoders: chat, VLM decoders, decision readout (DESIGN.md §6.2).
     public static let decoderLM = DriverID(validated: "decoder-lm@1")
+    /// A vision-language model: a `vision-tower@1` graph whose outputs a `decoder-lm@1` decoder reads as static image
+    /// inputs, image tokens as extension ids (MANIFEST.md §1.2, §2.6; Qwen3-VL).
+    public static let vlmStaticInject = DriverID(validated: "vlm-static-inject@1")
+    /// The vision tower graph kind a VLM embeds (MANIFEST.md §1.2).
+    public static let visionTower = DriverID(validated: "vision-tower@1")
     /// Text-to-image latent diffusion with a U-Net and an epsilon Euler schedule (SD-Turbo; MANIFEST.md §5).
     public static let latentDiffusion = DriverID(validated: "latent-diffusion@1")
     /// FLUX.2 [klein]: a Qwen3 text encoder, a segmented flow-matching transformer and a VAE (MANIFEST.md §5.7).

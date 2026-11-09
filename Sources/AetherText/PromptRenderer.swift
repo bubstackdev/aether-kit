@@ -1,6 +1,29 @@
 public import AetherRuntime
 import CryptoKit
 import Foundation
+import Synchronization
+
+/// An image in a user turn (docs/VLM.md §2): a `Sendable` box over an ``ImageInput`` that keeps its prepared form, so
+/// a turn that stays in a conversation's history isn't decoded and resized again on every reply. Two boxes are equal
+/// only if they are the same box.
+public final class ChatImage: Sendable, Hashable {
+    public let input: ImageInput
+    private let cache = Mutex<[String: PreparedPromptImage]>([:])
+
+    public init(_ input: ImageInput) { self.input = input }
+
+    /// The image prepared for `spec` (decoded, resized and patchified once per preprocessing).
+    public func prepared(for spec: ImageInputSpec) throws(AetherError) -> PreparedPromptImage {
+        let key = "\(spec.preprocessor.configuration.hashValue)/\(spec.patchRows)/\(spec.merge)"
+        if let hit = cache.withLock({ $0[key] }) { return hit }
+        let prepared = try spec.prepare(input)
+        cache.withLock { $0[key] = prepared }
+        return prepared
+    }
+
+    public static func == (a: ChatImage, b: ChatImage) -> Bool { a === b }
+    public func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(self)) }
+}
 
 /// One chat turn.
 public struct ChatMessage: Sendable, Hashable {
@@ -14,6 +37,8 @@ public struct ChatMessage: Sendable, Hashable {
     public var toolCalls: [ToolCall]
     /// A tool turn's tool name (`tool` role only).
     public var toolName: String?
+    /// A user turn's images, rendered before its text (one placeholder each, in order) for a model that takes images.
+    public var images: [ChatImage] = []
 
     public init(_ role: Role, _ content: String, toolCalls: [ToolCall] = [], toolName: String? = nil) {
         self.role = role
@@ -22,8 +47,16 @@ public struct ChatMessage: Sendable, Hashable {
         self.toolName = toolName
     }
 
+    /// A turn with images (user turns only).
+    public init(_ role: Role, _ content: String, images: [ChatImage]) {
+        self.init(role, content)
+        self.images = images
+    }
+
     public static func system(_ text: String) -> ChatMessage { ChatMessage(.system, text) }
     public static func user(_ text: String) -> ChatMessage { ChatMessage(.user, text) }
+    /// A user turn with images, rendered before the text.
+    public static func user(_ text: String, images: [ChatImage]) -> ChatMessage { ChatMessage(.user, text, images: images) }
     public static func assistant(_ text: String, toolCalls: [ToolCall] = []) -> ChatMessage {
         ChatMessage(.assistant, text, toolCalls: toolCalls)
     }
@@ -36,6 +69,11 @@ public struct ChatMessage: Sendable, Hashable {
     /// encode a string twice.
     func templateMessage(argumentsAsText: Bool = true) -> [String: any Sendable] {
         var message: [String: any Sendable] = ["role": role.rawValue, "content": content]
+        if !images.isEmpty {
+            // Content parts, as the reference processor's messages carry them: the images, then the text.
+            let parts: [[String: any Sendable]] = images.map { _ in ["type": "image"] } + [["type": "text", "text": content]]
+            message["content"] = parts
+        }
         if !toolCalls.isEmpty {
             message["tool_calls"] = toolCalls.map { call -> [String: any Sendable] in
                 var arguments: any Sendable = call.arguments

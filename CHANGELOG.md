@@ -110,6 +110,29 @@
   token-exact, and the other two fork where the 0.0.7 reference itself is tied in float16 (logit margins 0 and one
   ulp; the near-tie rule). Teacher-forced on the reference's replies, 541 of 543 positions take its token, and the
   two that don't are those ties. No kit API changes.
+- **Vision-language models (`vlm-static-inject@1`)**, Qwen3-VL first (docs/VLM.md): `VLMStaticInjectDriver` loads
+  a decoder and a grid-static vision tower into one `DecoderEngine`, which conforms to the new
+  `ImageConditionedEngine` (`imageInput`, `boundImages`, `bindImages(_:prepared:)`). A user turn carries images
+  (`ChatMessage.user(_:images:)` with `ChatImage`, rendered as content parts before its text),
+  `ChatSession.respond(to:images:)` sends one, and `Generator.generate(prompt:images:parameters:)` takes a prompt
+  already rendered with one placeholder per image. Several images per turn: their tokens are extension ids over
+  slots packed in prompt order, and `ImagePromptPlan` writes the decoder's rotary inputs by upstream's rule (gated
+  against 0.0.7's M-RoPE positions). Images are prepared on the CPU before the reply's single GPU grant; a later turn
+  reuses the state past images it already holds and skips their encode, and never past an image that changed (two
+  same-sized pictures render the same ids). `DecoderEngine` binds `binding: static` inputs and accepts
+  `inputEncodings.tokens.extensionIds`. Manifest: `preprocess.image.resize` mode `smartResize` (`factor`,
+  `minPixels`, `maxPixels`; `Resize.smartSize(width:height:)`), `graphs.<g>.kind`, `image.slots`,
+  `ImageBlock.typedTokens()`, `DriverContract.vlmStaticInject`, `DriverID.vlmStaticInject` and `.visionTower`.
+  `bindImages` holds the engine as its operation across the tower calls (a feed, decode, rewind or second bind
+  meanwhile is refused). After a failed bind on a state that still holds earlier images' tokens, feeding, decoding and
+  snapshots are refused until a rewind before them, a reset or a restore; the Generator resets on such a failure. A
+  conversation's images stay in the `ChatSession` history and count against one context's limits (16 images and
+  4,096 image tokens on the Qwen3-VL exports): past them every turn is refused until `clearHistory()`.
+  `Forge/qwen3vl` exports any pinned Qwen3-VL checkpoint (`--pins`; 4B: `source-pins-4b-abliterated.json`) with packed
+  image slots (4,096 slots, 16 images), fp16 image statics and an fp16 tied head (`--head-compute`; float32 logits).
+  Adding the `smartResize` case to
+  `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
+  The FoundationModels bridge stays text-only for now.
 
 ### Fixed
 

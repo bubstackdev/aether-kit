@@ -1,43 +1,47 @@
-"""The Qwen3-VL 2B export graphs and the shared harness for its exporter, reference and checks.
+"""The Qwen3-VL export graphs and the shared harness for its exporter, reference and checks.
 
-Qwen3-VL-2B-Instruct (Qwen/Qwen3-VL-2B-Instruct, Apache-2.0, Alibaba Qwen) is a ViT vision tower (24 blocks, hidden
-1024, patch 16, temporal patch 2, 2x2 spatial merge to the decoder's width 2048, DeepStack features from blocks 5, 11
-and 17) in front of a Qwen3 decoder (28 layers, hidden 2048, 16 query / 8 KV heads of 128, tied head, interleaved
-3-axis M-RoPE). The bundle is `vlm-static-inject@1` (MANIFEST.md §1.2): two graphs, one per role.
+Qwen3-VL (Qwen3VLForConditionalGeneration, Apache-2.0, Alibaba Qwen; 2B, 4B and 8B, and their fine-tunes) is a ViT
+vision tower (patch 16, temporal patch 2, 2x2 spatial merge to the decoder's width, DeepStack features from three of its
+blocks) in front of a Qwen3 decoder (tied head, interleaved 3-axis M-RoPE). Every size is read from the checkpoint's
+config; nothing here names one. The bundle is `vlm-static-inject@1` (MANIFEST.md §1.2): two graphs, one per role.
 
 **`vision` (graph kind `vision-tower@1`)**, one static function, `VisionTower`:
 
 * `patches` [P, 1536] (P = PATCH_CAPACITY rows): the processor's block-major patch rows (each 2x2 merge block's four
   patches contiguous, each row C,T,py,px with the frame repeated T=2 times), the first h*w rows real, the rest zero;
 * `grid` int32 [2] = (h, w), the image's patch grid (both even, h*w <= P);
-* outputs `image_embeds` [P/4, 2048] (merged tokens in raster order of the merged grid) and `deepstack_embeds`
-  [3*P/4, 2048] (level-major: level k's rows at k*P/4 + slot). Rows past h*w/4 are zero.
+* outputs `image_embeds` [P/4, H] (merged tokens in raster order of the merged grid) and `deepstack_embeds`
+  [3*P/4, H] (level-major: level k's rows at k*P/4 + i), in the export's output dtype. Rows past h*w/4 are zero.
 
 Everything upstream derives from `grid_thw` is computed in the graph from `grid`, with upstream's own closed forms
 (transformers.vision_utils): the block-major (row, col) of each patch, the bilinear resampling (align_corners) of the
-learned 48x48 position table, the 2-D rotary angles. The padding rows are masked out of attention as keys, so every
-real row computes exactly what upstream's per-image attention does. One static shape serves every grid up to the
-capacity: a dynamic-shape tower computed wrong outputs intermittently on the GPU in the 0.0.x prototype
-(docs/qwen3-vl.md there), and per-grid functions each wire their own resources.
+learned position table, the 2-D rotary angles. The padding rows are masked out of attention as keys, so every real row
+computes exactly what upstream's per-image attention does. One static shape serves every grid up to the capacity: a
+dynamic-shape tower computed wrong outputs intermittently on the GPU in the 0.0.x prototype, and per-grid functions
+each wire their own resources.
 
 **`decoder` (the `decoder-lm@1` contract plus static image inputs)**, one function, `Decoder`:
 
 * `input_ids` int32 [1, S] (S dynamic, 1..PREFILL_MAX): token ids; the prompt's `<|image_pad|>` ids are rewritten by
-  the host to extension ids `vocab + slot` (slot 0..count-1 in order);
+  the host to extension ids `vocab + slot`, slots packed over the prompt's images in order (image k's tokens take
+  base_k .. base_k + count_k - 1, base_k the sum of the earlier counts);
 * `position_ids` int32 [1, T] (T dynamic): the running positions 0..T-1, the last S of them the fed tokens';
-* static inputs `image_embeds` [N, 2048], `deepstack_embeds` [3N, 2048] (the tower's outputs as is, N = P/4),
-  `image_rc` int32 [N, 2] (merged-grid (row, col) of each slot), `rope_shift_start`, `rope_shift_amount` int32 [1];
-* states `keyCache`, `valueCache` [28, 1, 8, C, 128] (C dynamic, the sequence axis 3), written in place at rows
-  T-S..T-1;
-* output `logits` [1, 1, 151936]: the last fed row only (`rows: last`).
+* static inputs (N = slots, M = most images): `image_embeds` [N, H] and `deepstack_embeds` [3N, H] (level k at rows
+  k*N + slot) in the static dtype, `image_positions` int32 [N, 3] (each slot's (t, h, w) rotary positions),
+  `rope_shift_start` and `rope_shift_amount` int32 [M];
+* states `keyCache`, `valueCache` [layers, 1, kv heads, C, head dim] (C dynamic, the sequence axis 3), written in place
+  at rows T-S..T-1;
+* output `logits` [1, 1, vocab]: the last fed row only (`rows: last`).
 
 In the graph, per token: the embedding is the vocabulary row, or `image_embeds[slot]` for an extension id; DeepStack
-adds `deepstack_embeds[k*N + slot]` after decoder layer k < 3 at image tokens; the M-RoPE positions are synthesized
-from (id, position) alone: an image token at position p has slot s, image start s0 = p - s and (t, h, w) = (s0,
-s0 + row, s0 + col); a text token's three positions are p - shift, shift = rope_shift_amount when p >=
-rope_shift_start (else 0). For one image of N tokens with merged grid (gh, gw) starting at position s0, the host binds
-start = s0 + N and amount = N - max(gh, gw): exactly upstream's `get_rope_index` (text after the image resumes at
-s0 + max(gh, gw)). Text-only: start = 1 << 30, amount 0, zero buffers; the graph is then a plain Qwen3 decoder.
+adds `deepstack_embeds[k*N + slot]` after decoder layer k < 3 at image tokens; an image token's M-RoPE positions are
+`image_positions[slot]`, a text token's three positions are p - sum_j [p >= rope_shift_start[j]] * rope_shift_amount[j]
+for its running position p. For image k with first pad at position start_k, merged grid (gh_k, gw_k) and count_k tokens,
+the host binds (`plan_images`): s0_k = start_k - sum_{j<k} amount_j; image_positions[base_k + i] = (s0_k, s0_k + i // gw_k,
+s0_k + i % gw_k); rope_shift_start[k] = start_k + count_k; rope_shift_amount[k] = count_k - max(gh_k, gw_k): exactly
+upstream's `get_rope_index` (text after an image resumes at s0_k + max(gh_k, gw_k)). Unused entries: positions zero,
+start 1 << 30, amount 0; text-only is all unused, and the graph is then a plain Qwen3 decoder. A text token before
+image k reads no entry of image k or later, so a KV prefix stays valid while later images change.
 """
 from __future__ import annotations
 
@@ -52,16 +56,36 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 HERE = Path(__file__).resolve().parent
-PINS = json.loads((HERE / "source-pins.json").read_text())
-REPO, REVISION = PINS["repository"], PINS["revision"]
-DEFAULT_SNAPSHOT = Path.home() / f".cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/{REVISION}"
 DTYPES = {"float32": torch.float32, "float16": torch.float16}
+PINS: dict = {}
+REPO = REVISION = ""
+DEFAULT_SNAPSHOT = Path()
+
+
+def use_pins(path: Path) -> None:
+    """Selects the source checkpoint: a pins file (repository, revision, the SHA-256 of every snapshot file read, the
+    bundle's id and names). `source-pins.json` is Qwen3-VL 2B Instruct; others sit beside it (`source-pins-*.json`)."""
+    global PINS, REPO, REVISION, DEFAULT_SNAPSHOT
+    PINS = json.loads(Path(path).read_text())
+    REPO, REVISION = PINS["repository"], PINS["revision"]
+    DEFAULT_SNAPSHOT = (Path.home() / ".cache/huggingface/hub" / ("models--" + REPO.replace("/", "--"))
+                        / "snapshots" / REVISION)
+
+
+def pins_argument(parser) -> None:
+    parser.add_argument("--pins", type=Path, default=HERE / "source-pins.json",
+                        help="the source checkpoint's pins (default: Qwen3-VL 2B Instruct)")
+
+
+use_pins(HERE / "source-pins.json")
 
 PATCH_CAPACITY = 2048          # tower rows: 512 image tokens, 524,288 pixels (e.g. 1024x512, 736x704)
 PREFILL_MAX = 512              # the decoder's dynamic token axis, 1..512 (DecoderEngine's default prefill chunk)
 CONTEXT_MAX = 32768            # the KV capacity axis' upper bound in the graph (limits.maxContext)
 DEEPSTACK_LEVELS = 3
 TEXT_ONLY_SHIFT_START = 1 << 30
+IMAGE_SLOTS = 4096             # the decoder's static image rows N (every image token of a context, packed)
+MAX_IMAGES = 16                # the decoder's rope-shift entries M (images per context)
 
 # Token ids (tokenizer_config.json added_tokens_decoder; config.json image_token_id / vision_*_token_id).
 IMAGE_PAD_ID, VISION_START_ID, VISION_END_ID = 151655, 151652, 151653
@@ -90,6 +114,13 @@ def verify_sources(snapshot: Path) -> dict:
 
 def config(snapshot: Path) -> dict:
     return json.loads((snapshot / "config.json").read_text())
+
+
+def chat_template(snapshot: Path) -> str:
+    """The checkpoint's chat template: `chat_template.jinja`, or `chat_template.json`'s value."""
+    if (snapshot / "chat_template.jinja").is_file():
+        return (snapshot / "chat_template.jinja").read_text()
+    return json.loads((snapshot / "chat_template.json").read_text())["chat_template"]
 
 
 # MARK: upstream (transformers' unmodified Qwen3-VL, the CPU float32 reference)
@@ -215,13 +246,13 @@ class VisionTower(nn.Module):
     """patches [P, 1536], grid int32 [2] -> image_embeds [P/4, H], deepstack_embeds [3P/4, H] (see the module doc).
 
     `dtype` is the compute dtype of the blocks and mergers (norm statistics and the rotary always float32);
-    `storage` the dtype linear weights are stored in."""
+    `storage` the dtype linear weights are stored in; `output` the outputs' dtype (rounded once from float32)."""
 
     def __init__(self, visual, capacity: int = PATCH_CAPACITY, dtype: torch.dtype = torch.float32,
-                 storage: torch.dtype = torch.float16) -> None:
+                 storage: torch.dtype = torch.float16, output: torch.dtype = torch.float32) -> None:
         super().__init__()
         vc = visual.config
-        self.capacity, self.dtype = capacity, dtype
+        self.capacity, self.dtype, self.output = capacity, dtype, output
         self.merge = vc.spatial_merge_size
         if capacity % (self.merge * self.merge):
             raise SystemExit("the patch capacity must be a multiple of merge^2")
@@ -282,8 +313,8 @@ class VisionTower(nn.Module):
             if i in self.deepstack_at:
                 levels.append(self.deepstack[self.deepstack_at.index(i)](x))
         tokens = (self.token_index < floordiv(grid[0] * grid[1], self.merge * self.merge))[:, None]
-        image = torch.where(tokens, self.merger(x).float(), 0.0)
-        deep = torch.cat([torch.where(tokens, lv.float(), 0.0) for lv in levels], dim=0)
+        image = torch.where(tokens, self.merger(x).float(), 0.0).to(self.output)
+        deep = torch.cat([torch.where(tokens, lv.float(), 0.0) for lv in levels], dim=0).to(self.output)
         return image, deep
 
     def example(self, grid=(28, 28)):
@@ -305,16 +336,16 @@ def mrope_masks(head_dim: int, section: list[int]) -> torch.Tensor:
     return torch.cat([m, m], dim=-1)
 
 
-def mrope_positions(ids, p, image_rc, rope_shift_start, rope_shift_amount, vocab: int, slots: int):
+def mrope_positions(ids, p, image_positions, rope_shift_start, rope_shift_amount, vocab: int, slots: int):
     """The graph's M-RoPE positions (t, h, w), each int32 [S], from the fed ids (extension ids for image tokens), their
     running positions p and the static inputs (see the module doc)."""
     is_img = ids >= vocab
     slot = torch.clamp(ids - vocab, 0, slots - 1)
-    rc = F.embedding(slot, image_rc)                                                 # [S, 2] int32
-    shifted = p - torch.where(p >= rope_shift_start, rope_shift_amount, torch.zeros_like(p))
-    s0 = p - slot
-    return (torch.where(is_img, s0, shifted), torch.where(is_img, s0 + rc[:, 0], shifted),
-            torch.where(is_img, s0 + rc[:, 1], shifted))
+    pos = F.embedding(slot, image_positions)                                         # [S, 3] int32
+    hit = (p[:, None] >= rope_shift_start[None, :]).to(torch.int32)                  # [S, M]
+    shifted = p - (hit * rope_shift_amount[None, :]).sum(-1).to(torch.int32)
+    return (torch.where(is_img, pos[:, 0], shifted), torch.where(is_img, pos[:, 1], shifted),
+            torch.where(is_img, pos[:, 2], shifted))
 
 
 class DecoderLayer(nn.Module):
@@ -364,17 +395,20 @@ class Decoder(nn.Module):
     """The Qwen3-VL text decoder on the `decoder-lm@1` contract with static image inputs (see the module doc).
 
     `dtype`: the residual stream and matmuls; `attention`: the SDPA arithmetic; `storage`: the weights' and KV
-    states' dtype. Norm statistics and rotary angles are float32 always; logits are float32."""
+    states' dtype; `head`: the tied head's matmul (float16 reads the stored float16 embedding as is; float32 computes
+    on a float32 copy of it, 4·vocab·H bytes more). Norm statistics and rotary angles are float32 always; logits are
+    float32."""
 
-    def __init__(self, model, image_tokens: int = PATCH_CAPACITY // 4, dtype: torch.dtype = torch.float16,
-                 attention: torch.dtype = torch.float32, storage: torch.dtype = torch.float16) -> None:
+    def __init__(self, model, slots: int = IMAGE_SLOTS, images: int = MAX_IMAGES, dtype: torch.dtype = torch.float16,
+                 attention: torch.dtype = torch.float32, storage: torch.dtype = torch.float16,
+                 statics: torch.dtype = torch.float16, head: torch.dtype = torch.float32) -> None:
         super().__init__()
         cfg = model.config.text_config
-        self.cfg, self.dtype, self.storage = cfg, dtype, storage
-        self.vocab, self.hidden, self.image_tokens = cfg.vocab_size, cfg.hidden_size, image_tokens
+        self.cfg, self.dtype, self.storage, self.static_dtype, self.head_dtype = cfg, dtype, storage, statics, head
+        self.vocab, self.hidden, self.slots, self.images = cfg.vocab_size, cfg.hidden_size, slots, images
         lm = model.model.language_model
         if not model.config.tie_word_embeddings:
-            raise SystemExit("the export assumes a tied head (Qwen3-VL 2B ties it)")
+            raise SystemExit("the export assumes a tied head (Qwen3-VL 2B and 4B tie it)")
         self.register_buffer("embed", checked(lm.embed_tokens.weight, storage))
         self.layers = nn.ModuleList(DecoderLayer(layer, cfg, storage, attention) for layer in lm.layers)
         self.register_buffer("norm", lm.norm.weight.detach().float().clone())
@@ -391,20 +425,20 @@ class Decoder(nn.Module):
         angles = angles + torch.cat((pw.float()[:, None] * f, pw.float()[:, None] * f), dim=-1) * self.masks[2]
         return angles.cos()[None, None], angles.sin()[None, None]
 
-    def forward(self, input_ids, position_ids, image_embeds, deepstack_embeds, image_rc, rope_shift_start,
+    def forward(self, input_ids, position_ids, image_embeds, deepstack_embeds, image_positions, rope_shift_start,
                 rope_shift_amount, key_cache, value_cache):
         s = input_ids.shape[1]
         total = position_ids.shape[1]
         positions = position_ids[0]
         p = positions[total - s:]                                                    # [S] the fed tokens' positions
         ids = input_ids[0]
-        v, n = self.vocab, self.image_tokens
+        v, n = self.vocab, self.slots
         is_img = ids >= v
         slot = torch.clamp(ids - v, 0, n - 1)
         text = F.embedding(torch.clamp(ids, 0, v - 1), self.embed).to(self.dtype)
         image = F.embedding(slot, image_embeds).to(self.dtype)
         x = torch.where(is_img[:, None], image, text)[None]                          # [1, S, H]
-        pt, ph, pw = mrope_positions(ids, p, image_rc, rope_shift_start, rope_shift_amount, v, n)
+        pt, ph, pw = mrope_positions(ids, p, image_positions, rope_shift_start, rope_shift_amount, v, n)
         cos, sin = self.rope(pt, ph, pw)
         cos, sin = cos.to(self.dtype), sin.to(self.dtype)
         # Lower-right causal mask from the position data (not shapes): row i sees keys 0..total-s+i.
@@ -416,19 +450,20 @@ class Decoder(nn.Module):
                 extra = F.embedding(slot + i * n, deepstack_embeds).to(self.dtype)[None]
                 x = x + torch.where(img, extra, torch.zeros_like(extra))
         hidden = rms_norm(x[:, -1:], self.norm, self.eps)
-        return F.linear(hidden.float(), self.embed.float())
+        return F.linear(hidden.to(self.head_dtype), self.embed.to(self.head_dtype)).float()
 
     def empty_state(self, capacity: int) -> tuple[torch.Tensor, torch.Tensor]:
         c = self.cfg
         shape = (c.num_hidden_layers, 1, c.num_key_value_heads, capacity, c.head_dim)
         return torch.zeros(shape, dtype=self.storage), torch.zeros(shape, dtype=self.storage)
 
-    def statics(self, image_dtype: torch.dtype = torch.float32):
-        """Text-only static inputs (zero buffers, the shift sentinel)."""
-        n, h = self.image_tokens, self.hidden
-        return (torch.zeros(n, h, dtype=image_dtype), torch.zeros(DEEPSTACK_LEVELS * n, h, dtype=image_dtype),
-                torch.zeros(n, 2, dtype=torch.int32), torch.tensor([TEXT_ONLY_SHIFT_START], dtype=torch.int32),
-                torch.tensor([0], dtype=torch.int32))
+    def statics(self, image_dtype: torch.dtype | None = None):
+        """Text-only static inputs (zero buffers, every shift entry the sentinel)."""
+        n, h, m = self.slots, self.hidden, self.images
+        dt = image_dtype or self.static_dtype
+        return (torch.zeros(n, h, dtype=dt), torch.zeros(DEEPSTACK_LEVELS * n, h, dtype=dt),
+                torch.zeros(n, 3, dtype=torch.int32), torch.full((m,), TEXT_ONLY_SHIFT_START, dtype=torch.int32),
+                torch.zeros(m, dtype=torch.int32))
 
     def example(self):
         """(example inputs, dynamic shapes) for torch.export; the example dims all differ so export keeps them apart."""
@@ -446,13 +481,31 @@ class Decoder(nn.Module):
 
 # MARK: host-side contract (what the Swift driver reproduces)
 
-def image_rc(grid_h: int, grid_w: int, merge: int = 2, slots: int = PATCH_CAPACITY // 4) -> np.ndarray:
-    """int32 [slots, 2]: (row, col) of each image token in the merged grid, raster order; unused slots zero."""
-    gh, gw = grid_h // merge, grid_w // merge
-    out = np.zeros((slots, 2), dtype=np.int32)
-    k = np.arange(gh * gw)
-    out[:gh * gw, 0], out[:gh * gw, 1] = k // gw, k % gw
-    return out
+def plan_images(starts: list[int], grids: list[tuple[int, int]], merge: int = 2, slots: int = IMAGE_SLOTS,
+                images: int = MAX_IMAGES) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The static rope inputs for a prompt's images, in order: image k's first pad at `starts[k]`, patch grid
+    `grids[k]` = (h, w). Returns image_positions int32 [slots, 3], rope_shift_start and rope_shift_amount int32
+    [images] (see the module doc)."""
+    if len(starts) != len(grids) or len(grids) > images:
+        raise SystemExit(f"{len(grids)} images for {images} rope-shift entries")
+    positions = np.zeros((slots, 3), dtype=np.int32)
+    start = np.full(images, TEXT_ONLY_SHIFT_START, dtype=np.int32)
+    amount = np.zeros(images, dtype=np.int32)
+    base = shift = 0
+    for k, (s0, (h, w)) in enumerate(zip(starts, grids)):
+        gh, gw = h // merge, w // merge
+        count = gh * gw
+        if base + count > slots:
+            raise SystemExit(f"{base + count} image tokens exceed the {slots} slots")
+        t = s0 - shift
+        i = np.arange(count)
+        positions[base:base + count, 0] = t
+        positions[base:base + count, 1] = t + i // gw
+        positions[base:base + count, 2] = t + i % gw
+        start[k], amount[k] = s0 + count, count - max(gh, gw)
+        shift += int(amount[k])
+        base += count
+    return positions, start, amount
 
 
 def rope_shift(image_start: int, grid_h: int, grid_w: int, merge: int = 2) -> tuple[int, int]:

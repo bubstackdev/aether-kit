@@ -120,10 +120,13 @@ public actor Generator {
 
     /// Renders `messages` and generates. Cancelling the consuming task stops the decode and leaves the engine
     /// consistent.
+    /// User turns may carry images (``ChatMessage/images``) for an engine that takes them
+    /// (``ImageConditionedEngine``); they're prepared on the CPU before the request waits for the GPU, and a request with
+    /// images for a model that takes none is refused (`unsupportedOperation`).
     public nonisolated func generate(_ messages: [ChatMessage], parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
-        stream(job: parameters.job) { generator, continuation in
+        stream(job: parameters.job, images: messages.flatMap(\.images)) { generator, continuation, images in
             if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
             let rendered = try generator.renderer.render(
                 messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
@@ -135,7 +138,7 @@ public actor Generator {
                     messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
                 boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
             }
-            try await generator.run(rendered, parameters, continuation, boundary: boundary)
+            try await generator.run(rendered, parameters, continuation, boundary: boundary, images: images)
         }
     }
 
@@ -143,15 +146,54 @@ public actor Generator {
     public nonisolated func generate(prompt: RenderedPrompt, parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
-        stream(job: parameters.job) { generator, continuation in try await generator.run(prompt, parameters, continuation) }
+        stream(job: parameters.job, images: []) { generator, continuation, _ in try await generator.run(prompt, parameters, continuation) }
+    }
+
+    /// Generates from prompt tokens already rendered with one image placeholder per image (the chat template's
+    /// `<|vision_start|><|image_pad|><|vision_end|>` for Qwen3-VL), the images in the same order. The engine must take
+    /// images (``ImageConditionedEngine``).
+    public nonisolated func generate(
+        prompt: RenderedPrompt, images: [ChatImage], parameters: GenerationParameters = GenerationParameters()
+    ) -> AsyncThrowingStream<GenerationEvent, any Error> {
+        stream(job: parameters.job, images: images) { generator, continuation, prepared in
+            try await generator.run(prompt, parameters, continuation, images: prepared)
+        }
+    }
+
+    /// The image contract of the engine, nil when it takes no images.
+    public nonisolated var imageInput: ImageInputSpec? { (engine as? any ImageConditionedEngine)?.imageInput }
+
+    /// The CPU half of a request's images, off the actor, before the GPU grant.
+    @concurrent nonisolated static func prepare(_ images: [ChatImage], spec: ImageInputSpec?) async throws -> [PreparedPromptImage] {
+        guard !images.isEmpty else { return [] }
+        guard let spec else { throw AetherError.unsupportedOperation("this model takes no images") }
+        guard images.count <= spec.maxImages else {
+            throw AetherError.generation(.invalidParameters("\(images.count) images; this model takes at most \(spec.maxImages) per context"))
+        }
+        var out: [PreparedPromptImage] = []
+        for image in images {
+            try Task.checkCancellation()
+            out.append(try image.prepared(for: spec))
+        }
+        return out
     }
 
     private nonisolated func stream(
-        job: GPUJob?,
-        _ body: @escaping @Sendable (isolated Generator, AsyncThrowingStream<GenerationEvent, any Error>.Continuation) async throws -> Void
+        job: GPUJob?, images: [ChatImage],
+        _ body: @escaping @Sendable (isolated Generator, AsyncThrowingStream<GenerationEvent, any Error>.Continuation,
+                                     [PreparedPromptImage]) async throws -> Void
     ) -> AsyncThrowingStream<GenerationEvent, any Error> {
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
+        let spec = imageInput
         let task = Task {
+            // Images are decoded and patchified first, on the CPU: the GPU grant covers only GPU work.
+            let prepared: [PreparedPromptImage]
+            do {
+                prepared = try await Self.prepare(images, spec: spec)
+            } catch {
+                continuation.finish(throwing: error)
+                return
+            }
             // The GPU before this generator's own turn, so priority also orders this generator's requests. The grant
             // is released after the turn, once the decode's GPU work has joined.
             let grant: GPUAdmissionGrant
@@ -167,7 +209,7 @@ public actor Generator {
                 // nothing.
                 try await self.gate.withTurn {
                     do {
-                        try await body(self, continuation)
+                        try await body(self, continuation, prepared)
                         continuation.finish()
                     } catch AetherError.runtime(let underlying) where underlying is CancellationError {
                         continuation.finish(throwing: CancellationError())
@@ -186,13 +228,35 @@ public actor Generator {
     // MARK: - Prefix reuse
 
     /// Brings the engine to `prompt`'s end, reusing what it can. Returns the prompt's last logits and the reused count.
-    private func prepare(_ prompt: [Int32], boundary: Int?) async throws -> (Logits, Int) {
+    /// With an image plan, the reuse stops at the first image the engine doesn't hold where the plan places it, and
+    /// the plan's images are bound before the prefill.
+    private func prepare(
+        _ prompt: [Int32], boundary: Int?, images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine)? = nil
+    ) async throws -> (Logits, Int) {
         let recurrent = engine.hasRecurrentState
+        if recurrent, let images {
+            let bound = await images.engine.boundImages
+            if !images.plan.images.isEmpty || !bound.isEmpty {
+                throw AetherError.unsupportedOperation("images on a model with recurrent state (snapshot reuse with images is not implemented)")
+            }
+        }
         if !recurrent {
             let lcp = liveValid ? Self.commonPrefix(mirror, prompt) : 0
-            let keep = min(lcp, prompt.count - 1)
+            var keep = min(lcp, prompt.count - 1)
+            if let images { keep = min(keep, images.plan.reusableLimit(bound: await images.engine.boundImages)) }
             try await engine.rewind(to: keep)
             mirror = Array(prompt.prefix(keep))
+            if let images {
+                do {
+                    try await images.engine.bindImages(images.plan, prepared: images.prepared)
+                } catch {
+                    // A failed bind leaves no image bound, and the engine refuses to feed on a state that holds
+                    // images: start the next request from an empty state.
+                    try? await engine.reset()
+                    mirror = []
+                    throw error
+                }
+            }
             let logits = try await engine.prefill(Array(prompt[keep...]), logits: .last)!
             mirror = prompt
             return (logits, keep)
@@ -283,9 +347,19 @@ public actor Generator {
 
     private func run(
         _ rendered: RenderedPrompt, _ parameters: GenerationParameters,
-        _ continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation, boundary: Int? = nil
+        _ continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation, boundary: Int? = nil,
+        images prepared: [PreparedPromptImage] = []
     ) async throws {
-        let prompt = rendered.tokens
+        // A model that takes images plans every prompt (a text-only one restores the text-only statics); the prompt is
+        // then fed with its image tokens as extension ids, and samplers and constraints see the placeholder id there.
+        var imaging: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine)?
+        if let conditioned = engine as? any ImageConditionedEngine, let spec = conditioned.imageInput {
+            imaging = (try ImagePromptPlan(rendered: rendered.tokens, images: prepared, spec: spec), prepared, conditioned)
+        } else if !prepared.isEmpty {
+            throw AetherError.unsupportedOperation("this model takes no images")
+        }
+        let prompt = imaging?.plan.tokens ?? rendered.tokens
+        let history = imaging?.plan.placeholderTokens ?? prompt
         guard !prompt.isEmpty else { throw AetherError.unsupportedOperation("an empty prompt") }
         try parameters.sampling.validate()
         let clock = ContinuousClock()
@@ -304,8 +378,8 @@ public actor Generator {
         let (logits, reused): (Logits, Int)
         var constraint = base
         do {
-            async let first = Self.begin(processors, prompt, base: base)
-            (logits, reused) = try await prepare(prompt, boundary: boundary)
+            async let first = Self.begin(processors, history, base: base)
+            (logits, reused) = try await prepare(prompt, boundary: boundary, images: imaging)
             constraint = try await first
         } catch {
             liveValid = false
@@ -321,7 +395,7 @@ public actor Generator {
                               valueOnly: processors.contains { $0.isStructuredOutput }),
             stopper: StopMatcher(parameters.stopSequences), stopTokens: stopTokens, maxTokens: max(1, parameters.maxTokens),
             continuation: continuation)
-        var sampler = Sampler(parameters.sampling, prompt: prompt)
+        var sampler = Sampler(parameters.sampling, prompt: history)
         func choose(_ row: ArraySlice<Float>, _ constraint: TokenConstraint) throws -> Int32 {
             if pipelined { return try Logits.argmax(row) }
             var values = Array(row)
