@@ -10,7 +10,13 @@ Functions (names, dtypes and dynamic axes are the bundle contract):
 
     textEncoder/encode   input_ids, position_ids int32 [1, L] (L = 35...546, unpadded)
                          -> text_embeds fp16 [L - 34, 30720]   (12 tapped layers x 2560, tap-major)
-    denoiser0/segment    latents fp16 [N, 64], text_embeds fp16 [T, 30720], sigma f32 [1], rope_image f32 [N, 2, 128]
+    textEncoder/encodeWithImages   input_ids int32 [1, L] (L = 36...1150; image pads as extension ids),
+                         rope_positions int32 [3, L], image_embeds f32 [576, 2560], deepstack_embeds f32 [3, 576, 2560]
+                         -> text_embeds fp16 [L - 34, 30720]   (reference images; `ReferenceTextGraph`)
+    vision/encode        patches f16 [576, 1536], grid int32 [2] -> image_embeds f32 [144, 2560],
+                         deepstack_embeds f32 [3, 144, 2560]   (one reference image; `KreaVisionTower`, static)
+    denoiser0/segment    latents fp16 [N, 64], text_embeds fp16 [T, 30720] (T = 2...1116), sigma f32 [1],
+                         rope_image f32 [N, 2, 128]
                          -> image_1 f32 [N, 6144], text_1 f32 [T, 6144], cond f32 [8, 6144]
     denoiser1/segment    image_1, text_1, cond, rope_image -> image_2, text_2
     denoiser2/segment    image_2, text_2, cond, rope_image -> image_3, text_3
@@ -79,7 +85,23 @@ STEPS = 8
 MU = 1.15                                                    # `is_distilled` -> fixed exponential shift
 TRAIN_TIMESTEPS = 1000
 MAX_IMAGE_TOKENS = 4096
-MAX_TEXT_ROWS = MAX_TOKENS - DROP_ROWS                       # 512
+MAX_TEXT_ROWS = MAX_TOKENS - DROP_ROWS                       # 512, a text-only prompt's conditioning rows
+
+# Reference images (the 0.0.x reference contract): each image is a labelled part of the user message before the text,
+# "Picture n: <|vision_start|><|image_pad|><|vision_end|>", its pad expanded to the image's merged tokens, embedded by
+# Qwen3-VL-4B's own vision tower (in the text encoder checkpoint) and fed to the unchanged taps as extra text rows.
+REFERENCE_MAX_IMAGES = 4
+REFERENCE_MAX_SIDE = 384
+REFERENCE_MAX_IMAGE_TOKENS = 576                             # merged tokens over all images (the text graph's slots)
+REFERENCE_PATCH_CAPACITY = 576                               # one image's patch rows: 24 x 24 patches, 144 tokens
+REFERENCE_LABEL = "Picture {n}: "
+IMAGE_PAD_ID, VISION_START_ID, VISION_END_ID = 151655, 151652, 151653
+EXTENSION_BASE = 151936                                      # the text vocabulary: image slot s is id EXTENSION_BASE + s
+DEEPSTACK_LEVELS = 3
+MROPE_SECTION = (24, 20, 20)
+# 512 text rows + 576 image tokens + each image's label and vision start/end (7 ids) = 1116; L = 1116 + 34 ids.
+REFERENCE_MAX_TEXT_ROWS = MAX_TEXT_ROWS + REFERENCE_MAX_IMAGE_TOKENS + 7 * REFERENCE_MAX_IMAGES
+DENOISER_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS                 # the denoisers take text-only and reference rows
 
 # Within a head, new dim i takes interleaved dim 2i and new dim i + 64 takes dim 2i + 1.
 HALF_SPLIT = torch.cat([torch.arange(0, HEAD_DIM, 2), torch.arange(1, HEAD_DIM, 2)])
@@ -260,7 +282,8 @@ class Linear(nn.Module):
         self.weight = nn.Parameter(w, requires_grad=False)
 
     def forward(self, x):
-        return F.linear(x, self.weight)
+        # The reference text function may compute wider than the stored weights (cast in the graph, stored once).
+        return F.linear(x, self.weight if x.dtype == self.weight.dtype else self.weight.to(x.dtype))
 
 
 class WideLinear(nn.Module):
@@ -303,19 +326,20 @@ class TextLayer(nn.Module):
         self.heads, self.kv_heads, self.eps = cfg["num_attention_heads"], cfg["num_key_value_heads"], cfg["rms_norm_eps"]
         self.compute = compute
 
-    def forward(self, h, cos, sin, mask):
+    def forward(self, h, cos, sin, mask, compute: torch.dtype | None = None):
+        compute = compute or self.compute
         length = h.shape[1]
-        x = rms(h, self.input_norm, self.eps).to(self.compute)
+        x = rms(h, self.input_norm, self.eps).to(compute)
         q, k, v = self.qkv(x).split([self.heads * TEXT_HEAD_DIM, self.kv_heads * TEXT_HEAD_DIM,
                                      self.kv_heads * TEXT_HEAD_DIM], dim=-1)
         q = rms(q.unflatten(-1, (self.heads, TEXT_HEAD_DIM)), self.q_norm, self.eps).transpose(1, 2)
         k = rms(k.unflatten(-1, (self.kv_heads, TEXT_HEAD_DIM)), self.k_norm, self.eps).transpose(1, 2)
         v = v.unflatten(-1, (self.kv_heads, TEXT_HEAD_DIM)).transpose(1, 2)
-        q = (q * cos + rotate_half(q) * sin).to(self.compute)
-        k = (k * cos + rotate_half(k) * sin).to(self.compute)
+        q = (q * cos + rotate_half(q) * sin).to(compute)
+        k = (k * cos + rotate_half(k) * sin).to(compute)
         attn = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, scale=TEXT_HEAD_DIM ** -0.5, enable_gqa=True)
         h = h + self.o(attn.transpose(1, 2).reshape(1, length, self.heads * TEXT_HEAD_DIM)).float()
-        x = rms(h, self.post_norm, self.eps).to(self.compute)
+        x = rms(h, self.post_norm, self.eps).to(compute)
         return h + self.down(F.silu(self.gate(x)) * self.up(x)).float()
 
 
@@ -396,6 +420,154 @@ class TextEncoderGraph(nn.Module):
         positions = torch.arange(length, dtype=torch.int32)[None]
         tokens = torch.export.Dim("tokens", min=DROP_ROWS + 2, max=MAX_TOKENS)
         return (ids, positions), ({1: tokens}, {1: tokens})
+
+
+class ReferenceTextGraph(nn.Module):
+    """`textEncoder/encodeWithImages`: the text graph's layers (shared weights) with reference images as extra rows.
+
+    input_ids int32 [1, L]: the rendered ids, each image's pads replaced by extension ids `EXTENSION_BASE + slot` (slot
+    0...575, running over the images in order); rope_positions int32 [3, L] (t, h, w; the 0.0.x M-RoPE: text at the
+    running position on all axes, an image's tokens at (p + ti, p + hi, p + wi) in raster order, then p += max(t, h,
+    w)); image_embeds f32 [576, 2560] and deepstack_embeds f32 [3, 576, 2560] (level-major), slot-indexed, rows past the
+    images ignored. Out: the taps for rows 34.. as [L - 34, 12 * 2560] fp16, as `encode`.
+
+    As transformers' Qwen3VLModel: an image token's embedding is its slot's vision row; DeepStack level k is added at
+    image rows after decoder layer k (k < 3), after that layer's output is recorded, so `hidden_states[2]` (the second
+    layer's output) holds level 0 but not level 1. The interleaved M-RoPE takes frequency j from h for j in range(1,
+    3 * section[1], 3), from w for j in range(2, 3 * section[2], 3), else from t. Causal over row order.
+    """
+
+    def __init__(self, base: TextEncoderGraph, compute: torch.dtype | None = None) -> None:
+        super().__init__()
+        self.base, self.compute = base, compute or base.compute
+        section = base.cfg["rope_parameters"].get("mrope_section", list(MROPE_SECTION))
+        half = base.inv_freq.shape[0]
+        axis = torch.zeros(half, dtype=torch.long)
+        axis[1:3 * section[1]:3] = 1
+        axis[2:3 * section[2]:3] = 2
+        self.register_buffer("axis_masks", F.one_hot(axis, 3).T.float().contiguous(), persistent=False)  # [3, half]
+
+    def forward(self, input_ids, rope_positions, image_embeds, deepstack_embeds):
+        g = self.base
+        ids = input_ids[0]
+        image = ids >= EXTENSION_BASE
+        slot = torch.clamp(ids - EXTENSION_BASE, min=0, max=image_embeds.shape[0] - 1)
+        text = g.embed(torch.where(image, torch.zeros_like(ids), ids)).float()
+        h = torch.where(image[:, None], F.embedding(slot, image_embeds).float(), text)[None]
+        freqs = rope_positions.float()[:, :, None] * g.inv_freq[None, None, :]            # [3, L, half]
+        angles = (freqs * self.axis_masks[:, None, :]).sum(0)
+        emb = torch.cat((angles, angles), dim=-1)
+        cos, sin = emb.cos(), emb.sin()
+        row = torch.ones_like(ids).cumsum(0)
+        mask = torch.logical_not(row[None, :] > row[:, None])                              # causal over rows
+        levels = deepstack_embeds.shape[0]
+        taps = []
+        for index, layer in enumerate(g.layers, start=1):
+            h = layer(h, cos, sin, mask, self.compute)
+            if index in TEXT_TAPS:
+                taps.append(h[0, DROP_ROWS:])
+            if index <= levels:
+                extra = F.embedding(slot, deepstack_embeds[index - 1]).float()
+                h = h + torch.where(image[:, None], extra, torch.zeros_like(extra))[None]
+        return torch.stack(taps, dim=1).flatten(1).to(torch.float16)
+
+    def example(self, length: int = 64, image_tokens: int = 12):
+        width = self.base.embed.weight.shape[1]
+        g = torch.Generator().manual_seed(5)
+        ids = torch.arange(1000, 1000 + length, dtype=torch.int32)
+        ids[40:40 + image_tokens] = EXTENSION_BASE + torch.arange(image_tokens, dtype=torch.int32)
+        rope = torch.arange(length, dtype=torch.int32)[None].repeat(3, 1)
+        embeds = torch.randn(REFERENCE_MAX_IMAGE_TOKENS, width, generator=g) * 0.1
+        deep = torch.randn(DEEPSTACK_LEVELS, REFERENCE_MAX_IMAGE_TOKENS, width, generator=g) * 0.1
+        tokens = torch.export.Dim("tokens", min=DROP_ROWS + 2, max=DROP_ROWS + REFERENCE_MAX_TEXT_ROWS)
+        return (ids[None], rope, embeds, deep), ({1: tokens}, {1: tokens}, None, None)
+
+
+def load_visual(checkpoint: Checkpoint):
+    """Qwen3-VL-4B's vision tower (transformers' unmodified `Qwen3VLVisionModel`) with the text encoder checkpoint's
+    `visual.*` weights, float32."""
+    from transformers.models.qwen3_vl.configuration_qwen3_vl import Qwen3VLVisionConfig
+    from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLVisionModel
+
+    config = Qwen3VLVisionConfig(**checkpoint.config("text_encoder")["vision_config"])
+    model = Qwen3VLVisionModel(config).float().eval()
+    names = [n for n in checkpoint.files("text_encoder") if n.startswith("visual.")]
+    state = {n.removeprefix("visual."): t.float() for n, t in checkpoint.read("text_encoder", names).items()}
+    model.load_state_dict(state, strict=True)
+    model.requires_grad_(False)
+    return model
+
+
+class KreaVisionTower(nn.Module):
+    """`vision/encode`: one reference image's patches f16 [576, 1536] (block-major, C,T,py,px rows, the first h*w real)
+    and grid int32 [2] = (h, w) -> image_embeds f32 [144, 2560] and deepstack_embeds f32 [3, 144, 2560] (level-major).
+    Rows past the image's h*w/4 tokens are zero. A static capacity, as Forge/qwen3vl's tower (which this wraps): one
+    shape serves every grid, and padding rows are masked out of attention as keys."""
+
+    def __init__(self, visual, capacity: int = REFERENCE_PATCH_CAPACITY, dtype: torch.dtype = torch.float32,
+                 storage: torch.dtype = torch.float16) -> None:
+        super().__init__()
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "qwen3vl"))
+        import qwen3vl_graphs as qg
+        self.tower = qg.VisionTower(visual, capacity=capacity, dtype=dtype, storage=storage)
+        self.tokens = capacity // (visual.config.spatial_merge_size ** 2)
+
+    def forward(self, patches, grid):
+        image, deep = self.tower(patches, grid)
+        return image, deep.reshape(-1, self.tokens, image.shape[1])
+
+    def example(self, grid=(24, 20)):
+        p, g = self.tower.example(grid)
+        return (p.half(), g), None
+
+
+def reference_prompt(tokenizer, text: str, grids: list[tuple[int, int, int]]) -> dict:
+    """The 0.0.x reference prompt for `text` and images with patch grids (t, h, w), in order: ids (pads expanded, the
+    real pad id), the graph's ids (pads as extension ids), rope [3, L], each image's token span, and truncation."""
+    parts = "".join(REFERENCE_LABEL.format(n=i + 1) + "<|vision_start|><|image_pad|><|vision_end|>"
+                    for i in range(len(grids)))
+    rendered = tokenizer(SYSTEM_PREFIX + parts + text + SUFFIX, add_special_tokens=False)["input_ids"]
+    text_only = len(tokenizer(SYSTEM_PREFIX + text + SUFFIX, add_special_tokens=False)["input_ids"])
+    if not 1 <= len(grids) <= REFERENCE_MAX_IMAGES:
+        raise ValueError(f"1...{REFERENCE_MAX_IMAGES} reference images")
+    merged = [(t, h // 2, w // 2) for t, h, w in grids]
+    if sum(t * h * w for t, h, w in merged) > REFERENCE_MAX_IMAGE_TOKENS:
+        raise ValueError("reference images exceed 576 tokens")
+    truncated = text_only > MAX_TOKENS
+    if truncated:
+        cut = len(rendered) - TRAILING_TOKENS - (text_only - MAX_TOKENS)
+        rendered = rendered[:cut] + rendered[-TRAILING_TOKENS:]
+    ids, graph_ids, spans, slot = [], [], [], 0
+    for token in rendered:
+        if token != IMAGE_PAD_ID:
+            ids.append(token)
+            graph_ids.append(token)
+            continue
+        t, h, w = merged[len(spans)]
+        n = t * h * w
+        spans.append((len(ids), len(ids) + n, (t, h, w)))
+        ids += [IMAGE_PAD_ID] * n
+        graph_ids += [EXTENSION_BASE + slot + j for j in range(n)]
+        slot += n
+    if len(spans) != len(grids) or spans[0][0] < DROP_ROWS or len(ids) - DROP_ROWS > REFERENCE_MAX_TEXT_ROWS:
+        raise ValueError("the rendered reference prompt does not fit the contract")
+    axes = [[], [], []]
+    p, i, k = 0, 0, 0
+    while i < len(ids):
+        if k < len(spans) and spans[k][0] == i:
+            start, end, (t, h, w) = spans[k]
+            for j in range(end - start):
+                axes[0].append(p + j // (h * w))
+                axes[1].append(p + (j // w) % h)
+                axes[2].append(p + j % w)
+            p += max(t, h, w)
+            i, k = end, k + 1
+            continue
+        for a in axes:
+            a.append(p)
+        p, i = p + 1, i + 1
+    return {"ids": ids, "graphIds": graph_ids, "rope": axes, "spans": spans, "truncated": truncated}
 
 
 # MARK: denoiser
@@ -648,7 +820,7 @@ class DenoiserSegment(nn.Module):
     def example(self, tokens: int = 24, text: int = 8):
         g = torch.Generator().manual_seed(self.index)
         n_dim = torch.export.Dim("image_tokens", min=4, max=MAX_IMAGE_TOKENS)
-        t_dim = torch.export.Dim("text_rows", min=2, max=MAX_TEXT_ROWS)
+        t_dim = torch.export.Dim("text_rows", min=2, max=DENOISER_TEXT_ROWS)
         rope = rotary_table(4, tokens // 4)
         if self.is_first:
             inputs = (torch.randn(tokens, LATENT_CHANNELS, generator=g).half(),

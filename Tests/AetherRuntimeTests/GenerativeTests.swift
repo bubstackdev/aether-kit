@@ -254,7 +254,7 @@ struct ResidencyTests {
         let partial = ResidencyPlan.inputs(manifest: manifest, ledger: ledger, profile: "1024x1024", fileBytes: files)
         #expect(!partial.isMeasured && partial.allowsPerPhase)
         #expect(partial.phases == [
-            .perPrompt: PhaseFootprint(peakBytes: 200, heldBytes: 200),  // the text and VAE encoders' files
+            .perPrompt: PhaseFootprint(peakBytes: 300, heldBytes: 300),  // the text, VAE and vision encoders' files
             .perStep: PhaseFootprint(peakBytes: 500, heldBytes: 350),
             .perImage: PhaseFootprint(peakBytes: 100, heldBytes: 100),
         ])

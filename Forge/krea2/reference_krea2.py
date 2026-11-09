@@ -26,6 +26,16 @@ Records (all float32 `.npy` unless noted) in `--output`:
     refine_noise.npy               [N, 64] Kit's seeded noise for the refine seed
     refine_start.npy               [N, 64] `(1 - sigma) * x0 + sigma * noise` at the start step's sigma
     refine_image.npy               [3, H, W] the refined decode in [-1, 1]; refine_image.png
+  references (`--references <0.0.x fixture dir>`, refine skipped): the reference cases, each through transformers'
+  unmodified `Qwen3VLModel` in float32 with its pixels (upstream Krea 2 has no image conditioning: the images are
+  extra text rows, the 0.0.x reference contract), then the pipeline from one case's conditioning (`--reference-case`):
+    cases.json                     per case: prompt, grids, rows, the fixture checks (ids, rope, pixels sha256 and
+                                   the oracle files' sha256 matches), the tap-order finding
+    cases/<id>/patches.npy         [P, 1536] the processor's patch rows (block-major), grids.json (t, h, w) per image
+    cases/<id>/ids.npy, graph_ids.npy, rope.npy   int32 [L], [L] (pads as extension ids), [3, L]
+    cases/<id>/image_embeds.npy    [n, 2560] merged tokens of all images in order; deepstack_embeds.npy [3, n, 2560]
+    cases/<id>/conditioning.npy    [L - 34, 30720] the 12 taps (rows 34..)
+    text_embeds.npy, step*.npz, image.npy   as above, for `--reference-case`
 """
 
 from __future__ import annotations
@@ -125,6 +135,97 @@ def refine_reference(pipe, transformer, vae, prompt_embeds, prompt_mask, decoded
             "steps": args.steps, "start": "(1 - sigma) * x0 + sigma * noise", "encoder": "posterior mode"}
 
 
+def reference_cases(model, tokenizer, args) -> dict:
+    """Each 0.0.x fixture case through `Qwen3VLModel` (float32, with pixels): the oracle tensors, checked against the
+    fixture's ids, rope and the recorded sha256s of the oracle it was made from."""
+    from PIL import Image
+    from transformers import Qwen2VLImageProcessorFast
+
+    fixture = json.loads((args.references / "fixture.json").read_text())
+    recorded = fixture["sha256"]
+    processor = Qwen2VLImageProcessorFast(size={"shortest_edge": 65536, "longest_edge": 16777216}, patch_size=16,
+                                          temporal_patch_size=2, merge_size=2, image_mean=[0.5] * 3,
+                                          image_std=[0.5] * 3)
+    sha = lambda a: hashlib.sha256(np.ascontiguousarray(a).tobytes()).hexdigest()  # noqa: E731
+    out = {}
+    for line in (args.references / fixture["cases"]).read_text().splitlines():
+        case = json.loads(line)
+        cid, files = case["id"], case["files"]
+        t0 = time.monotonic()
+        images = [Image.open(args.references / f).convert("RGB") for f in files["images"]]
+        batch = processor(images=images, return_tensors="pt")
+        pixels, thw = batch["pixel_values"].float(), batch["image_grid_thw"]
+        grids = [tuple(int(v) for v in g) for g in thw.tolist()]
+        prompt = kg.reference_prompt(tokenizer, case["prompt"], grids)
+        ids = np.array(prompt["ids"], dtype=np.int32)
+        rope = np.array(prompt["rope"], dtype=np.int32)
+        fixture_ids = np.fromfile(args.references / files["ids"], dtype="<i4")
+        fixture_rope = np.fromfile(args.references / files["rope"], dtype="<i4")
+        input_ids = torch.from_numpy(ids.astype(np.int64))[None]
+        types = (input_ids == kg.IMAGE_PAD_ID).int()
+        upstream_rope = model.get_rope_index(input_ids, types, thw)[0][:, 0].numpy().astype(np.int32)
+        run = model(input_ids=input_ids, attention_mask=torch.ones_like(input_ids), pixel_values=pixels,
+                    image_grid_thw=thw, mm_token_type_ids=types, output_hidden_states=True)
+        hidden = run.hidden_states
+        taps = torch.stack([hidden[i] for i in kg.TEXT_TAPS], dim=2)[0].flatten(1).float()     # [L, 30720]
+        features = model.get_image_features(pixels, thw)
+        image_embeds = torch.cat(features.pooler_output).float()
+        deepstack = torch.stack([torch.cat(level) for level in features.deepstack_features]).float()
+        # The other tap order (DeepStack added before a layer's output is recorded): only tap 2 (hidden_states[2], the
+        # second layer's output) can differ, by level 1 at the image rows.
+        image_rows = torch.from_numpy(ids == kg.IMAGE_PAD_ID)
+        other = taps.clone()
+        width = image_embeds.shape[1]
+        tap2 = kg.TEXT_TAPS.index(2)
+        other[image_rows, tap2 * width:(tap2 + 1) * width] += deepstack[1]
+        directory = args.output / "cases" / cid
+        directory.mkdir(parents=True)
+        arrays = {"patches": pixels.numpy(), "ids": ids, "graph_ids": np.array(prompt["graphIds"], dtype=np.int32),
+                  "rope": rope.reshape(3, -1), "image_embeds": image_embeds.numpy(),
+                  "deepstack_embeds": deepstack.numpy(), "conditioning": taps[kg.DROP_ROWS:].numpy()}
+        for name, value in arrays.items():
+            np.save(directory / f"{name}.npy", value)
+        (directory / "grids.json").write_text(json.dumps(grids) + "\n")
+
+        def matches(key: str, *candidates) -> str | None:
+            want = recorded.get(f"{cid}/{key}")
+            return next((label for label, value in candidates if sha(value) == want), None)
+
+        def cosine(a, b):
+            a, b = a.double().ravel(), b.double().ravel()
+            return round(float(a @ b / (a.norm() * b.norm())), 8)
+
+        record = {
+            "prompt": case["prompt"], "grids": grids, "rows": len(ids) - kg.DROP_ROWS, "ids": prompt["ids"],
+            "truncated": prompt["truncated"], "imageTokens": [s[1] - s[0] for s in prompt["spans"]],
+            "fixtureGrids": case["grids"] == [list(g) for g in grids],
+            "idsExact": bool(np.array_equal(ids, fixture_ids)),
+            "ropeExact": bool(np.array_equal(rope.ravel(), fixture_rope)),          # the fixture is flat [3 * L]
+            "ropeMatchesUpstream": bool(np.array_equal(rope.reshape(3, -1), upstream_rope)),
+            "pixelsSHA256Match": sha(pixels.numpy().astype("<f4")) == recorded.get(f"{cid}/pixels.f32"),
+            # Which recorded oracle file this regeneration reproduces bit for bit (None: none; versions differ).
+            "oracleSHA256Match": {
+                "text": matches("text.f32", ("taps", taps.numpy().astype("<f4")),
+                                ("tapsFromRow34", taps[kg.DROP_ROWS:].numpy().astype("<f4")),
+                                ("otherOrder", other.numpy().astype("<f4")),
+                                ("otherOrderFromRow34", other[kg.DROP_ROWS:].numpy().astype("<f4"))),
+                "image": matches("image.f32", ("imageEmbeds", image_embeds.numpy().astype("<f4"))),
+                "deepstack": matches("deepstack.f32", ("deepstack", deepstack.numpy().astype("<f4")),
+                                     ("deepstackTokenMajor", deepstack.permute(1, 0, 2).numpy().astype("<f4"))),
+            },
+            "tapOrder": {"recorded": "hidden_states[k] before DeepStack level k is added (transformers)",
+                         "otherOrderTap2Cosine": cosine(taps[image_rows, tap2 * width:(tap2 + 1) * width],
+                                                        other[image_rows, tap2 * width:(tap2 + 1) * width])},
+            "seconds": round(time.monotonic() - t0, 1),
+        }
+        out[cid] = record
+        print(f"[reference] case {cid}: rows {record['rows']} ids {record['idsExact']} rope {record['ropeExact']} "
+              f"pixels {record['pixelsSHA256Match']} oracle {record['oracleSHA256Match']} "
+              f"({record['seconds']} s, peak {peak_rss_gb()} GB)", file=sys.stderr, flush=True)
+    (args.output / "cases.json").write_text(json.dumps(out, indent=1) + "\n")
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", choices=("vanilla", "realism"), required=True)
@@ -139,8 +240,13 @@ def main() -> None:
                         help="the step a refine of image.npy starts from (default the last: sigma about 0.31)")
     parser.add_argument("--refine-seed", type=int, help="the refine noise's seed (default seed + 1)")
     parser.add_argument("--no-refine", action="store_true")
+    parser.add_argument("--references", type=Path,
+                        help="the 0.0.x reference fixture (cases.jsonl, fixture.json, <case>/image*.png, ids, rope)")
+    parser.add_argument("--reference-case", default="one-square", help="the case the image is rendered from")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
+    if args.references is not None:
+        args.no_refine = True
     if not args.no_refine and not 1 <= args.refine_step < args.steps:
         parser.error("--refine-step must be in 1 ..< steps (step 0 would ignore the picture)")
     if args.output.exists():
@@ -181,6 +287,16 @@ def main() -> None:
     mask = torch.cat([padded.attention_mask, suffix.attention_mask], 1)[0].bool()
     real_ids = ids[mask].tolist()
     prompt_embeds, prompt_mask = pipe.encode_prompt(args.prompt, device=torch.device("cpu"))
+    cases = None
+    if args.references is not None:
+        cases = reference_cases(text_encoder, tokenizer, args)
+        chosen = cases[args.reference_case]
+        args.prompt = chosen["prompt"]
+        cond = torch.from_numpy(np.load(args.output / "cases" / args.reference_case / "conditioning.npy"))
+        prompt_embeds = cond.reshape(1, cond.shape[0], len(kg.TEXT_TAPS), -1)
+        prompt_mask = torch.ones(1, cond.shape[0], dtype=torch.bool)
+        real_ids = chosen["ids"]
+        ids, mask = torch.tensor(real_ids), torch.ones(len(real_ids), dtype=torch.bool)
     text_rows = int(prompt_mask.sum())
     text_embeds = prompt_embeds[0][prompt_mask[0]].flatten(1).contiguous()
     np.save(args.output / "text_embeds.npy", text_embeds.numpy())
@@ -266,6 +382,9 @@ def main() -> None:
         "prompt": args.prompt, "seed": args.seed, "noise": "splitmix64BoxMuller packedToken float32",
         "height": args.size, "width": args.size, "steps": args.steps, "guidance": 0.0, "mu": kg.MU,
         "imageTokens": tokens, "textRows": text_rows, "renderedTokens": len(real_ids),
+        **({"references": {"fixture": str(args.references), "case": args.reference_case,
+                           "cases": {k: {x: v[x] for x in v if x != "ids"} for k, v in cases.items()}}}
+           if cases is not None else {}),
         "sigmas": sigmas, "timesteps": main_timesteps, "refine": refine,
         "kitSigmas": kit_sigmas, "kitTimesteps": kit_timesteps,
         "kitSigmaMaxAbsDiff": max(abs(a - b) for a, b in zip(sigmas, kit_sigmas)),

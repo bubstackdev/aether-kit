@@ -6,6 +6,9 @@
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --output <new bundle dir>
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --only vaeEncoder \
         --base-bundle <existing bundle> --output <new bundle dir>
+    Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace \
+        --only textEncoder denoiser0 denoiser1 denoiser2 denoiser3 vision --base-bundle <existing bundle> \
+        --output <new bundle dir>       # reference images: re-exports what they change, links the VAEs
 
 `vanilla` is the pinned checkpoint; `realism` merges the realism LoKr (`realism_engine_krea2_v3.1.safetensors`,
 sha256 a6712629...) into the transformer in float32 before export. Nothing is downloaded: the snapshot must be in the
@@ -13,7 +16,7 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
 
     OUTPUT/
       .aether/aether.json               the Aether manifest (MANIFEST.md §5.5–5.6; driver `krea2@1`)
-      krea2_turbo[_realism]-{text,denoiser0..3,vae,vae-encoder}.aimodel
+      krea2_turbo[_realism]-{text,denoiser0..3,vae,vae-encoder,vision}.aimodel   (text: encode, encodeWithImages)
       tokenizer/                        the checkpoint's tokenizer files, unchanged
       LICENSE.pdf, KREA-2-LICENSE.txt, KREA-2-USE-POLICY.txt, NOTICE
       SHA256SUMS                        every bundle file except itself
@@ -84,11 +87,13 @@ VARIANTS = {
     "vanilla": {"id": "krea-2-turbo", "name": "krea2_turbo", "title": "Krea 2 Turbo"},
     "realism": {"id": "krea-2-turbo-realism", "name": "krea2_turbo_realism", "title": "Krea 2 Turbo Realism"},
 }
-ROLES = ("textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder", "vaeEncoder")
-ASSET_SUFFIX = {"textEncoder": "text", "vaeDecoder": "vae", "vaeEncoder": "vae-encoder",
+ROLES = ("textEncoder", "denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder", "vaeEncoder", "vision")
+ASSET_SUFFIX = {"textEncoder": "text", "vaeDecoder": "vae", "vaeEncoder": "vae-encoder", "vision": "vision",
                 **{f"denoiser{i}": f"denoiser{i}" for i in range(4)}}
-FUNCTIONS = {"textEncoder": "encode", "vaeDecoder": "decode", "vaeEncoder": "encode",
+FUNCTIONS = {"textEncoder": "encode", "vaeDecoder": "decode", "vaeEncoder": "encode", "vision": "encode",
              **{f"denoiser{i}": "segment" for i in range(4)}}
+REFERENCE_FUNCTION = "encodeWithImages"           # textEncoder's second function (the `references` phase)
+TEXT_REFERENCE_INPUTS = ["input_ids", "rope_positions", "image_embeds", "deepstack_embeds"]
 NOTICE_LINE = ("Krea 2 is licensed under the Krea 2 Community License Agreement. For more information, visit "
                "https://krea.ai/krea-2-licensing.")
 
@@ -136,23 +141,29 @@ def tree_bytes(root: Path) -> int:
 
 
 def convert(module: nn.Module, example: tuple, dynamic, inputs: list[str], outputs: list[str], entry: str,
-            path: Path) -> dict:
+            path: Path, extra: list[tuple] = ()) -> dict:
+    """Exports `module` as function `entry` (and each `extra` (module, example, dynamic, inputs, outputs, entry) as
+    another function of the same asset: modules sharing weights store them once, measured on the random-weight
+    selftest)."""
     import coreai_torch as ct
 
     t0 = time.monotonic()
-    with torch.no_grad():
-        ep = torch.export.export(module, example, dynamic_shapes=dynamic, strict=False)
-        ep = ep.run_decompositions(ct.get_decomp_table())
-    t1 = time.monotonic()
     converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
-    converter.add_exported_program(ep, input_names=inputs, output_names=outputs, state_names=[], entrypoint_name=entry)
-    del ep
+    for m, ex, dyn, ins, outs, name in [(module, example, dynamic, inputs, outputs, entry), *extra]:
+        with torch.no_grad():
+            ep = torch.export.export(m, ex, dynamic_shapes=dyn, strict=False)
+            ep = ep.run_decompositions(ct.get_decomp_table())
+        converter.add_exported_program(ep, input_names=ins, output_names=outs, state_names=[], entrypoint_name=name)
+        del ep
+    t1 = time.monotonic()
     program = converter.to_coreai()
     del converter
     program.optimize()
     program.save_asset(path)
     return {"exportSeconds": round(t1 - t0, 1), "convertSeconds": round(time.monotonic() - t1, 1),
-            "bytes": tree_bytes(path), "inputs": inputs, "outputs": outputs, "function": entry}
+            "bytes": tree_bytes(path), "inputs": inputs, "outputs": outputs, "function": entry,
+            **({"functions": {name: {"inputs": ins, "outputs": outs} for _, _, _, ins, outs, name in extra}}
+               if extra else {})}
 
 
 def transformer_shapes(checkpoint: kg.Checkpoint) -> dict[str, tuple[int, ...]]:
@@ -186,6 +197,12 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                         "inputs": {"tokens": "input_ids", "positions": "position_ids"},
                         "outputs": {"conditioning": "text_embeds"},
                         "compute": "gpu", "expectFrequentReshapes": True, "residency": "perPrompt"},
+        # Reference images: one image's patches [576, 1536] (block-major, the first h*w real) and its patch grid (h, w)
+        # -> merged tokens [144, 2560] and DeepStack [3, 144, 2560]. Static: a dynamic tower is wrong intermittently.
+        "vision": {"file": graph_file("vision"), "function": "encode",
+                   "inputs": {"patches": "patches", "grid": "grid"},
+                   "outputs": {"imageEmbeds": "image_embeds", "deepstackEmbeds": "deepstack_embeds"},
+                   "compute": "gpu", "expectFrequentReshapes": False, "residency": "perPrompt"},
         "denoiser0": {"file": graph_file("denoiser0"), "function": "segment",
                       "inputs": {"latents": "latents", "conditioning": {"name": "text_embeds",
                                                                          "source": {"from": "textEncoder.text_embeds"}},
@@ -205,6 +222,15 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         graphs[f"denoiser{i}"] = {"file": graph_file(f"denoiser{i}"), "function": "segment",
                                   "inputs": segment_inputs(i), "outputs": outputs, "compute": "gpu",
                                   "expectFrequentReshapes": False, "residency": "perStep"}
+    references = "vision" in asset_names
+    if references:
+        # The text encoder's second function: the same weights and output, with images as extra rows.
+        text = graphs["textEncoder"]
+        del text["function"]
+        text["functions"] = {"step": FUNCTIONS["textEncoder"], "references": REFERENCE_FUNCTION}
+        text["inputsByFunction"] = {"references": {"tokens": "input_ids", "ropePositions": "rope_positions",
+                                                   "imageEmbeds": "image_embeds",
+                                                   "deepstackEmbeds": "deepstack_embeds"}}
     order = [role for role in ROLES if role in asset_names]
     return {
         "schema": 1,
@@ -240,12 +266,16 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
             "segments": [f"denoiser{i}" for i in range(4)],
             "condRows": kg.CONDITION_ROWS,
             "contentFilter": {"required": True, "reason": "Krea 2 Community License §4.2; the app supplies the filter"},
+            **({"references": reference_block()} if references else {}),
         },
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
                                      "vaeDecoder": "fp16 weights, fp32 compute",
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
-                                        if "vaeEncoder" in asset_names else {})}},
+                                        if "vaeEncoder" in asset_names else {}),
+                                     **({"vision": "fp16 weights, fp32 compute",
+                                         "textEncoder": "encode and encodeWithImages share the fp16 weights"}
+                                        if references else {})}},
         "license": "LicenseRef-Krea-2-Community-License-1.0",
         "x-license": {"files": ["LICENSE.pdf", "KREA-2-LICENSE.txt", "KREA-2-USE-POLICY.txt", "NOTICE"],
                       "modified": True, "commercialRevenueCapUSD": 1_000_000,
@@ -265,6 +295,21 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
     }
 
 
+def reference_block() -> dict:
+    """`krea2.references` (MANIFEST.md §5.6): the 0.0.x reference contract the host applies before `encodeWithImages`."""
+    return {
+        "maxImages": kg.REFERENCE_MAX_IMAGES, "maxSide": kg.REFERENCE_MAX_SIDE,
+        "maxImageTokens": kg.REFERENCE_MAX_IMAGE_TOKENS, "label": kg.REFERENCE_LABEL,
+        "tokens": {"pad": kg.IMAGE_PAD_ID, "start": kg.VISION_START_ID, "end": kg.VISION_END_ID},
+        "extensionBase": kg.EXTENSION_BASE, "rows": f"1...{kg.REFERENCE_MAX_TEXT_ROWS}", "positions": "mrope",
+        "deepstackLevels": kg.DEEPSTACK_LEVELS, "vision": "vision", "function": "references",
+        "preprocess": {"fit": "longSideRounded", "maxSide": kg.REFERENCE_MAX_SIDE, "factor": 32, "minPixels": 65536,
+                       "maxPixels": 16777216, "maxAspect": 200, "filter": "keysBicubic-0.5-antialias",
+                       "mean": 127.5, "std": 127.5, "patch": 16, "temporalPatch": 2, "merge": 2,
+                       "order": "mergeWindow C,T,py,px"},
+    }
+
+
 def sample_manifest(variant: str) -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
     fixtures with `--sample-manifest --variant <v> > Tests/AetherCoreTests/Fixtures/krea2/<v>.json`."""
@@ -279,6 +324,8 @@ def sample_manifest(variant: str) -> dict:
 def notice(variant: str, roles=ROLES) -> str:
     v = VARIANTS[variant]
     vae = "VAE decoder and encoder" if "vaeEncoder" in roles else "VAE decoder"
+    if "vision" in roles:
+        vae += ", and the text encoder checkpoint's vision tower for reference images"
     lines = [
         f"{v['title']} (Aether-Kit Core AI export)",
         "",
@@ -320,6 +367,9 @@ def main() -> None:
                         help="export a subset (probes; a bundle only with --base-bundle)")
     parser.add_argument("--base-bundle", type=Path,
                         help="a complete earlier export to add the --only graphs to (read only; linked, not changed)")
+    parser.add_argument("--replace", action="store_true",
+                        help="with --base-bundle: re-export --only roles the base already has (their old assets are "
+                             "not linked)")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
@@ -338,8 +388,8 @@ def main() -> None:
         if base["id"] != VARIANTS[args.variant]["id"]:
             raise SystemExit(f"the base bundle is {base['id']}, not {VARIANTS[args.variant]['id']}")
         clash = set(roles) & set(base["graphs"])
-        if clash:
-            raise SystemExit(f"the base bundle already has {sorted(clash)}")
+        if clash and not args.replace:
+            raise SystemExit(f"the base bundle already has {sorted(clash)}; pass --replace to re-export them")
     started = time.monotonic()
     args.output.mkdir(parents=True)
     log = Log(args.output / "forge-log.jsonl")
@@ -400,9 +450,13 @@ def main() -> None:
         module = kg.TextEncoderGraph.load(checkpoint, strict=not args.allow_unpinned)
         report["stages"]["build-textEncoder"] = log.done("build-textEncoder")
         example, dynamic = module.example()
+        reference = kg.ReferenceTextGraph(module).eval()
+        ref_example, ref_dynamic = reference.example()
         log.start("export-textEncoder")
-        report["conversion"]["textEncoder"] = convert(module, example, dynamic, ["input_ids", "position_ids"],
-                                                      ["text_embeds"], "encode", args.output / asset_names["textEncoder"])
+        report["conversion"]["textEncoder"] = convert(
+            module, example, dynamic, ["input_ids", "position_ids"], ["text_embeds"], "encode",
+            args.output / asset_names["textEncoder"],
+            extra=[(reference, ref_example, ref_dynamic, TEXT_REFERENCE_INPUTS, ["text_embeds"], REFERENCE_FUNCTION)])
         report["stages"]["export-textEncoder"] = log.done("export-textEncoder")
         del module
         gc.collect()
@@ -421,6 +475,18 @@ def main() -> None:
                                              "segment", args.output / asset_names[role])
         report["stages"][f"export-{role}"] = log.done(f"export-{role}")
         del segment
+        gc.collect()
+        save()
+
+    if "vision" in roles:
+        log.start("export-vision")
+        module = kg.KreaVisionTower(kg.load_visual(checkpoint)).eval()
+        example, dynamic = module.example()
+        report["conversion"]["vision"] = convert(module, example, dynamic, ["patches", "grid"],
+                                                 ["image_embeds", "deepstack_embeds"], "encode",
+                                                 args.output / asset_names["vision"])
+        report["stages"]["export-vision"] = log.done("export-vision")
+        del module
         gc.collect()
         save()
 
@@ -452,13 +518,17 @@ def main() -> None:
         asset_names = {role: asset_names[role] for role in present}
         log.start("link-base")
         keep = {MANIFEST_PATH, "SHA256SUMS", "export-report.json", "forge-log.jsonl", "NOTICE"}
+        exported = tuple(asset_names[role] + "/" for role in roles)
         for source in tree_files(args.base_bundle):
             relative = str(source.relative_to(args.base_bundle))
-            # The base's own check reports describe the base, not this bundle: check_krea2.py writes new ones.
-            if relative in keep or relative.startswith("check-report"):
+            # The base's own check reports describe the base, not this bundle: check_krea2.py writes new ones. A role
+            # re-exported here (--replace) keeps only its new asset.
+            if relative in keep or relative.startswith("check-report") or relative.startswith(exported):
                 continue
             target = args.output / relative
             target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists():
+                raise SystemExit(f"{relative} exists in both the base and the new export")
             try:
                 os.link(source, target)
             except OSError:
@@ -466,7 +536,8 @@ def main() -> None:
         shutil.copyfile(args.base_bundle / "export-report.json", args.output / "base-export-report.json")
         base_report = json.loads((args.base_bundle / "export-report.json").read_text())
         report["base"] = {"bundle": str(args.base_bundle), "manifestSHA256": sha256(args.base_bundle / MANIFEST_PATH),
-                          "exportedAt": base_report.get("exportedAt"), "added": roles}
+                          "exportedAt": base_report.get("exportedAt"), "added": roles,
+                          "replaced": sorted(set(roles) & set(base["graphs"]))}
         if "adapter" in base_report:
             report["adapter"] = base_report["adapter"]
         report["stages"]["link-base"] = log.done("link-base")

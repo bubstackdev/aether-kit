@@ -37,7 +37,15 @@ struct Krea2ReferenceTests {
         var manifest = try Krea2Tests.manifest()
         manifest.krea2?.prompt.maxTokens = 40
         manifest.krea2?.conditioning.rows = "1...38"
-        guard references else { return try Manifest.decode(manifest.encoded()) }
+        guard references else {
+            // The exporter's fixture takes references: strip them for a text-only export.
+            manifest.krea2?.references = nil
+            manifest.graphs["vision"] = nil
+            manifest.graphs["textEncoder"]?.functions = nil
+            manifest.graphs["textEncoder"]?.inputsByFunction = nil
+            manifest.graphs["textEncoder"]?.function = "encode"
+            return try Manifest.decode(manifest.encoded())
+        }
         var text = manifest.graphs["textEncoder"]!
         text.function = nil
         text.functions = ["step": "encode", "references": "encodeWithImages"]
