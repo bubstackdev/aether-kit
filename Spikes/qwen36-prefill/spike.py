@@ -91,18 +91,31 @@ def build(weights: Path, layers: int, capacity: int, dtype=torch.float16):
     from safetensors.torch import load_file
     q = zoo()
     cfg = config(weights, layers, capacity)
-    core = q.Qwen3_5DecodeCore(cfg)
-    raw = load_file(str(weights / "layers.safetensors"))
+    # Built on the meta device and given the loaded tensors as they are (assign): no fp32 copy of the model and no
+    # 248k-row embedding table (2026-11-10: 8 layers peaked at 24.5 GB to export, 16 at 39.6 GB, ~1.9 GB a layer).
+    with torch.device("meta"):
+        core = q.Qwen3_5DecodeCore(cfg)
+    raw = {}
+    for f in sorted(weights.glob("layers*.safetensors")):  # one file, or 8-layer shards (extract_hf_layers)
+        raw.update(load_file(str(f)))
     prefix = "model.language_model."
-    state = {"model." + k[len(prefix):]: v for k, v in raw.items()
+    state = {"model." + k[len(prefix):]: v.to(dtype) for k, v in raw.items()
              if k.startswith(prefix) and int(k.split(".")[3]) < layers}
-    missing, unexpected = core.load_state_dict(state, strict=False)
+    del raw
+    missing, unexpected = core.load_state_dict(state, strict=False, assign=True)
+    del state
     missing = [m for m in missing if m != "model.norm.weight" and not m.endswith("embed_tokens.weight")]
     if missing or unexpected:
         raise SystemExit(f"missing {missing[:8]} unexpected {unexpected[:8]}")
-    with torch.no_grad():
-        core.model.norm.weight.zero_()  # (1 + 0): the cut model has no final norm of its own
+    hidden = cfg.hidden_size
+    core.model.norm.weight = torch.nn.Parameter(torch.zeros(hidden, dtype=dtype))  # (1 + 0): no final norm of its own
+    for name, module in core.named_modules():  # the embedding table is never used here (inputs are embeddings)
+        if isinstance(module, torch.nn.Embedding):
+            module.weight = torch.nn.Parameter(torch.zeros(1, module.weight.shape[1], dtype=dtype))
     core.model.reset_buffers()
+    on_meta = [n for n, t in list(core.named_parameters()) + list(core.named_buffers()) if t.is_meta]
+    if on_meta:
+        raise SystemExit(f"still on the meta device: {on_meta[:8]}")
     core.last_token_only = True
     for layer in core.model.layers:  # the recurrent state stays fp32 (spike F: fp16 state was slower and drifts)
         if not layer.is_full:
@@ -218,6 +231,33 @@ def example(cfg, s: int, capacity: int, offset: int, dtype=torch.float16):
     return ex, None
 
 
+def quantize(static, cfg, capacity: int, bits: int):
+    """Weight-only symmetric PTQ (coreai-opt, eager), Forge's shieldstral recipe: every decoder Linear to int4 in blocks
+    of 32 along the input axis (or int8 per output channel). Norms, conv1d, A_log and dt_bias stay as they are."""
+    import re
+    from coreai_opt.quantization import Quantizer
+    from coreai_opt.quantization.config import ModuleQuantizerConfig, QuantizerConfig
+    from coreai_opt.quantization.spec.granularity import PerBlockGranularity, PerChannelGranularity
+    from coreai_opt.quantization.spec.qscheme import QuantizationScheme
+    from coreai_opt.quantization.spec.spec import QuantizationSpec
+    spec = QuantizationSpec(dtype=torch.int4 if bits == 4 else torch.int8, qscheme=QuantizationScheme.SYMMETRIC,
+                            granularity=PerBlockGranularity(axis=1, block_size=32) if bits == 4
+                            else PerChannelGranularity(axis=None))
+    config = ModuleQuantizerConfig(op_input_spec=None, op_output_spec=None, op_state_spec={"weight": spec})
+    selected = {f"^{re.escape(path)}$": config for path, child in static.named_modules()
+                if isinstance(child, torch.nn.Linear) and path.startswith("m.layers.")}
+    quantizer = Quantizer(static, QuantizerConfig(global_config=None, module_name_configs=selected,
+                                                  execution_mode="eager"))
+    ex, _ = example(cfg, 1, capacity, offset=8)
+    with torch.no_grad():
+        prepared = quantizer.prepare(tuple(t.clone() for t in ex))
+        return quantizer.finalize(prepared).eval(), len(selected)
+
+
+def peak_gb() -> float:
+    return round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 1)
+
+
 def export(args):
     import coreai_torch as ct
     from coreai_models.export.mlir_ops import register_custom_torch_lowering, remove_functionalization
@@ -229,7 +269,13 @@ def export(args):
         raise SystemExit("output exists")
     t0 = time.monotonic()
     cfg, core = build(args.weights, args.layers, args.capacity)
+    after_build = peak_gb()
     static = StaticCore(core).eval()
+    quantized = 0
+    if args.weight_bits in (4, 8):
+        t = time.monotonic()
+        static, quantized = quantize(static, cfg, args.capacity, args.weight_bits)
+        quant_seconds = round(time.monotonic() - t, 1)
     converter = ct.TorchConverter(mode=ct.TorchConverter.Mode.RELEASE)
     kernel = None
     if args.scan == "metal":
@@ -238,8 +284,11 @@ def export(args):
         kernel.chunk_max = args.chunk
         converter.register_custom_kernels([kernel])
     timings = {"build": round(time.monotonic() - t0, 1)}
+    peaks = {"build": after_build, "build+quantize": peak_gb()}
+    if quantized:
+        timings["quantize"] = quant_seconds
     for name, s, mode in (("main", 1, args.main_scan), ("prefill", args.chunk, args.scan)):
-        set_scan(core, mode, kernel)
+        set_scan(types.SimpleNamespace(model=static.m), mode, kernel)  # the exported module (quantize may copy)
         ex, dyn = example(cfg, s, args.capacity, offset=8)
         t = time.monotonic()
         with torch.no_grad():
@@ -256,6 +305,7 @@ def export(args):
         converter.add_exported_program(ep, input_names=STATIC_INPUTS, output_names=OUTPUTS, state_names=STATES,
                                        entrypoint_name=name)
         timings[f"export_{name}"] = round(time.monotonic() - t, 1)
+        peaks[f"export_{name}"] = peak_gb()
         del ep
     register_custom_torch_lowering(converter)
     t = time.monotonic()
@@ -266,8 +316,8 @@ def export(args):
     timings["convert"] = round(time.monotonic() - t, 1)
     size = sum(p.stat().st_size for p in (args.output / "model.aimodel").rglob("*") if p.is_file())
     report = {"layers": args.layers, "kinds": "".join("a" if l.is_full else "l" for l in core.model.layers),
-              "scan": args.scan, "subchunk": args.subchunk, "mainScan": args.main_scan, "recState": args.rec, "chunk": args.chunk, "capacity": args.capacity, "bytes": size,
-              "timings": timings, "peakRSSGB": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 1),
+              "scan": args.scan, "subchunk": args.subchunk, "mainScan": args.main_scan, "weightBits": args.weight_bits, "quantizedLinears": quantized, "recState": args.rec, "chunk": args.chunk, "capacity": args.capacity, "bytes": size,
+              "timings": timings, "peakGBAfter": peaks, "peakRSSGB": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 1),
               "hostOS": subprocess.run(["sw_vers", "-buildVersion"], capture_output=True, text=True).stdout.strip()}
     json.dump(report, open(args.output / "export.json", "w"), indent=1)
     print(json.dumps(report))
@@ -310,6 +360,8 @@ def reference(cfg, core, embeds: np.ndarray, capacity: int, chunk: int):
 
 
 def cosine(a, b):
+    if np.size(a) != np.size(b):
+        return float('nan')
     a, b = a.astype(np.float64).ravel(), b.astype(np.float64).ravel()
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-30))
 
@@ -317,14 +369,19 @@ def cosine(a, b):
 def run(args):
     import coreai.runtime as rt
     meta = json.load(open(args.bundle / "export.json"))
-    cfg, core = build(args.weights, meta["layers"], meta["capacity"])
     embeds = np.load(args.weights / "embeds.npy")[:args.tokens]
     chunk, capacity = meta["chunk"], meta["capacity"]
-    t = time.monotonic()
-    ref_rows, ref_states = reference(cfg, core, embeds, capacity, chunk)
-    report = {**meta, "tokens": len(embeds), "referenceSeconds": round(time.monotonic() - t, 1)}
-    del core
-    gc.collect()
+    if args.no_reference:  # the full model's fp32 reference would need ~100 GB: self-consistency and speed only
+        n = len(embeds)
+        ref_rows, ref_states = np.ones((n, 1)), {"rec_state": np.ones(1)}
+        report = {**meta, "tokens": n, "reference": "none"}
+    else:
+        cfg, core = build(args.weights, meta["layers"], meta["capacity"])
+        t = time.monotonic()
+        ref_rows, ref_states = reference(cfg, core, embeds, capacity, chunk)
+        report = {**meta, "tokens": len(embeds), "referenceSeconds": round(time.monotonic() - t, 1)}
+        del core
+        gc.collect()
 
     options = (rt.SpecializationOptions.cpu_only() if args.compute == "cpu" else
                rt.SpecializationOptions.from_preferred_compute_unit_kind(rt.ComputeUnitKind.gpu()))
@@ -449,12 +506,14 @@ def main():
     e.add_argument("--rec", choices=["fp32", "fp16"], default="fp32")
     e.add_argument("--subchunk", type=int, default=16)
     e.add_argument("--main-scan", choices=["step", "chunk"], default="step")
+    e.add_argument("--weight-bits", type=int, choices=[16, 8, 4], default=16)
     e.add_argument("--output", type=Path, required=True)
     r = sub.add_parser("run")
     r.add_argument("--weights", type=Path, required=True)
     r.add_argument("--bundle", type=Path, required=True)
     r.add_argument("--tokens", type=int, default=320)
     r.add_argument("--compute", choices=["gpu", "cpu"], default="gpu")
+    r.add_argument("--no-reference", action="store_true")
     args = ap.parse_args()
     export(args) if args.cmd == "export" else run(args)
 

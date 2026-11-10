@@ -55,3 +55,46 @@ inside an fp16 graph, and two functions sharing states in one bundle on this mac
 
 Spike 2: an 8-layer int4 slice through Forge's quantization (exporter peak memory, int4 speed, size), then the 9B
 staging model with the vision tower and M-RoPE.
+
+# Spike 2: int4, up to the whole decoder (2026-11-10)
+
+Weights now come from the pinned abliterated checkpoint (`huihui-ai/Huihui-Qwen3.6-27B-abliterated@27502c87`, bf16)
+through `extract_hf_layers.py` (8-layer fp16 shards, 28 s and 11 GB peak for all 64 layers). Quantization is Forge's
+shieldstral recipe: coreai-opt eager weight-only symmetric PTQ, every decoder Linear int4 in blocks of 32 along the
+input axis (`--weight-bits 4`); norms, conv1d, A_log and dt_bias untouched.
+
+| Layers | Bundle | Export (wall) | Export peak RSS | GPU `main` | GPU `prefill` (64 tokens) |
+|---|---|---|---|---|---|
+| 8 | 1.71 GB | 47 s | 15.8 GB | 6.3 ms/token | 26 ms (2,450 tok/s) |
+| 16 | 3.43 GB | 2 min | 28.4 GB | | |
+| 32 | 6.85 GB | 2 min | 50.4 GB (no new swap) | | |
+| **64 (the whole decoder)** | **13.7 GB** | **6 min** | 50.5 GB RSS + ~35 GB in the compressor; swap 12 to 40 GB | **77 ms/token (13 tok/s)** | **170 ms (377 tok/s)** |
+
+Accuracy: at 8 layers, int4 against the unquantized fp32 reference is 0.9964 worst row / 0.9990 last for the step
+loop, and prefill equals the step loop (1.0). At 64 layers there is no fp32 reference (it would need ~100 GB); prefill
+against the step loop is 0.999998 at all five chunk ends and the recurrent state 0.9999998, no NaN. A real-output
+check (tokens, against MLX or HF) needs the head and is the next slice.
+
+Runtime memory of the 64-layer bundle, after one call of each function (`footprint`): 13 GB mapped file (the weights,
+clean) and 3.0 GB dirty (4.0 GB peak). The first load took 59 s and ~32 GB while MPSGraph compiled. So the decoder
+needs ~17 GB at rest; with the vision tower and an int4 head about 19-20 GB, beside Krea's 31 GB on this 64 GB M5 Max.
+
+For a describe (~3.7k prompt tokens with pictures, ~130 out): ~10 s to read the prompt and ~10 s to write, plus the
+vision tower.
+
+## Exporter memory, and what fixed most of it
+
+- The zoo model was built in fp32 with its 248k-row embedding table, then cast: 24.5 GB to export 8 layers, 1.9 GB a
+  layer. Building on the meta device and adopting the loaded tensors (`load_state_dict(assign=True)`, the table a
+  1-row stand-in, never used here) brought it to 15.8 GB, 1.6 GB a layer, most of it the memory-mapped fp16 pages
+  quantization reads (file-backed, droppable).
+- After quantization a Linear keeps its int4 values in an int8 tensor (half the fp16 size) plus fp16 scales and int8
+  zero points per block of 32; the fp16 original is emptied.
+- The whole decoder in one process works on 64 GB but only by paging (swap peaked at 40 GB, the guard's limit). The
+  production exporter should quantize layer by layer straight from the mmapped shards, or convert the decoder in
+  segments, before the vision tower and head are added to the same export.
+
+## Next
+
+The vision tower (27 blocks, hidden 1152) and M-RoPE, the head, and a token-level check against HF on real pictures,
+staged on Qwen3.5-9B (same tower) per the plan.

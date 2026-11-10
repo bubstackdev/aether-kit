@@ -10,7 +10,6 @@ import argparse
 import json
 from pathlib import Path
 
-import mlx.core as mx
 import numpy as np
 
 PLUS_ONE = ("input_layernorm", "post_attention_layernorm", "q_norm", "k_norm")
@@ -26,6 +25,7 @@ PROMPT = ("You write the costume description an image generator will use to recr
 
 
 def main():
+    import mlx.core as mx  # here, so extract_hf_layers can share PROMPT without mlx
     ap = argparse.ArgumentParser()
     ap.add_argument("--snapshot", type=Path, required=True)
     ap.add_argument("--layers", type=int, default=8)
