@@ -306,21 +306,20 @@ enum BundleInspection {
             }
             defer { try? handle.close() }
             var hasher = SHA256()
-            while true {
-                let chunk: Data
-                do {
-                    guard let read = try handle.read(upToCount: 8 << 20), !read.isEmpty else { break }
-                    chunk = read
-                } catch {
-                    return (file, "unreadable")
+            do {
+                try FileChunks.forEach(handle) { chunk in
+                    try Task.checkCancellation()
+                    hasher.update(data: chunk)
+                    completed += Int64(chunk.count)
+                    if completed - reported >= 64 << 20 {
+                        reported = completed
+                        progress?(BundleVerificationProgress(completedBytes: completed, totalBytes: total, file: file.local))
+                    }
                 }
-                try Task.checkCancellation()
-                hasher.update(data: chunk)
-                completed += Int64(chunk.count)
-                if completed - reported >= 64 << 20 {
-                    reported = completed
-                    progress?(BundleVerificationProgress(completedBytes: completed, totalBytes: total, file: file.local))
-                }
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                return (file, "unreadable")
             }
             let actual = hasher.finalize().map { String(format: "%02x", $0) }.joined()
             guard actual == file.sha256 else { return (file, actual) }
