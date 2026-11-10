@@ -400,8 +400,9 @@ public actor Krea2Pipeline {
     public var residentRoles: [String] { admission.residentRoles }
 
     /// What the graphs kept between generations hold, measured on the pipeline's probe (Metal allocations, so Core AI's
-    /// memory is counted): the last generation's plan of what stays loaded. 0 when nothing is.
-    public var residentBytes: Int64 { admission.residentBytes }
+    /// memory is counted): the last generation's plan of what stays loaded, which is what stays reserved on a
+    /// coordinator. 0 when nothing is. Planned, not read at the call.
+    public var plannedResidentBytes: Int64 { admission.residentBytes }
 
     /// Sets what happens to the graphs after each generation. A generation already running applies the new choice
     /// when it ends.

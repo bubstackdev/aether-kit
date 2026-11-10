@@ -140,7 +140,7 @@ struct Krea2TextMaskQualificationTests {
         var render = Render(
             label: label, prompt: String(label.split(separator: " ").first ?? ""), rows: rows, metrics: generation.metrics,
             firstStepSeconds: steps.first ?? 0, laterStepMeanSeconds: later.isEmpty ? 0 : later.reduce(0, +) / Double(later.count),
-            metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.residentBytes,
+            metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.plannedResidentBytes,
             pixelsSHA256: digest(generation.image))
         render.ledger = pipeline.options.ledger.snapshot.sorted { $0.key.description < $1.key.description }.map {
             "\($0.key): peak \($0.value.peakBytes >> 20) held \($0.value.heldBytes >> 20)"

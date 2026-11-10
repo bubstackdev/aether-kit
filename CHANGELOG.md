@@ -54,8 +54,8 @@
   refuses too.
 - **Krea 2 residency controls:** `setRetention(_:)` chooses `ImageRetention.keepLoaded` (the default, as before) or
   `.releaseAfterEachGeneration`. `releaseIfIdle()` releases every graph only while no generation is running or
-  waiting: it never waits and never interrupts one, and returns `false` otherwise. `residentBytes` is the measured
-  (Metal-inclusive) footprint the kept graphs hold.
+  waiting: it never waits and never interrupts one, and returns `false` otherwise. `plannedResidentBytes` is the measured
+  (Metal-inclusive) footprint the kept graphs hold, as the last generation planned it.
 - **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
   `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
   while the monitor reads critical, and graphs already resident still run.
@@ -106,9 +106,9 @@
   one specialization (`PhasedGraphBackend`, `GraphFunctionSet`). Additive; the API baselines record it.
 - **GPU waiters (`AetherHost`)**: a waiting `SharedGPULease.acquire` and `scripts/gpu-lease` hold a shared flock on the
   lease's `<name>.waiters` file while they wait (this user's single-link, mode-0600 sibling, checked as `<name>.reclaim`
-  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:legacyWrapper:)`
+  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:)`
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
-  `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
+  `~/.cache/aether-kit/gpu.lock`; `hasWaiters(directory:legacyWrapper:)` names another wrapper lock, or none (`nil`). Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
 - **Compile-cache tooling:** `scripts/coreai-cache list [--entries]` shows Core AI's compile cache by OS build and
   bucket (one bucket per process name), with sizes, entry counts and dates. `scripts/coreai-cache prune` deletes what
@@ -169,6 +169,15 @@
   Adding the `smartResize` case to
   `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
   The FoundationModels bridge stays text-only for now.
+
+### Changed
+
+- **API freeze review (#180 findings 5 and 8, approved by the owner).** Renamed or hidden before 0.2.0; each was public
+  only in the 0.2.0 alphas, so 0.1.0 is unaffected:
+  - `Krea2Pipeline.residentBytes` is now `plannedResidentBytes`: it is the last generation's plan, and the live
+    reading is a different figure. (`ResidentAdmission.residentBytes`, frozen in 0.1.0, keeps its name.)
+  - `SharedGPULease.legacyWrapperLock` is no longer public. `hasWaiters(directory:)` checks the lab wrapper's lock
+    itself; `hasWaiters(directory:legacyWrapper:)` stays for another lock, or `nil` for none, with no default.
 
 ### Fixed
 
