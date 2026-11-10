@@ -3,29 +3,40 @@
 ## 0.2.0 — unreleased (dated at the tag)
 
 0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
-preparation, conditioning reuse, residency control, reference images, refine and one fixed text length; MiniMax H3
-keyframes, every video profile with measured admission, clip limits and streamed frames; our own Qwen3 language-model
-exports; the `vlm-static-inject@1` vision-language driver; and location-free bundle identity, status and verification,
-compiled-cache status and GPU waiters. It is additive over 0.1.0 except for the entries under "Breaking". The
-prereleases `0.2.0-alpha.1` to `0.2.0-alpha.3` carried most of it; nothing in the public API changed between
-`0.2.0-alpha.3` and the release branch's base.
+preparation, conditioning reuse, residency control with planned and live resident bytes, reference images, refine and
+one fixed text length; MiniMax H3 keyframes, every video profile with measured admission, clip limits and streamed
+frames; our own Qwen3 language-model exports; the `vlm-static-inject@1` vision-language driver; measured and
+qualified model memory for the decoder engine, with a narrow prefill and a reload budget that keep the describer's
+memory flat; and location-free bundle identity, status and verification, compiled-cache status and GPU waiters. It is
+additive over 0.1.0 except for the entries under "Breaking". The prereleases `0.2.0-alpha.1` to `0.2.0-alpha.3`
+carried most of it; the API freeze review renamed or hid a few of their declarations before the release (see
+"Breaking" and "Changed").
+
+**Release notes, in short:**
+
+- **The describer trades prefill speed for flat memory.** On Core AI decoders specialized for frequent reshapes,
+  prefill now runs in calls of at most 32 tokens, about twice as slow (one picture 0.51 s instead of 0.24 s; the owner
+  accepted the trade on 2026-11-10). What the narrow calls still retain is released by reloading the decoder's graphs
+  past a 2 GiB budget (docs/VLM.md V6): about once every 21 requests of the G5 mix, 2.7 s each, at the end of the
+  request that crossed the budget. The G5 retention gate passes at 880 MiB of growth against a 1,024 MiB bar (5.6 GiB
+  before). Both apply to `decoder-lm@1` exports too. See "Fixed".
+- **Qualified model bytes ship for the two local 4B exports** on `h17c` (M5), each the native gate's measurement plus
+  the owner's 256 MiB margin: the writer (Qwen3 `decoder-lm@1`, Qwen3 export gate) at 9,957 + 256 MiB, and the
+  describer (Qwen3-VL `vlm-static-inject@1`, G5 with the 32-token prefill and the reload budget) at 12,379 + 256 MiB.
+  A bundle load charges them by default (`ModelCharge.qualified`); any other export or chip charges what load
+  measures. See "New".
 
 ### Still to merge before the tag (release PR only: replace each line with the PR's own entry, then delete this section)
 
-- [ ] **UNRELEASED, #174** (New): live resident bytes, `Krea2Pipeline.liveResidentBytes`,
-  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveHeldBytes()`; the decoder engine's measured and declared
-  model memory, `DecoderEngine.memory` (`DecoderEngine.Memory`) and `DecoderEngine.Options.modelBytes`; the G5
-  retention gate.
-- [ ] **UNRELEASED, #178** (New, on #174): qualified model bytes for known decoder exports,
-  `DecoderEngine.qualifiedModelBytes`, `qualifiedModelBytes(for:device:)`, `QualifiedExport` and
-  `declaredModelBytes`. Its table fills from the native gates' printed entries; an empty table ships as "not yet
-  measured", never as invented figures.
 - [ ] **UNRELEASED, #176** (New and Breaking): every MiniMax H3 profile in the manifest (`recipes`, `memory`, `shapes`),
-  measured envelopes (`h3.envelopes`, `Manifest.measurementDigest`, `VideoMemoryEnvelope`), `VideoAdmissionPolicy`,
-  `scripts/h3-memory-gate`. Merges only once the envelopes are recorded.
-- [ ] **UNRELEASED, #179** (New and Breaking, on #176): `clipLimits(profile:keyframes:)` / `VideoClipLimits`,
-  `preflight(_:)` / `VideoPreflight`, `VideoClipRefusal`, `generate(_:onProgress:frames:)` / `VideoFrame`,
-  `GeneratedVideo.seed` and `.frameCount`.
+  measured envelopes (`h3.envelopes`, `VideoMemoryEnvelope`, keyed by `VideoAdmissionKey`), `VideoAdmissionPolicy`
+  (`.measuring` as `@_spi(Testing)`), typed admission refusals in `VideoRefusal` (`.unmeasured`, `.recipeNotOffered`,
+  `.insufficientPhysicalMemory`), `scripts/h3-memory-gate`; `Manifest.contentDigest` (and so `contentIdentity()`)
+  leaves `h3.envelopes` out. Merges only once the H2 envelopes are recorded.
+- [ ] **UNRELEASED, #179** (New and Breaking, on #176): `clipLimits(profile:keyframeCount:)` / `VideoClipLimits`
+  (`keyframeCount`), `preflight(_:)` / `VideoPreflight` (`frameCount`, `admissionKey: VideoAdmissionKey`),
+  `VideoRefusal.promptTooLong` / `.tooLargeAtSize` (folded from the former `VideoClipRefusal`),
+  `generate(_:onProgress:frames:)` / `VideoFrame`, `GeneratedVideo.seed` and `.frameCount`.
 - [ ] **#177** (docs only, no entry): docs/RELEASE.md's 0.2.0 pre-tag checklist.
 
 ### Breaking
@@ -34,15 +45,27 @@ prereleases `0.2.0-alpha.1` to `0.2.0-alpha.3` carried most of it; nothing in th
   `switch` over it no longer compiles. Add a case or a `default`. This is the only source break `swift-api-digester`
   reports against the 0.1.0 baseline.
 - **UNRELEASED, #176. MiniMax H3 refuses a profile it has no measured envelope for.** `MiniMaxH3Pipeline` admits a
-  request only under an envelope for its admission key and recipe, measured on this export and this chip, on a device
-  with the profile's minimum physical memory (`VideoAdmissionPolicy.measuredOnly`, the default, also for the 0.1.0
-  initializer). Anything else throws `unsupportedOperation` before anything loads. A 0.1.0 export without
-  `h3.envelopes` keeps only what its qualified footprints cover. Re-run `scripts/h3-memory-gate` on the export and
-  record its envelopes, or pass `.measuring` to measure.
+  request only under an envelope for its admission key (`VideoAdmissionKey`) and recipe, measured on this export and
+  this chip, on a device with the profile's minimum physical memory (`VideoAdmissionPolicy.measuredOnly`, the default,
+  also for the 0.1.0 initializer). Anything else throws before anything loads, typed as a `VideoRefusal`
+  (`.unmeasured`, `.recipeNotOffered` as `unsupportedOperation`; `.insufficientPhysicalMemory` as `capacity`), read
+  back with `VideoRefusal(_:)`. A 0.1.0 export without `h3.envelopes` keeps only what its qualified footprints cover.
+  Re-run `scripts/h3-memory-gate` on the export and record its envelopes (the gate measures with the `@_spi(Testing)` policy `.measuring`).
 - **UNRELEASED, #179. MiniMax H3 prompt-length refusals change error.** A prompt too long for the clip, or a clip no
-  prompt fits, now throws `AetherError.capacity(what:needed:available:)` (read back with `VideoClipRefusal(_:)`)
-  where 0.1.0 threw `GenerationFailure.invalidParameters`. A prompt shorter than the clip's minimum is still
+  prompt fits, now throws `AetherError.capacity(what:needed:available:)` (read back with `VideoRefusal(_:)` as
+  `.promptTooLong` or `.tooLargeAtSize`) where 0.1.0 threw `GenerationFailure.invalidParameters`. A prompt shorter than the clip's minimum is still
   `invalidParameters`.
+- **For hosts on the 0.2.0 alphas: renamed or hidden by the API freeze review.** None of these was in 0.1.0, so a
+  0.1.0 host is unaffected (details under "Changed"):
+
+  | 0.2.0-alpha.3 | 0.2.0 |
+  | --- | --- |
+  | `Krea2Pipeline.residentBytes` (the plan) | `plannedResidentBytes`; the live reading is the new `liveResidentBytes` |
+  | `SharedGPULease.legacyWrapperLock` | internal: `hasWaiters(directory:)` checks the lab wrapper's lock itself |
+  | `PhasedGraphBackend`, `GraphFunctionSet`, the 9-argument `DecoderEngine.init(step:prefill:graph:…)`, `ImagePromptPlan`'s planning, `ImageInputSpec.prepare(_:)`, `PreparedPromptImage`'s `init`/`values`/`rowLength`/`merge`/`geometry` | `package` |
+  | `DecoderEngine.imageEncodes` | `@_spi(Diagnostics)` |
+  | `gridH` / `gridW` (`PreparedPromptImage`, `ImagePromptPlan.Image`) | `gridHeight` / `gridWidth` |
+  | `padId` / `openId` / `closeId` (`ImageInputSpec`, `ImagePromptPlan.padId`) | `padID` / `openID` / `closeID` (manifest JSON unchanged) |
 
 ### Migrating from 0.0.x
 
@@ -78,30 +101,16 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
   | `KreaGenerationSession.prepare(prompt:)` → `KreaPreparedPrompt` (the encoded conditioning) | `encode(prompt:job:)` → `Krea2Conditioning`, then `generate(_:reusing:observing:)`. Note the rename: 0.2.0's `prepare(prompt:)` is the CPU-only tokenization, `encode` runs the text encoder |
   | `KreaReferencePrompt`, `KreaReferencePixels` (AetherKrea) | `Krea2ReferenceImage`, `prepare(prompt:references:)`, `encode(prompt:references:job:)` |
   | `encodeImage(_:encoder:)`, `refine(configuration:preparedPrompt:start:noise:progress:)`, `KreaRefineStart` | `encode(image:job:)`, `generate(_:refining:reusing:noise:observing:)`, `Krea2RefineStart` |
-  | keeping a model warm, `AetherError.memoryPressure` | `setRetention(_:)`, `releaseIfIdle()`, `residentBytes` (and `liveResidentBytes`, #174); `PipelineOptions.pressure` → `AetherError.memoryPressure` |
+  | keeping a model warm, `AetherError.memoryPressure` | `setRetention(_:)`, `releaseIfIdle()`, `plannedResidentBytes` (the plan's held bytes; 0.1.0's `ResidentAdmission.residentBytes`) and `liveResidentBytes` (the live reading); `PipelineOptions.pressure` → `AetherError.memoryPressure` |
+  | the decoder's KV budget charged with the model's memory | `DecoderEngine.Options.modelCharge` (`ModelCharge`: `.qualified`, the default, `.measured`, `.declared(bytes:)`), `DecoderEngine.qualifiedModelBytes(for:device:)`, `DecoderEngine.memory` (`measuredModelBytes`, `liveResidentBytes`), `declaredModelBytes` |
+  | the language engine's reload past a 2 GiB retention budget | `DecoderEngine.Options.reloadBudgetBytes` (default `defaultReloadBudgetBytes`, on by default for bundle-loaded reshaping Core AI decoders), `reloadIfRetainedPastBudget()`, `reloads`; the narrow prefill is `Options.prefillWidth` |
+  | video prompt-length and admission refusals (message text) | `VideoRefusal` and `VideoRefusal(_:)` (**pending, #176 and #179**) |
+  | clip limits and preflight | `clipLimits(profile:keyframeCount:)` → `VideoClipLimits`, `preflight(_:)` → `VideoPreflight` (`frameCount`, `admissionKey: VideoAdmissionKey`) (**pending, #179 on #176**) |
   | first- and last-frame video | `VideoRequest(prompt:keyframes:…)` with `VideoKeyframes` |
   | pack status and verification | `InstalledBundle.status(supportedDrivers:)`, `verifiedStatus(…)`, `verify(progress:)` |
   | probing the compile cache's folders | `CompiledCache.status(of:manifest:device:roles:cache:)` |
-  | waiting tools on the GPU lock | `SharedGPULease.hasWaiters(directory:legacyWrapper:)`, `othersWaiting` |
+  | waiting tools on the GPU lock | `SharedGPULease.hasWaiters(directory:)` (or `hasWaiters(directory:legacyWrapper:)` for another lock), `othersWaiting` |
   | `VisionLanguageSession` (AetherLanguageCoreAI) | `ChatSession` on a `vlm-static-inject@1` bundle: `ChatMessage.user(_:images:)`, `respond(to:images:)` |
-
-### Fixed
-
-- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
-  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
-  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
-  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
-    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
-    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
-    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
-  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
-    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
-    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
-    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
-    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
-    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
-    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
-    stayed under 12.9 GiB.
 
 ### New
 
@@ -123,16 +132,20 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
     the KV no longer fits.
   - Without a declaration, the charge is as before. Additive; the API baselines record it.
   - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
-    grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
+    grow by less than 1 GiB; then a second load charges the measurement. It passes at 880 MiB (see "Fixed").
 - **Qualified model bytes for known decoder exports.** The kit keeps a table of measured model memory (package
   only), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture, as H3's qualified
   footprints are; `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. A `decoder-lm@1` or
   `vlm-static-inject@1` bundle load with `Options.modelCharge` `.qualified` (the default) declares its export's entry,
   so the first load charges the measured memory without the host persisting `measuredModelBytes`; `.measured` or
   `.declared(bytes:)` wins, and an export or chip without an entry charges what load measures, as before.
-  `DecoderEngine.declaredModelBytes` reports the figure load was given. The table ships empty: the G5 retention gate and the
-  Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
-  covers what they measure. Additive; the API baselines record it.
+  `DecoderEngine.declaredModelBytes` reports the figure load was given. The G5 retention gate and the Qwen3 export
+  gate print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still covers what they
+  measure. The table holds two entries on `h17c`, each the gate's measurement plus the owner's 256 MiB margin
+  (`(measured + 256) << 20`): the writer's Qwen3 `decoder-lm@1` export, 9,957 MiB measured by the Qwen3 export gate,
+  and the describer's Qwen3-VL `vlm-static-inject@1` export, 12,379 MiB measured by G5 with the 32-token prefill and
+  the reload budget (a 48-request run read 12,526 MiB; the 19,066 MiB of the failed pre-fix run is not used).
+  Additive; the API baselines record it.
 
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
@@ -324,6 +337,22 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
     Manifest `Codable` fields (`image.tokens.padId`, …) keep their JSON spelling.
 
 ### Fixed
+
+- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
+  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
+  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
+  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
+    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
+    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
+    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
+  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
+    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
+    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
+    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
+    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
+    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
+    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
+    stayed under 12.9 GiB.
 
 - **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
   each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop
