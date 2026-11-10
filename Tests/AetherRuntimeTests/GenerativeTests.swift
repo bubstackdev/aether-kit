@@ -351,32 +351,32 @@ struct ResidencyTests {
 
     /// The live reading (K5): the level at the call above the level before any graph loaded, with nothing loaded 0;
     /// with graphs loaded outside any phase (no level before them known), the held bytes measured so far.
-    @Test func liveHeldBytesReadTheLevelAboveTheOneBeforeTheGraphs() async throws {
+    @Test func liveResidentBytesReadTheLevelAboveTheOneBeforeTheGraphs() async throws {
         let gpu = FakeGPU()
         let residency = GraphResidency(manifest: try Self.krea(), mode: .allResident, ledger: FootprintLedger(), profile: "p",
                                        probe: gpu.probe, samplingInterval: nil) { _ in Inert() }
-        #expect(residency.liveHeldBytes() == 0)
+        #expect(residency.liveResidentBytes == 0)
         _ = try await residency.graph("textEncoder")  // outside a phase: nothing measured, no level known
         gpu.add(50)
-        #expect(residency.liveHeldBytes() == 0)
+        #expect(residency.liveResidentBytes == 0)
         residency.releaseAll()
         try await residency.beginPhase(.perPrompt)  // 1050, nothing loaded
         _ = try await residency.graph("textEncoder")
         gpu.add(400)
         residency.endPhase(.perPrompt)
-        #expect(residency.liveHeldBytes() == 400)
+        #expect(residency.liveResidentBytes == 400)
         gpu.add(120)  // retained after the phase ended: read at once
-        #expect(residency.liveHeldBytes() == 520)
+        #expect(residency.liveResidentBytes == 520)
         try await residency.beginPhase(.perStep)  // graphs loaded: the level before them stays 1050
         _ = try await residency.graph("denoiser0")
         gpu.add(300)
         residency.endPhase(.perStep)
-        #expect(residency.liveHeldBytes() == 820)
+        #expect(residency.liveResidentBytes == 820)
         gpu.add(-2_000)  // never negative
-        #expect(residency.liveHeldBytes() == 0)
+        #expect(residency.liveResidentBytes == 0)
         residency.releaseAll()
         gpu.add(5_000)
-        #expect(residency.liveHeldBytes() == 0)
+        #expect(residency.liveResidentBytes == 0)
     }
 
     /// Second review, overlap with finding 4: resident graphs that grow on a phase's next occurrence (100, then 80

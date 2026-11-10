@@ -502,7 +502,7 @@ public final class GraphResidency {
     /// The probe reads the whole process: memory something else in the process allocated after these graphs loaded
     /// counts here too, and memory it freed since comes off. Between generations, with nothing else allocating, that is
     /// what the graphs hold.
-    public func liveHeldBytes() -> Int64 {
+    public var liveResidentBytes: Int64 {
         guard !loaded.isEmpty else { return 0 }
         guard let unloadedLevel else { return heldSoFar.values.reduce(0, +) }
         return max(0, probe.allocatedBytes() - unloadedLevel)

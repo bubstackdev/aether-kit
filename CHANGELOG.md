@@ -5,16 +5,17 @@
 ### New
 
 - **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
-  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveHeldBytes()`) read the pipeline's probe at the call: the
+  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
   process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
-  what the kept graphs retain after the plan, where `residentBytes` stays the last plan's held bytes (what remains
-  reserved on a coordinator). The probe reads the whole process, so models loaded after the pipeline count too.
+  what the kept graphs retain after the plan, where `Krea2Pipeline.plannedResidentBytes` (and
+  `ResidentAdmission.residentBytes`) stays the last plan's held bytes (what remains reserved on a coordinator). The probe reads the whole process, so models loaded after the pipeline count too.
   Additive; the API baselines record it.
 - **Measured and declared model memory for the decoder engine** (`decoder-lm@1` and `vlm-static-inject@1`;
   docs/VLM.md §5, V5). Loading allocates almost nothing, so load charged the KV budget with the graph files' size
   (8.28 GiB for the 4B Qwen3-VL export, against 9.4–13.6 GiB of Metal measured over a session).
   - `DecoderEngine.memory` reads the engine's memory at the call: the level before load, now and at its highest, the
-    engine's own buffers, the charge, and `measuredModelBytes` (the model's memory above the engine's buffers).
+    engine's own buffers, the charge, `measuredModelBytes` (the model's memory above the engine's buffers) and
+    `liveResidentBytes` (the level now above the level before load).
   - `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's measurement, or a gate's);
     load charges the larger of it and what it measured, and refuses with `capacity` when the KV no longer fits.
   - Without a declaration, the charge is as before. Additive; the API baselines record it.
@@ -29,6 +30,10 @@
   `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. The table ships empty: the G5 retention gate and the
   Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
   covers what they measure. Additive; the API baselines record it.
+
+- **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
+  `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
+  4B pins) get CPU float32 references for `check_qwen3vl.py`.
 
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
   key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;
@@ -76,8 +81,8 @@
   refuses too.
 - **Krea 2 residency controls:** `setRetention(_:)` chooses `ImageRetention.keepLoaded` (the default, as before) or
   `.releaseAfterEachGeneration`. `releaseIfIdle()` releases every graph only while no generation is running or
-  waiting: it never waits and never interrupts one, and returns `false` otherwise. `residentBytes` is the measured
-  (Metal-inclusive) footprint the kept graphs hold.
+  waiting: it never waits and never interrupts one, and returns `false` otherwise. `plannedResidentBytes` is the measured
+  (Metal-inclusive) footprint the kept graphs hold, as the last generation planned it.
 - **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
   `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
   while the monitor reads critical, and graphs already resident still run.
@@ -128,9 +133,9 @@
   one specialization (`PhasedGraphBackend`, `GraphFunctionSet`). Additive; the API baselines record it.
 - **GPU waiters (`AetherHost`)**: a waiting `SharedGPULease.acquire` and `scripts/gpu-lease` hold a shared flock on the
   lease's `<name>.waiters` file while they wait (this user's single-link, mode-0600 sibling, checked as `<name>.reclaim`
-  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:legacyWrapper:)`
+  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:)`
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
-  `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
+  `~/.cache/aether-kit/gpu.lock`; `hasWaiters(directory:legacyWrapper:)` names another wrapper lock, or none (`nil`). Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
 - **Compile-cache tooling:** `scripts/coreai-cache list [--entries]` shows Core AI's compile cache by OS build and
   bucket (one bucket per process name), with sizes, entry counts and dates. `scripts/coreai-cache prune` deletes what
@@ -192,7 +197,22 @@
   `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
   The FoundationModels bridge stays text-only for now.
 
+### Changed
+
+- **API freeze review (#180 findings 5 and 8, approved by the owner).** Renamed or hidden before 0.2.0; each was public
+  only in the 0.2.0 alphas, so 0.1.0 is unaffected:
+  - `Krea2Pipeline.residentBytes` is now `plannedResidentBytes`: it is the last generation's plan, and the live
+    reading is a different figure. (`ResidentAdmission.residentBytes`, frozen in 0.1.0, keeps its name.)
+  - `SharedGPULease.legacyWrapperLock` is no longer public. `hasWaiters(directory:)` checks the lab wrapper's lock
+    itself; `hasWaiters(directory:legacyWrapper:)` stays for another lock, or `nil` for none, with no default.
+
 ### Fixed
+
+- **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
+  each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop
+  kept them all until it returned. On a 94 GB local export the process reached 13.5 GB resident and was killed before
+  it finished. Each read and its hashing now run in their own autorelease pool, and memory stays flat (a 256 MiB file
+  grew the footprint by 257 MiB before, under 64 MiB now; `FileChunksTests`).
 
 - **Admission counts each shape specialization a pipeline keeps.** Graphs loaded without the reshape hint keep one
   specialization per shape (Krea 2's denoisers per prompt row count: about 27 GB each for the realism export, measured

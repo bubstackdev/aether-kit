@@ -75,11 +75,11 @@ public final class ResidentAdmission {
     /// stays reserved on the coordinator. For a reading at the call, see ``liveResidentBytes``.
     public private(set) var residentBytes: Int64 = 0
 
-    /// What the resident graphs hold now, read on the probe at the call (``GraphResidency/liveHeldBytes()``): the
+    /// What the resident graphs hold now, read on the probe at the call (``GraphResidency/liveResidentBytes``): the
     /// process's level above where it stood before these graphs loaded, Metal included. 0 when no graph is resident.
     /// Unlike ``residentBytes`` it follows what the graphs actually keep after the plan (Core AI's retained working
     /// memory, say), and it counts anything else the process allocated since they loaded.
-    public var liveResidentBytes: Int64 { residency?.liveHeldBytes() ?? 0 }
+    public var liveResidentBytes: Int64 { residency?.liveResidentBytes ?? 0 }
     private var shapes: Set<Int> = []
     /// The lowest phase baseline of graphs released since the next residency began: their memory returns seconds
     /// late, so the next phase is measured from here (an overestimate, the direction admission prefers).

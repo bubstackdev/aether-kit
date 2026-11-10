@@ -72,7 +72,7 @@ struct DescriberRetentionGateTests {
                 "baseline": loaded.baselineBytes, "current": loaded.currentBytes, "owned": loaded.ownedBytes,
                 "charged": loaded.chargedModelBytes, "measuredModel": loaded.measuredModelBytes,
             ]
-            print("GATE retention load: charged \(loaded.chargedModelBytes >> 20) MiB, resident \(loaded.residentBytes >> 20) MiB, "
+            print("GATE retention load: charged \(loaded.chargedModelBytes >> 20) MiB, resident \(loaded.liveResidentBytes >> 20) MiB, "
                   + "measured model \(loaded.measuredModelBytes >> 20) MiB, owned \(loaded.ownedBytes >> 20) MiB")
             let generator = try await ChatSession.generator(engine: engine, bundle: bundle, manifest: manifest)
             report.warmUpRequests = cases.cases.count
