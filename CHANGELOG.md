@@ -4,6 +4,23 @@
 
 ### Fixed
 
+- **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after
+  picture, kept losing warm graphs. Two changes, for `ImageRetention.keepLoaded` (the default):
+  - **Canvas-aware encode.** New `Krea2Pipeline.encode(prompt:width:height:job:)` plans memory against the canvas
+    the generation that follows will use. Before, the first `encode(prompt:job:)` on a pipeline planned under its own
+    conditioning-only profile, so the generation's canvas, another profile, released the text encoder. The next
+    picture's encode then loaded it again. Now the text encoder stays resident beside that canvas's denoisers and
+    decoder. The canvas is checked as a generation's would be (`invalidParameters`). `encode(prompt:job:)` is
+    unchanged. Additive; the `AetherImage` API baseline records it.
+  - **Cancellation keeps measured graphs.** A generation or encode that throws `CancellationError` (bare or as
+    `AetherError.runtime(underlying:)`) now keeps its resident graphs, so the next request starts warm. Its
+    reservation shrinks to what they hold, and nothing of the cut-short run is measured
+    (`ResidentAdmission.keepAfterCancellation()`, package access). Graphs the interrupted phase loaded were never
+    measured, so a cancelled cold load still releases everything. So does any other failure, and any cancellation
+    under `releaseAfterEachGeneration`.
+  - **Behaviour change:** a cancellation that lands after every phase ended (during the decoder's call, say) used to
+    release the graphs; they now stay.
+
 - **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
   It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
   decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
