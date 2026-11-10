@@ -63,7 +63,7 @@ struct Krea2ResidencyTests {
         for _ in 0..<2 {
             _ = try await pipeline.generate(Self.request)
             #expect(await pipeline.residentRoles.isEmpty)
-            #expect(await pipeline.residentBytes == 0)
+            #expect(await pipeline.plannedResidentBytes == 0)
         }
         // Cold every time: the last generation loaded all six.
         #expect(try await pipeline.generate(Self.request, observing: nil).metrics.loadedRoles == Self.roles)
@@ -90,7 +90,7 @@ struct Krea2ResidencyTests {
         _ = try await running.value
         #expect(await pipeline.releaseIfIdle() == true)
         #expect(await pipeline.residentRoles.isEmpty)
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
         // Released, not unloaded: the pipeline generates again.
         filter.release.continuation.yield()
         _ = try await pipeline.generate(Self.request)
@@ -103,11 +103,11 @@ struct Krea2ResidencyTests {
         var options = Self.options
         options.probe = GPUMemoryProbe { reads.withLock { $0 += 1_000; return $0 } }
         let pipeline = try Self.pipeline(options: options)
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
         _ = try await pipeline.generate(Self.request)
-        #expect(await pipeline.residentBytes > 0)
+        #expect(await pipeline.plannedResidentBytes > 0)
         #expect(await pipeline.releaseIfIdle())
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
     }
 
     @Test func criticalPressureRefusesLoadsButNotResidentGraphs() async throws {
