@@ -55,6 +55,17 @@ public actor DecoderEngine: LanguageEngine {
         /// Diagnostics only: use `pipelineDepth` without the canary. With `canary` off (and without this), greedy
         /// decoding uses depth 1, as documented.
         @_spi(Diagnostics) public var uncheckedPipelineDepth = false
+        /// The most tokens one call of a dynamic token axis feeds (the prefill's chunks), at most the manifest's
+        /// `limits.prefillChunk`. Nil (the default): ``DecoderEngine/reshapeSafePrefillWidth`` on a Core AI graph
+        /// specialized with `expectFrequentReshapes`, the manifest's chunk otherwise. Wider calls prefill faster, but
+        /// Core AI then retains Metal on every request (see ``DecoderEngine/reshapeSafePrefillWidth``).
+        public var prefillWidth: Int? = nil
+        /// How much Metal the model may retain past its level after the first request before the engine reloads its
+        /// decoder (``reloadIfRetainedPastBudget()``; docs/VLM.md, V6). Nil (the default):
+        /// ``DecoderEngine/defaultReloadBudgetBytes`` for a bundle-loaded Core AI decoder specialized with
+        /// `expectFrequentReshapes` and without recurrent state, no reloads otherwise. 0 never reloads.
+        public var reloadBudgetBytes: Int64? = nil
+
         /// What load charges for the model's own memory against the memory budget (``ModelCharge``). Loading
         /// allocates almost nothing (Core AI's memory arrives with the first run), so what load can measure is the
         /// graph files' size, below what the model reaches: a 4B `vlm-static-inject@1` export of 8.28 GiB on disk read
@@ -230,6 +241,13 @@ public actor DecoderEngine: LanguageEngine {
     private var peakLevel: Int64
     private var peakModel: Int64 = 0
     public private(set) var decodeMode: DecodeMode
+    /// Reloads since load (``reloadIfRetainedPastBudget()``).
+    public private(set) var reloads = Reloads()
+    private let reloader: Reloader?
+    /// The level reloads are measured from (the first ``reloadIfRetainedPastBudget()`` call's), and its probe.
+    private var retentionFloor: Int64?
+    private let levelProbe: @Sendable () -> Int64
+    private var reloading = false
     public var decodeModeDescription: String { decodeMode.description }
 
     /// Loads `manifest`'s decoder graph from an installed bundle. Compute and the reshape hint come from the
@@ -290,7 +308,14 @@ public actor DecoderEngine: LanguageEngine {
         let gpuTotal = Int64(max(0, (gpu?.currentAllocatedSize ?? 0) - gpuBefore))
         let device = device
         let metal: (any MTLDevice)? = options.execution == .automatic ? gpu : nil
-        let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] }, tower: tower)
+        // A reload loads the same functions again (through the compile cache) once the old ones are released.
+        let functions = Array(Set(phases.values)).sorted(), prefillName = phases["prefill"]
+        let reloader: Reloader = { () async throws(AetherError) -> ReloadedGraphs in
+            let graphs = try await Graph.load(url: url, functions: functions, options: graphOptions)
+            return ReloadedGraphs(step: graphs[stepName]!, prefill: prefillName.flatMap { graphs[$0] })
+        }
+        let pair = Backends(step: loaded[stepName]!, prefill: prefillName.flatMap { loaded[$0] }, tower: tower,
+                            reloader: reloader)
         try await self.init(backends: pair, graph: graph, image: image, device: device, options: options, metal: metal,
                             modelBytes: max(gpuTotal, diskBytes(url) + towerDisk), probe: probe, baseline: baseline)
         loadedModelBytes = (gpu: gpuTotal, disk: diskBytes(url) + towerDisk)
@@ -339,11 +364,29 @@ public actor DecoderEngine: LanguageEngine {
             device: device, options: options, metal: nil, modelBytes: modelBytes, probe: probe, baseline: nil)
     }
 
+    /// An engine over any ``GraphBackend`` pair that reloads through `reloader` and reads its level on `levelProbe`
+    /// (tests: a fake reload budget).
+    init(
+        step: sending any GraphBackend, prefill: sending (any GraphBackend)? = nil, graph: Manifest.Graph,
+        device: Device, options: Options = Options(),
+        reloader: sending @escaping () async throws(AetherError) -> (step: any GraphBackend, prefill: (any GraphBackend)?),
+        levelProbe: @escaping @Sendable () -> Int64
+    ) async throws(AetherError) {
+        let reload: Reloader = { () async throws(AetherError) -> ReloadedGraphs in
+            let graphs = try await reloader()
+            return ReloadedGraphs(step: graphs.step, prefill: graphs.prefill)
+        }
+        try await self.init(backends: Backends(step: step, prefill: prefill, reloader: reload), graph: graph, image: nil,
+                            device: device, options: options, metal: nil, modelBytes: 0, probe: .system, baseline: nil,
+                            levelProbe: levelProbe)
+    }
+
     /// The step, prefill and tower backends, sent into the actor as one region.
     private struct Backends {
         var step: any GraphBackend
         var prefill: (any GraphBackend)?
         var tower: (any GraphBackend)?
+        var reloader: Reloader?
     }
 
     /// A VLM's manifest blocks for its tower and statics.
@@ -355,7 +398,8 @@ public actor DecoderEngine: LanguageEngine {
 
     private init(
         backends: sending Backends, graph: Manifest.Graph, image: ImageConfiguration?, device: Device, options: Options,
-        metal: (any MTLDevice)?, modelBytes: Int64, probe: GPUMemoryProbe, baseline: Int64?
+        metal: (any MTLDevice)?, modelBytes: Int64, probe: GPUMemoryProbe, baseline: Int64?,
+        levelProbe: @escaping @Sendable () -> Int64 = DecoderEngine.metalAllocatedBytes
     ) async throws(AetherError) {
         // The level before the graphs loaded: the bundle init reads it before its loads; otherwise it is now.
         let memoryBaseline = baseline ?? probe.allocatedBytes()
@@ -364,6 +408,7 @@ public actor DecoderEngine: LanguageEngine {
         guard (1...(DecoderCore.ring - 2)).contains(options.pipelineDepth) else {
             throw .unsupportedOperation("pipelineDepth \(options.pipelineDepth); supported: 1...\(DecoderCore.ring - 2)")
         }
+        let prefillWidth = try Self.prefillWidth(requested: options.prefillWidth, step: step)
         let encodable = metal != nil && step is Graph && (prefill == nil || prefill is Graph)
         let arena = encodable ? TensorArena(device: metal!) : TensorArena()
         let kernels = encodable ? try await GreedyKernels(device: metal!) : nil
@@ -409,9 +454,14 @@ public actor DecoderEngine: LanguageEngine {
         }
         let core = try DecoderCore(
             step: step, prefill: prefill, graph: graph, arena: arena, kernels: kernels, capacityLimit: maxCapacity,
-            initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
+            initialCapacity: initial, prefillWidth: prefillWidth, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
+        reloadBudgetBytes = try Self.reloadBudget(
+            requested: options.reloadBudgetBytes, canReload: backends.reloader != nil, step: step,
+            hasRecurrentState: core.hasRecurrentState)
+        reloader = backends.reloader
+        self.levelProbe = levelProbe
         declaredModelBytes = declared
         self.probe = probe
         self.memoryBaseline = memoryBaseline
@@ -439,6 +489,127 @@ public actor DecoderEngine: LanguageEngine {
         }
         // After load and the canary: the decoder has run once, so its weights' memory has arrived.
         sampleMemory()
+    }
+
+    /// The widest dynamic call a Core AI decoder specialized with `expectFrequentReshapes` is fed by default
+    /// (``Options/prefillWidth``).
+    ///
+    /// Core AI retains Metal allocations, until the model is released, on every call wider than this and on every
+    /// decode step after one, even when each shape repeats one it already ran (the same bug 0.0.x worked around with
+    /// its reload budget). Measured on the 4B Qwen3-VL export (M5 Max, 2026-11-10; text-only prompts alike, so not the
+    /// image path): a 513-token prompt fed in calls of 40, 48, 64, 128, 256 or 512 tokens retained 123–180 MiB in
+    /// its prefill and 255–263 MiB over 60 decode steps, every time it was repeated; in calls of 8, 16, 32 or 33 it
+    /// retained nothing once its shapes had run once. The cost is the prefill's speed: 0.40 s instead of 0.11 s for
+    /// 513 tokens, 1.1 s instead of 0.33 s for 1,390.
+    ///
+    /// It does not bound retention on its own: a narrow call whose shape (tokens, positions) has not run for a while
+    /// can still grow again, about 11–26 MiB for one of 32 tokens, the more the longer its context. Over G5's 20 mixed
+    /// requests the growth after warm-up fell from 5,577 to 1,139 MiB (bar 1,024), nearly all of it from two of the
+    /// eight cases, each growing again by the same amount every time it came round. The reload budget releases that
+    /// (``Options/reloadBudgetBytes``, ``reloadIfRetainedPastBudget()``).
+    public static let reshapeSafePrefillWidth = 32
+
+    /// The prefill width an engine over `step` uses: `requested` when given (at least 1), else
+    /// ``reshapeSafePrefillWidth`` when `step` is a Core AI graph specialized with `expectFrequentReshapes`, else nil
+    /// (the manifest's chunk).
+    static func prefillWidth(requested: Int?, step: any GraphBackend) throws(AetherError) -> Int? {
+        if let requested {
+            guard requested >= 1 else { throw .generation(.invalidParameters("prefillWidth \(requested); at least 1")) }
+            return requested
+        }
+        guard let graph = step as? Graph, graph.options.expectFrequentReshapes else { return nil }
+        return reshapeSafePrefillWidth
+    }
+
+    // MARK: - Reload budget (docs/VLM.md, V6)
+
+    /// The default ``Options/reloadBudgetBytes``: 2 GiB, as 0.0.x's.
+    public static let defaultReloadBudgetBytes: Int64 = 2 << 30
+
+    /// The engine's reloads since load.
+    public struct Reloads: Sendable, Hashable {
+        public var count = 0
+        /// Wall time of the last reload and of all of them: dropping the graphs, loading them again (through the
+        /// compile cache) and one warming step.
+        public var lastSeconds = 0.0
+        public var totalSeconds = 0.0
+        /// The retained bytes that decided the last reload.
+        public var lastRetainedBytes: Int64 = 0
+    }
+
+    /// The decoder's graphs, loaded again from the bundle (a reload).
+    struct ReloadedGraphs {
+        var step: any GraphBackend
+        var prefill: (any GraphBackend)?
+    }
+
+    typealias Reloader = () async throws(AetherError) -> ReloadedGraphs
+
+    /// The budget this engine reloads at: ``Options/reloadBudgetBytes`` resolved (nil: it never reloads).
+    public nonisolated let reloadBudgetBytes: Int64?
+
+    /// Reloads the decoder when the model retains more than ``reloadBudgetBytes`` past its level at the first call.
+    /// Returns whether it reloaded.
+    ///
+    /// Core AI retains Metal on a reshaping decoder's calls until the model is released (``reshapeSafePrefillWidth``);
+    /// a reload releases it. The retained bytes are the device's Metal allocation less the engine's own buffers,
+    /// above that level at the first call (so the first request's working set is the reference, and anything else
+    /// the process allocates meanwhile counts too). Call it between requests: the ``Generator`` does at the end of
+    /// each, inside its turn and GPU grant, so the next request waits for the reload rather than racing it.
+    ///
+    /// The reload drops the decoder's graphs, loads them again from the bundle and runs one warming step, so the
+    /// weights are back before the next request. The KV state, position, images and statics stay: the next request
+    /// still reuses its prefix. The vision tower stays loaded (one static shape, nothing retained). Refused while a
+    /// feed, decode or bind is in progress; a failed load leaves the graphs unloaded, and the next feed loads them.
+    @discardableResult
+    public func reloadIfRetainedPastBudget() async throws(AetherError) -> Bool {
+        guard let budget = reloadBudgetBytes, reloader != nil, !reloading else { return false }
+        let level = levelProbe() - ownedBufferBytes
+        let floor = retentionFloor ?? level
+        retentionFloor = floor
+        let retained = level - floor
+        guard retained > budget || !core.graphsLoaded else { return false }
+        try await reload(retained: max(0, retained))
+        return true
+    }
+
+    /// The engine's own buffers: its arena and the tower's.
+    private var ownedBufferBytes: Int64 { Int64(core.arena.byteCount + (imageBinder?.arena.byteCount ?? 0)) }
+
+    private func reload(retained: Int64) async throws(AetherError) {
+        guard let reloader else { throw .unsupportedOperation("this engine cannot reload its graphs") }
+        guard !reloading else { throw .unsupportedOperation("a reload while one is in progress") }
+        reloading = true
+        defer { reloading = false }
+        let clock = ContinuousClock(), began = clock.now
+        try core.unloadGraphs()
+        let graphs = try await reloader()
+        try core.installGraphs(step: graphs.step, prefill: graphs.prefill)
+        try? await core.warmAfterReload()
+        let seconds = (clock.now - began) / .seconds(1)
+        reloads.count += 1
+        reloads.lastSeconds = seconds
+        reloads.totalSeconds += seconds
+        reloads.lastRetainedBytes = retained
+    }
+
+    /// Before a feed or decode: loads the graphs a failed reload left unloaded.
+    private func ensureGraphs() async throws(AetherError) {
+        if !core.graphsLoaded, !reloading { try await reload(retained: 0) }
+    }
+
+    /// The budget an engine uses: `requested` (0: none), else the default for a reloadable Core AI decoder specialized
+    /// with `expectFrequentReshapes` and without recurrent state; none when the engine cannot reload.
+    static func reloadBudget(
+        requested: Int64?, canReload: Bool, step: any GraphBackend, hasRecurrentState: Bool
+    ) throws(AetherError) -> Int64? {
+        if let requested, requested < 0 {
+            throw .generation(.invalidParameters("reloadBudgetBytes \(requested); at least 0"))
+        }
+        guard canReload, !hasRecurrentState else { return nil }
+        if let requested { return requested == 0 ? nil : requested }
+        guard let graph = step as? Graph, graph.options.expectFrequentReshapes else { return nil }
+        return defaultReloadBudgetBytes
     }
 
     /// The device's current Metal allocations (diagnostics: Core AI's shape-change retention shows up here).
@@ -514,12 +685,14 @@ public actor DecoderEngine: LanguageEngine {
     /// Feeds `tokens` at the current position on the prefill schedule (§6.2) and returns the rows asked for.
     public func prefill(_ tokens: [Int32], logits: LogitsSelection = .last) async throws(AetherError) -> Logits? {
         defer { sampleMemory() }
+        try await ensureGraphs()
         return try await core.feed(tokens, select: logits)
     }
 
     /// Feeds one token and returns the next-token logits (the depth-1 host path for CPU sampling).
     public func step(_ token: Int32) async throws(AetherError) -> Logits {
         defer { sampleMemory() }
+        try await ensureGraphs()
         return try await core.feed([token], select: .last)!
     }
 

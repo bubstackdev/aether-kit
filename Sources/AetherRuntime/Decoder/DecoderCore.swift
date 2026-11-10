@@ -9,7 +9,8 @@ final class DecoderCore {
     /// One function of the decoder graph (`step`, optionally `prefill`) and the buffers bound to its logits.
     final class Phase {
         let kind: PrefillPlan.Phase
-        let graph: any GraphBackend
+        /// Replaced only by a reload (``DecoderCore/unloadGraphs()``, ``DecoderCore/installGraphs(step:prefill:)``).
+        fileprivate(set) var graph: any GraphBackend
         /// The static token axis, or nil when dynamic.
         let staticTokens: Int?
         /// The static logits row axis, or nil when dynamic (one row per fed token).
@@ -99,7 +100,7 @@ final class DecoderCore {
 
     init(
         step stepGraph: any GraphBackend, prefill prefillGraph: (any GraphBackend)?, graph: Manifest.Graph,
-        arena: TensorArena, kernels: GreedyKernels?, capacityLimit: Int, initialCapacity: Int,
+        arena: TensorArena, kernels: GreedyKernels?, capacityLimit: Int, initialCapacity: Int, prefillWidth: Int? = nil,
         racingHandoff: Bool = false, staleHandoff: Bool = false
     ) throws(AetherError) {
         let prefix = "graphs.decoder"
@@ -184,7 +185,9 @@ final class DecoderCore {
         capacity = staticAxis ?? min(max(initialCapacity, 1), capacityLimit)
 
         let limits = graph.limits ?? Manifest.Limits()
-        let dynamicChunk = max(1, limits.prefillChunk ?? 512)
+        // A dynamic call feeds at most the manifest's chunk, narrowed by the engine's prefill width (Core AI's reshape
+        // retention, ``DecoderEngine/reshapeSafePrefillWidth``).
+        let dynamicChunk = max(1, min(limits.prefillChunk ?? 512, prefillWidth ?? .max))
         guard let padToken = Int32(exactly: limits.padTokenId ?? 0),
               let padPosition = Int32(exactly: graph.inputEncodings?["positions"]?.pad ?? -1) else {
             throw AetherError.manifestInvalid(field: "limits.padTokenId", reason: "the pad token and position must fit Int32")
@@ -311,6 +314,7 @@ final class DecoderCore {
     /// Feeds `tokens` at the current position on the prefill schedule and returns the selected logits rows.
     func feed(_ tokens: [Int32], select: LogitsSelection) async throws(AetherError) -> Logits? {
         try requireIdle("feeding tokens")
+        try requireLoaded("feeding tokens")
         operation = "a prefill"
         defer { operation = nil }
         return try await feedTokens(tokens, select: select)
@@ -576,6 +580,7 @@ final class DecoderCore {
     /// `depth` steps stay in flight on the GPU (encode mode); `0` decodes on the host (`run` + CPU argmax).
     func beginGreedy(first: Int32, limit: Int, depth: Int, delay: UInt32 = 0, sentinels: [Int32]? = nil) throws(AetherError) {
         try requireIdle("greedy decode")
+        try requireLoaded("greedy decode")
         try requireImageStateConsistent("greedy decode")
         guard !stateAhead else { throw .unsupportedOperation("the recurrent state ran past its position; restore or reset") }
         let limit = max(0, min(limit, maxCapacity - position))
@@ -726,6 +731,51 @@ final class DecoderCore {
         return GreedyEnd(fed: s.received, overshoot: 0)
     }
 
+    // MARK: - Reload
+
+    /// False between ``unloadGraphs()`` and ``installGraphs(step:prefill:)``: nothing runs on the placeholders.
+    private(set) var graphsLoaded = true
+
+    private func requireLoaded(_ request: String) throws(AetherError) {
+        guard graphsLoaded else { throw .unsupportedOperation("\(request) while the decoder's graphs are reloading") }
+    }
+
+    /// Drops the phases' graphs, so their model (and the memory Core AI retained for it) can be released before a
+    /// reload loads it again. The states, buffers, statics, stream and position stay. Refused during an operation.
+    func unloadGraphs() throws(AetherError) {
+        try requireIdle("a reload")
+        guard graphsLoaded else { return }
+        step.graph = UnloadedGraph(signature: step.graph.signature)
+        if let prefillPhase { prefillPhase.graph = UnloadedGraph(signature: prefillPhase.graph.signature) }
+        graphsLoaded = false
+    }
+
+    /// Puts reloaded graphs in place of the dropped ones. Their signatures must equal the originals', so every buffer
+    /// still binds; on a mismatch nothing is installed.
+    func installGraphs(step newStep: any GraphBackend, prefill newPrefill: (any GraphBackend)?) throws(AetherError) {
+        try requireIdle("a reload")
+        guard newStep.signature == step.graph.signature,
+              (newPrefill == nil) == (prefillPhase == nil),
+              newPrefill.map({ $0.signature == prefillPhase!.graph.signature }) ?? true else {
+            throw .manifestMismatch(field: "graphs.decoder", expected: "the reloaded graphs' signatures to equal the loaded ones'",
+                                    found: "\(newStep.signature.inputs.map(\.summary))")
+        }
+        step.graph = newStep
+        prefillPhase?.graph = newPrefill!
+        graphsLoaded = true
+    }
+
+    /// One step at the current position after a reload, so the model's memory arrives now and not in the next
+    /// request's prefill. The position, and every row below it, stay as they were: the row it writes is past the
+    /// position and the next feed overwrites it. Attention-only models (a recurrent state would advance); skipped at
+    /// capacity or while the image state is stale.
+    func warmAfterReload() async throws(AetherError) {
+        guard !hasRecurrentState, imageStateStaleFrom == nil, position < maxCapacity else { return }
+        let at = position
+        _ = try await feed([padToken >= 0 && Int(padToken) < vocab ? padToken : 0], select: .none)
+        position = at
+    }
+
     // MARK: - Canary
 
     /// The load-time delayed-argmax canary (DESIGN.md §6.1). Decodes `steps` tokens at depth 1, then again at
@@ -765,5 +815,15 @@ final class DecoderCore {
         return DecoderEngine.CanaryReport(
             passed: mismatch == nil, depth: depth, capacity: tested, steps: reference.count - 1,
             firstMismatch: mismatch, seconds: seconds)
+    }
+}
+
+/// What a reloading engine's phases hold between dropping their graphs and installing the reloaded ones: the
+/// signature, for the checks, and a refusal to run.
+final class UnloadedGraph: GraphBackend {
+    let signature: GraphSignature
+    init(signature: GraphSignature) { self.signature = signature }
+    func run(_ bindings: inout Bindings) async throws(AetherError) {
+        throw .unsupportedOperation("running a decoder graph that is being reloaded")
     }
 }
