@@ -17,11 +17,22 @@
   - `DecoderEngine.memory` reads the engine's memory at the call: the level before load, now and at its highest, the
     engine's own buffers, the charge, `measuredModelBytes` (the model's memory above the engine's buffers) and
     `liveResidentBytes` (the level now above the level before load).
-  - `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's measurement, or a gate's);
-    load charges the larger of it and what it measured, and refuses with `capacity` when the KV no longer fits.
+  - `DecoderEngine.Options.modelCharge` `.declared(bytes:)` declares the model's memory (an earlier session's
+    measurement, or a gate's); load charges the larger of it and what it measured, and refuses with `capacity` when
+    the KV no longer fits.
   - Without a declaration, the charge is as before. Additive; the API baselines record it.
   - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
     grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
+- **Qualified model bytes for known decoder exports.** The kit keeps a table of measured model memory (package
+  only), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture, as H3's qualified
+  footprints are; `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. A `decoder-lm@1` or
+  `vlm-static-inject@1` bundle load with `Options.modelCharge` `.qualified` (the default) declares its export's entry,
+  so the first load charges the measured memory without the host persisting `measuredModelBytes`; `.measured` or
+  `.declared(bytes:)` wins, and an export or chip without an entry charges what load measures, as before.
+  `DecoderEngine.declaredModelBytes` reports the figure load was given. The table ships empty: the G5 retention gate and the
+  Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
+  covers what they measure. Additive; the API baselines record it.
+
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
   4B pins) get CPU float32 references for `check_qwen3vl.py`.

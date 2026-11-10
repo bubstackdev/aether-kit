@@ -6156,18 +6156,10 @@
           "accessorKind": "get",
           "children": [
            {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Int64",
-              "printedName": "Swift.Int64",
-              "usr": "s:s5Int64V"
-             }
-            ],
             "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "Swift.Int64?",
-            "usr": "s:Sq"
+            "name": "ModelCharge",
+            "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+            "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
            }
           ],
           "declAttributes": [
@@ -6176,11 +6168,11 @@
           "declKind": "Accessor",
           "implicit": true,
           "kind": "Accessor",
-          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvg",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovg",
           "moduleName": "AetherRuntime",
           "name": "Get",
           "printedName": "Get()",
-          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvg"
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovg"
          },
          {
           "accessorKind": "set",
@@ -6191,18 +6183,10 @@
             "printedName": "()"
            },
            {
-            "children": [
-             {
-              "kind": "TypeNominal",
-              "name": "Int64",
-              "printedName": "Swift.Int64",
-              "usr": "s:s5Int64V"
-             }
-            ],
             "kind": "TypeNominal",
-            "name": "Optional",
-            "printedName": "Swift.Int64?",
-            "usr": "s:Sq"
+            "name": "ModelCharge",
+            "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+            "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
            }
           ],
           "declAttributes": [
@@ -6211,27 +6195,19 @@
           "declKind": "Accessor",
           "implicit": true,
           "kind": "Accessor",
-          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvs",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovs",
           "moduleName": "AetherRuntime",
           "name": "Set",
           "printedName": "Set()",
-          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvs"
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovs"
          }
         ],
         "children": [
          {
-          "children": [
-           {
-            "kind": "TypeNominal",
-            "name": "Int64",
-            "printedName": "Swift.Int64",
-            "usr": "s:s5Int64V"
-           }
-          ],
           "kind": "TypeNominal",
-          "name": "Optional",
-          "printedName": "Swift.Int64?",
-          "usr": "s:Sq"
+          "name": "ModelCharge",
+          "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
          }
         ],
         "declAttributes": [
@@ -6241,11 +6217,298 @@
         "declKind": "Var",
         "hasStorage": true,
         "kind": "Var",
-        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvp",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovp",
         "moduleName": "AetherRuntime",
-        "name": "modelBytes",
-        "printedName": "modelBytes",
-        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV10modelBytess5Int64VSgvp"
+        "name": "modelCharge",
+        "printedName": "modelCharge",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11modelChargeAE05ModelG0Ovp"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ModelCharge",
+              "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+              "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "ModelCharge",
+                "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+                "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Metatype",
+              "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge.Type"
+             }
+            ],
+            "kind": "TypeFunc",
+            "name": "Function",
+            "printedName": "(AetherRuntime.DecoderEngine.Options.ModelCharge.Type) -> AetherRuntime.DecoderEngine.Options.ModelCharge"
+           }
+          ],
+          "declKind": "EnumElement",
+          "kind": "Var",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9qualifiedyA2GmF",
+          "moduleName": "AetherRuntime",
+          "name": "qualified",
+          "printedName": "qualified",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9qualifiedyA2GmF"
+         },
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "ModelCharge",
+              "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+              "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "ModelCharge",
+                "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+                "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Metatype",
+              "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge.Type"
+             }
+            ],
+            "kind": "TypeFunc",
+            "name": "Function",
+            "printedName": "(AetherRuntime.DecoderEngine.Options.ModelCharge.Type) -> AetherRuntime.DecoderEngine.Options.ModelCharge"
+           }
+          ],
+          "declKind": "EnumElement",
+          "kind": "Var",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO8measuredyA2GmF",
+          "moduleName": "AetherRuntime",
+          "name": "measured",
+          "printedName": "measured",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO8measuredyA2GmF"
+         },
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "ModelCharge",
+                "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+                "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+               },
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "Int64",
+                  "printedName": "Swift.Int64",
+                  "usr": "s:s5Int64V"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Tuple",
+                "printedName": "(bytes: Swift.Int64)"
+               }
+              ],
+              "kind": "TypeFunc",
+              "name": "Function",
+              "printedName": "(Swift.Int64) -> AetherRuntime.DecoderEngine.Options.ModelCharge"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "ModelCharge",
+                "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+                "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Metatype",
+              "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge.Type"
+             }
+            ],
+            "kind": "TypeFunc",
+            "name": "Function",
+            "printedName": "(AetherRuntime.DecoderEngine.Options.ModelCharge.Type) -> (Swift.Int64) -> AetherRuntime.DecoderEngine.Options.ModelCharge"
+           }
+          ],
+          "declKind": "EnumElement",
+          "kind": "Var",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO8declaredyAGs5Int64V_tcAGmF",
+          "moduleName": "AetherRuntime",
+          "name": "declared",
+          "printedName": "declared",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO8declaredyAGs5Int64V_tcAGmF"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "ModelCharge",
+            "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+            "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "ModelCharge",
+            "printedName": "AetherRuntime.DecoderEngine.Options.ModelCharge",
+            "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
+           }
+          ],
+          "declAttributes": [
+           "Implements",
+           "Semantics"
+          ],
+          "declKind": "Func",
+          "funcSelfKind": "NonMutating",
+          "implicit": true,
+          "kind": "Function",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO21__derived_enum_equalsySbAG_AGtFZ",
+          "moduleName": "AetherRuntime",
+          "name": "__derived_enum_equals",
+          "printedName": "__derived_enum_equals(_:_:)",
+          "static": true,
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO21__derived_enum_equalsySbAG_AGtFZ"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Hasher",
+            "paramValueOwnership": "InOut",
+            "printedName": "Swift.Hasher",
+            "usr": "s:s6HasherV"
+           }
+          ],
+          "declKind": "Func",
+          "funcSelfKind": "NonMutating",
+          "implicit": true,
+          "kind": "Function",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO4hash4intoys6HasherVz_tF",
+          "moduleName": "AetherRuntime",
+          "name": "hash",
+          "printedName": "hash(into:)",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO4hash4intoys6HasherVz_tF"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9hashValueSivg",
+            "moduleName": "AetherRuntime",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9hashValueSivg"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Var",
+          "implicit": true,
+          "kind": "Var",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9hashValueSivp",
+          "moduleName": "AetherRuntime",
+          "name": "hashValue",
+          "printedName": "hashValue",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO9hashValueSivp"
+         }
+        ],
+        "conformances": [
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss8CopyableP",
+          "name": "Copyable",
+          "printedName": "Copyable",
+          "usr": "s:s8CopyableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSQ",
+          "name": "Equatable",
+          "printedName": "Equatable",
+          "usr": "s:SQ"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss9EscapableP",
+          "name": "Escapable",
+          "printedName": "Escapable",
+          "usr": "s:s9EscapableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSH",
+          "name": "Hashable",
+          "printedName": "Hashable",
+          "usr": "s:SH"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss8SendableP",
+          "name": "Sendable",
+          "printedName": "Sendable",
+          "usr": "s:s8SendableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss16SendableMetatypeP",
+          "name": "SendableMetatype",
+          "printedName": "SendableMetatype",
+          "usr": "s:s16SendableMetatypeP"
+         }
+        ],
+        "declKind": "Enum",
+        "isEnumExhaustive": true,
+        "kind": "TypeDecl",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO",
+        "moduleName": "AetherRuntime",
+        "name": "ModelCharge",
+        "printedName": "ModelCharge",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV11ModelChargeO"
        },
        {
         "children": [
@@ -9451,6 +9714,71 @@
         "accessorKind": "get",
         "children": [
          {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int64",
+            "printedName": "Swift.Int64",
+            "usr": "s:s5Int64V"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int64?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC18declaredModelBytess5Int64VSgvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime13DecoderEngineC18declaredModelBytess5Int64VSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int64?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "Nonisolated",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime13DecoderEngineC18declaredModelBytess5Int64VSgvp",
+      "moduleName": "AetherRuntime",
+      "name": "declaredModelBytes",
+      "printedName": "declaredModelBytes",
+      "usr": "s:13AetherRuntime13DecoderEngineC18declaredModelBytess5Int64VSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
           "kind": "TypeNominal",
           "name": "Description",
           "printedName": "AetherRuntime.DecoderEngine.Description",
@@ -10514,6 +10842,49 @@
       "printedName": "bindImages(_:prepared:)",
       "throwing": true,
       "usr": "s:13AetherRuntime13DecoderEngineC10bindImages_8preparedyAA15ImagePromptPlanV_SayAA08PreparediH0VGtYa0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int64?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Manifest",
+        "printedName": "AetherCore.Manifest",
+        "usr": "s:10AetherCore8ManifestV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Device",
+        "printedName": "AetherCore.Device",
+        "usr": "s:10AetherCore6DeviceV"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s13AetherRuntime13DecoderEngineC19qualifiedModelBytes3for6devices5Int64VSg0A4Core8ManifestV_AJ6DeviceVtFZ",
+      "moduleName": "AetherRuntime",
+      "name": "qualifiedModelBytes",
+      "printedName": "qualifiedModelBytes(for:device:)",
+      "static": true,
+      "usr": "s:13AetherRuntime13DecoderEngineC19qualifiedModelBytes3for6devices5Int64VSg0A4Core8ManifestV_AJ6DeviceVtFZ"
      }
     ],
     "conformances": [
