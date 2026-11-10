@@ -117,8 +117,10 @@ tower forward (Qwen3VLVisionModel) as an export graph.
 Forge's exporters use Transformers 5.22.1 (Forge/pyproject.toml):
 Forge/qwen3/qwen3_graphs.py re-expresses Qwen3ForCausalLM's dense decoder,
 and Forge/qwen3vl/qwen3vl_graphs.py Qwen3VLForConditionalGeneration's vision
-tower, merger, DeepStack injection and M-RoPE decoder, as export graphs;
-Forge/krea2/krea2_graphs.py re-expresses Qwen3VLModel's image-conditioned
+tower, merger, DeepStack injection and M-RoPE decoder, and
+Forge/qwen3_5/qwen3_5_graphs.py Qwen3_5ForConditionalGeneration's vision tower
+and hybrid decoder (its gated delta rule, gated attention and interleaved
+M-RoPE), as export graphs; Forge/krea2/krea2_graphs.py re-expresses Qwen3VLModel's image-conditioned
 text-encoder forward (encodeWithImages), and
 Sources/AetherRuntime/Vision/ImagePrompt.swift its multimodal rotary position
 rule.
