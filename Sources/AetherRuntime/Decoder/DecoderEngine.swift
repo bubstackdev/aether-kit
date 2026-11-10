@@ -344,6 +344,11 @@ public actor DecoderEngine: LanguageEngine {
     /// its prefill and 255–263 MiB over 60 decode steps, every time it was repeated; in calls of 8, 16, 32 or 33 it
     /// retained nothing once its shapes had run once. The cost is the prefill's speed: 0.40 s instead of 0.11 s for
     /// 513 tokens, 1.1 s instead of 0.33 s for 1,390.
+    ///
+    /// It does not bound retention on its own: a narrow call whose shape (tokens, positions) has not run for a while
+    /// can still grow again, about 11–26 MiB for one of 32 tokens, the more the longer its context. Over G5's 20 mixed
+    /// requests the growth after warm-up fell from 5,577 to 1,139 MiB (bar 1,024), nearly all of it from two of the
+    /// eight cases, each growing again by the same amount every time it came round.
     public static let reshapeSafePrefillWidth = 32
 
     /// The prefill width an engine over `step` uses: `requested` when given (at least 1), else

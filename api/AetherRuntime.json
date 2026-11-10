@@ -6151,6 +6151,103 @@
         "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV22uncheckedPipelineDepthSbvp"
        },
        {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvp",
+        "moduleName": "AetherRuntime",
+        "name": "prefillWidth",
+        "printedName": "prefillWidth",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12prefillWidthSiSgvp"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",
@@ -9193,6 +9290,57 @@
       "printedName": "init(step:prefill:graph:vision:visionGraph:image:preprocess:device:options:)",
       "throwing": true,
       "usr": "s:13AetherRuntime13DecoderEngineC4step7prefill5graph6vision0H5Graph5image10preprocess6device7optionsAcA0I7Backend_pn_AaM_pSgn0A4Core8ManifestV0I0VAaM_pnAsQ10ImageBlockVAQ0Q10PreprocessVAO6DeviceVAC7OptionsVtYaAO0A5ErrorOYKcfc"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC23reshapeSafePrefillWidthSivgZ",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:13AetherRuntime13DecoderEngineC23reshapeSafePrefillWidthSivgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime13DecoderEngineC23reshapeSafePrefillWidthSivpZ",
+      "moduleName": "AetherRuntime",
+      "name": "reshapeSafePrefillWidth",
+      "printedName": "reshapeSafePrefillWidth",
+      "static": true,
+      "usr": "s:13AetherRuntime13DecoderEngineC23reshapeSafePrefillWidthSivpZ"
      },
      {
       "children": [

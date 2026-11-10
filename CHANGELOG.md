@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixed
+
+- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
+  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
+  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). A Core AI decoder
+  specialized with `expectFrequentReshapes` is now fed in calls of at most 32 tokens
+  (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; set it to the manifest's
+  chunk for the old schedule). G5's growth fell to 1,139 MiB, still over its 1 GiB bar (docs/VLM.md §6); prefill is
+  about twice as slow (one picture 0.51 s instead of 0.24 s). Applies to `decoder-lm@1` exports too.
+
 ### New
 
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes

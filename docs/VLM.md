@@ -230,6 +230,18 @@ Decode binds the 80 MiB of image statics on every step. With the fp16 head it's 
 cost, so the default slots stay. The fp32 head's extra cost is its float32 copy of the embedding (4·vocab·H bytes) and
 the bandwidth to read it every step; the exporter's default is now fp16, as in 0.0.7's recipe (`--head-compute`).
 
+**G5, first runs (2026-11-10, same export and build).** The first run grew 5,577 MiB after warm-up, every picture
+request adding 200–1,400 MiB. None of it is the image path: a text prompt of the same length grows alike and the
+tower's bind adds nothing. It is Core AI's reshape retention, triggered by the prefill's width: any decoder call wider
+than about 32 tokens (the manifest's 512-token chunks, or 40 to 256) retains memory, and so does every decode step
+after one, each time even when the shapes repeat; calls of up to 32 or 33 tokens retain nothing once their shapes have
+run. So the engine now feeds a reshaping Core AI decoder in calls of at most 32 tokens
+(`DecoderEngine.Options.prefillWidth`, default `reshapeSafePrefillWidth`), at the cost of prefill speed (a one-picture
+prefill 0.51 s instead of 0.24 s, three pictures 1.53 s instead of 0.78 s). G5 then grew 1,139 MiB, still over its 1
+GiB bar: two of the eight cases (one picture at an unshared offset, and the three-frame turn's long context) grow 258
+and 610 MiB again each time they come round, the narrow calls' shapes being retained anew once others have run in
+between. So V6's reload budget is still needed; the narrower width makes it reload about five times less often.
+
 ## 7. From 0.0.7: port, and what changes
 
 | 0.0.7 | Here |
