@@ -4,6 +4,10 @@
 
 ### New
 
+- **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
+  `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
+  4B pins) get CPU float32 references for `check_qwen3vl.py`.
+
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
   key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;
   `--no-text-mask` keeps the exact-length graphs). The text axis is static at 1,116 rows, the most a reference prompt
