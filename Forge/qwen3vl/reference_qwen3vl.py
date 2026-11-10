@@ -2,6 +2,11 @@
 """Upstream-PyTorch Qwen3-VL 2B references for the Core AI gate (check_qwen3vl.py) and the Swift driver gate.
 
     Forge/.venv/bin/python -I Forge/qwen3vl/reference_qwen3vl.py --output <new reference dir>
+    Forge/.venv/bin/python -I Forge/qwen3vl/reference_qwen3vl.py --pins Forge/qwen3vl/source-pins-4b-abliterated.json \
+        --pictures <synthetic_pictures.py output> --output <new reference dir>
+
+Pins without reference photographs (the 4B pins) take `--pictures`: synthetic_pictures.py's one-picture cases and its
+text-only case, each picture checked against its cases.json. The 4B run takes about 18 GB of memory.
 
 Runs transformers' unmodified Qwen3VLForConditionalGeneration (pinned weights, SDPA attention) on the CPU in float32,
 with upstream's own processor and chat template. The processor's pixel budget is the bundle's (max_pixels =
@@ -61,10 +66,10 @@ CASES = [
 ]
 
 
-def load_image(name: str, edit: dict | None):
+def load_image(name: str, edit: dict | None, folder: Path = IMAGES):
     from PIL import Image, ImageOps
 
-    image = ImageOps.exif_transpose(Image.open(IMAGES / name)).convert("RGB")
+    image = ImageOps.exif_transpose(Image.open(folder / name)).convert("RGB")
     if edit:
         if edit.get("centerCropSquare"):
             side = min(image.size)
@@ -73,6 +78,18 @@ def load_image(name: str, edit: dict | None):
         if "resize" in edit:
             image = image.resize(tuple(edit["resize"]), Image.Resampling.BICUBIC)
     return image
+
+
+def synthetic_cases(folder: Path) -> list:
+    """synthetic_pictures.py's cases with at most one picture, as (name, picture, None, question); each picture is
+    checked against the SHA-256 its cases.json records. The several-picture cases need a several-image check and are
+    left to the driver's gate (G4)."""
+    index = json.loads((folder / "cases.json").read_text())
+    for name, sha in index["files"].items():
+        if qg.sha256_file(folder / name) != sha:
+            raise SystemExit(f"{name} differs from {folder / 'cases.json'}")
+    return [(c["name"], c["pictures"][0] if c["pictures"] else None, None, c["question"])
+            for c in index["cases"] if len(c["pictures"]) <= 1]
 
 
 def greedy(model, inputs, steps: int) -> tuple[np.ndarray, np.ndarray]:
@@ -99,17 +116,24 @@ def main() -> None:
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--snapshot", type=Path)
     ap.add_argument("--cases", help="comma-separated subset")
+    ap.add_argument("--pictures", type=Path,
+                    help="synthetic_pictures.py's output: its one-picture and text-only cases replace the photographs "
+                         "(for pins that carry none, such as the 4B pins)")
     args = ap.parse_args()
     qg.use_pins(args.pins)
     args.snapshot = args.snapshot or qg.DEFAULT_SNAPSHOT
-    if "referenceImages" not in qg.PINS:
-        raise SystemExit("these pins carry no reference photographs (the 2B pins do)")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
+    if args.pictures:
+        cases, images = synthetic_cases(args.pictures), args.pictures
+    elif "referenceImages" in qg.PINS:
+        cases, images = CASES, IMAGES
+        for name, meta in qg.PINS["referenceImages"]["files"].items():
+            if qg.sha256_file(IMAGES / name) != meta["sha256"]:
+                raise SystemExit(f"{name} differs from its pin; run Forge/qwen3vl/fetch_upstream.py")
+    else:
+        raise SystemExit("these pins carry no reference photographs (the 2B pins do); pass --pictures")
     verified = qg.verify_sources(args.snapshot)
-    for name, meta in qg.PINS["referenceImages"]["files"].items():
-        if qg.sha256_file(IMAGES / name) != meta["sha256"]:
-            raise SystemExit(f"{name} differs from its pin; run Forge/qwen3vl/fetch_upstream.py")
     torch.manual_seed(0)
     torch.set_grad_enabled(False)
     started = time.monotonic()
@@ -122,9 +146,11 @@ def main() -> None:
                                                                      "numpy")},
              "host": {"machine": platform.machine(), "python": platform.python_version()},
              "dtype": "float32", "device": "cpu", "attention": "sdpa", "steps": STEPS,
+             "pictures": (None if not args.pictures else
+                          {"cases.json": qg.sha256_file(args.pictures / "cases.json")}),
              "patchCapacity": qg.PATCH_CAPACITY, "maxPixels": qg.PATCH_CAPACITY * 256, "vocab": vocab, "cases": []}
     wanted = set(args.cases.split(",")) if args.cases else None
-    for name, image_name, edit, question in CASES:
+    for name, image_name, edit, question in cases:
         if wanted and name not in wanted:
             continue
         t0 = time.monotonic()
@@ -135,7 +161,7 @@ def main() -> None:
                                         tokenize=False)
         case = {"name": name, "question": question, "prompt": text}
         if image_name:
-            image = load_image(image_name, edit)
+            image = load_image(image_name, edit, images)
             inputs = proc(text=[text], images=[image], return_tensors="pt",
                           images_kwargs={"size": {"longest_edge": qg.PATCH_CAPACITY * 256,
                                                    "shortest_edge": 65536}})
@@ -144,7 +170,7 @@ def main() -> None:
             pads = np.nonzero(ids == qg.IMAGE_PAD_ID)[0]
             start = int(pads[0])
             ss, sa = qg.rope_shift(start, grid[1], grid[2])
-            case.update({"image": image_name, "edit": edit, "decodedSize": list(load_image(image_name, None).size),
+            case.update({"image": image_name, "edit": edit, "decodedSize": list(load_image(image_name, None, images).size),
                          "imageSize": list(image.size), "resized": [grid[2] * 16, grid[1] * 16],
                          "gridTHW": grid, "patches": grid[1] * grid[2], "imageTokens": len(pads),
                          "imageStart": start, "ropeShiftStart": ss, "ropeShiftAmount": sa})
