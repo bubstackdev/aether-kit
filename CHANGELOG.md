@@ -22,6 +22,18 @@
 
 ### New
 
+- **Qwen3.5 / Qwen3.6 vision-language export (`Forge/qwen3_5/`, docs/QWEN3_5.md).** Any Qwen3_5ForConditionalGeneration
+  checkpoint as a `vlm-static-inject@1` bundle: Qwen3-VL's grid-static tower without DeepStack, and the hybrid decoder
+  (Gated DeltaNet and gated full attention, interleaved M-RoPE, untied head) as one function of up to 32 tokens a call
+  over `keyCache`/`valueCache` and the recurrent `convState`/`recState`. Built a layer at a time from the shards, decoder
+  Linears int4 and the head int8: the Qwen3.6-27B abliterated export is 18.5 GB, made in 3.6 minutes on a 64 GB Mac,
+  and runs at about 20 GB of Metal (flat over mixed requests), a two-picture describer prompt in 2.6 s and 56 ms a
+  token. `Qwen35GateTests` (opt-in) checks a bundle against a reference from the same checkpoint: the 27B against
+  mlx-vlm at 8 bits, teacher-forced, agrees on 40 of 48 tokens with the reference's in our top five at every step.
+- **Images on a decoder with recurrent state.** The `Generator` refused images on a hybrid model. It now reuses the
+  live state when the prompt extends it with every bound image still in place, and otherwise starts from an empty
+  state; no snapshots are kept while images are bound.
+
 - **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
   `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
   process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
