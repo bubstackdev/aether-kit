@@ -11,7 +11,9 @@
     conditioning-only profile, so the generation's canvas, another profile, released the text encoder. The next
     picture's encode then loaded it again. Now the text encoder stays resident beside that canvas's denoisers and
     decoder. The canvas is checked as a generation's would be (`invalidParameters`). `encode(prompt:job:)` is
-    unchanged. Additive; the `AetherImage` API baseline records it.
+    unchanged. `encode(prompt:references:width:height:job:)` does the same for reference prompts, so the
+    denoisers the last generation kept are never released by the generation's change of canvas. Additive; the
+    `AetherImage` API baseline records both.
   - **Cancellation keeps measured graphs.** A generation or encode that throws `CancellationError` (bare or as
     `AetherError.runtime(underlying:)`) now keeps its resident graphs, so the next request starts warm. Its
     reservation shrinks to what they hold, and nothing of the cut-short run is measured

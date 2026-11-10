@@ -74,6 +74,25 @@ struct Krea2WarmSessionTests {
         #expect(loads.log.isEmpty)
     }
 
+    /// Reference pictures, warm: the canvas-aware reference encode keeps the denoisers and decoder the last generation
+    /// kept (its vision tower and text encoder are released after each encode, as before), so the next picture loads
+    /// only the conditioning graphs.
+    @Test func aReferenceEncodeForTheCanvasKeepsTheDenoisers() async throws {
+        let (pipeline, loads) = try Krea2ReferenceTests.pipeline(calls: Calls())
+        let picture = ImageRequest(prompt: "a cat", seed: 3, steps: 2, width: 32, height: 32)
+        let first = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square], width: 32, height: 32)
+        _ = try await pipeline.generate(picture, reusing: first)
+        let denoisers = ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"]
+        #expect(await pipeline.residentRoles == denoisers)
+        let second = try await pipeline.encode(prompt: "a dog", references: [Krea2ReferenceTests.wide], width: 32, height: 32)
+        let dog = ImageRequest(prompt: "a dog", seed: 3, steps: 2, width: 32, height: 32)
+        #expect(try await pipeline.generate(dog, reusing: second).metrics.loadedRoles.isEmpty)
+        #expect(loads.log.filter { denoisers.contains($0) }.count == denoisers.count)
+        #expect(await Krea2ConditioningTests.isInvalidParameters {
+            _ = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square], width: 33, height: 32)
+        })
+    }
+
     // MARK: - Cancellation
 
     @Test func aCancelledWarmGenerationKeepsItsGraphs() async throws {

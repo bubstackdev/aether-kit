@@ -302,7 +302,7 @@ public actor Krea2Pipeline {
     /// ``AetherError/runtime(underlying:)``) keeps the resident graphs under ``ImageRetention/keepLoaded``, so the next
     /// request starts warm (``ResidentAdmission/keepAfterCancellation()``: only graphs already measured stay); any other
     /// failure, or a cancellation under ``ImageRetention/releaseAfterEachGeneration``, releases every graph.
-    private func settle(after error: any Error) {
+    func settle(after error: any Error) {
         if retention == .keepLoaded, Self.isCancellation(error) {
             admission.keepAfterCancellation()
         } else {
