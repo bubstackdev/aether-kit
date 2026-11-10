@@ -8389,11 +8389,11 @@
           ],
           "declKind": "Accessor",
           "kind": "Accessor",
-          "mangledName": "$s13AetherRuntime13DecoderEngineC6MemoryV13residentBytess5Int64Vvg",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC6MemoryV17liveResidentBytess5Int64Vvg",
           "moduleName": "AetherRuntime",
           "name": "Get",
           "printedName": "Get()",
-          "usr": "s:13AetherRuntime13DecoderEngineC6MemoryV13residentBytess5Int64Vvg"
+          "usr": "s:13AetherRuntime13DecoderEngineC6MemoryV17liveResidentBytess5Int64Vvg"
          }
         ],
         "children": [
@@ -8406,11 +8406,11 @@
         ],
         "declKind": "Var",
         "kind": "Var",
-        "mangledName": "$s13AetherRuntime13DecoderEngineC6MemoryV13residentBytess5Int64Vvp",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC6MemoryV17liveResidentBytess5Int64Vvp",
         "moduleName": "AetherRuntime",
-        "name": "residentBytes",
-        "printedName": "residentBytes",
-        "usr": "s:13AetherRuntime13DecoderEngineC6MemoryV13residentBytess5Int64Vvp"
+        "name": "liveResidentBytes",
+        "printedName": "liveResidentBytes",
+        "usr": "s:13AetherRuntime13DecoderEngineC6MemoryV17liveResidentBytess5Int64Vvp"
        },
        {
         "children": [
@@ -25896,6 +25896,29 @@
       "usr": "s:13AetherRuntime14GraphResidencyC6sampleyyF"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime14GraphResidencyC17liveResidentBytess5Int64Vvg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime14GraphResidencyC17liveResidentBytess5Int64Vvg"
+       }
+      ],
       "children": [
        {
         "kind": "TypeNominal",
@@ -25907,14 +25930,13 @@
       "declAttributes": [
        "Final"
       ],
-      "declKind": "Func",
-      "funcSelfKind": "NonMutating",
-      "kind": "Function",
-      "mangledName": "$s13AetherRuntime14GraphResidencyC13liveHeldBytess5Int64VyF",
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime14GraphResidencyC17liveResidentBytess5Int64Vvp",
       "moduleName": "AetherRuntime",
-      "name": "liveHeldBytes",
-      "printedName": "liveHeldBytes()",
-      "usr": "s:13AetherRuntime14GraphResidencyC13liveHeldBytess5Int64VyF"
+      "name": "liveResidentBytes",
+      "printedName": "liveResidentBytes",
+      "usr": "s:13AetherRuntime14GraphResidencyC17liveResidentBytess5Int64Vvp"
      },
      {
       "children": [

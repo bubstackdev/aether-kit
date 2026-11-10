@@ -476,7 +476,7 @@ struct VisionLanguageMemoryTests {
         let engine = try await FakeVLM.engine(probe: level.probe, modelBytes: 777)
         let loaded = await engine.memory
         #expect(loaded.baselineBytes == 10_000 && loaded.currentBytes == 10_000 && loaded.peakBytes == 10_000)
-        #expect(loaded.residentBytes == 0 && loaded.measuredModelBytes == 0 && loaded.chargedModelBytes == 777)
+        #expect(loaded.liveResidentBytes == 0 && loaded.measuredModelBytes == 0 && loaded.chargedModelBytes == 777)
         #expect(loaded.ownedBytes > 0, "KV, logits, statics and the tower's buffers")
         let owned = loaded.ownedBytes
         // The engine's buffers and 5,000 bytes of the model's own arrive with the first image and prefill.
@@ -487,11 +487,11 @@ struct VisionLanguageMemoryTests {
         let warm = await engine.memory
         #expect(warm.ownedBytes == owned)
         #expect(warm.measuredModelBytes == 5_000 && warm.peakBytes == 10_000 + owned + 5_000)
-        #expect(warm.residentBytes == owned + 5_000)
+        #expect(warm.liveResidentBytes == owned + 5_000)
         // Working memory given back: what it holds now falls, the peak and the measurement keep their highest.
         level.set(10_000 + owned + 2_000)
         let after = await engine.memory
-        #expect(after.residentBytes == owned + 2_000 && after.currentBytes == 10_000 + owned + 2_000)
+        #expect(after.liveResidentBytes == owned + 2_000 && after.currentBytes == 10_000 + owned + 2_000)
         #expect(after.peakBytes == warm.peakBytes && after.measuredModelBytes == 5_000)
         // A greedy decode is read when it ends.
         level.set(10_000 + owned + 7_500)
@@ -502,6 +502,6 @@ struct VisionLanguageMemoryTests {
         #expect(await engine.memory.measuredModelBytes == 7_500)
         // Below the baseline, nothing is held.
         level.set(1_000)
-        #expect(await engine.memory.residentBytes == 0)
+        #expect(await engine.memory.liveResidentBytes == 0)
     }
 }

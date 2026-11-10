@@ -140,8 +140,9 @@ public actor DecoderEngine: LanguageEngine {
         /// next load.
         public var measuredModelBytes: Int64
 
-        /// What the engine holds now, its buffers included: ``currentBytes`` above ``baselineBytes`` (at least 0).
-        public var residentBytes: Int64 { max(0, currentBytes - baselineBytes) }
+        /// What the engine holds now, its buffers included: ``currentBytes`` above ``baselineBytes`` (at least 0). The
+        /// same name as the pipelines' live reading (`Krea2Pipeline.liveResidentBytes`).
+        public var liveResidentBytes: Int64 { max(0, currentBytes - baselineBytes) }
     }
 
     /// The engine's memory now (``Memory``): live, read at the call.
