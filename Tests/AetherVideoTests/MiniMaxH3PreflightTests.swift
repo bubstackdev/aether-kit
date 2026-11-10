@@ -4,7 +4,7 @@ import AetherRuntime
 import Foundation
 import Synchronization
 import Testing
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// The CPU-side clip API, hermetic: the clip limits and the preflight against generation's own refusals (a prompt too
 /// long for the clip, a clip no prompt fits, both typed), and the streamed decode through a fake video decoder (frames
@@ -77,10 +77,10 @@ struct MiniMaxH3PreflightTests {
         #expect(plain.profile == "960x544x124" && plain.recipe == "turbo8" && plain.seed == 42 && plain.frames == 124)
         #expect(plain.promptTokens == 13 && plain.presentationTokens == 13 && plain.packedRows == 19297)
         let t2va = try pipeline.clipLimits(), fl2va = try pipeline.clipLimits(keyframes: 2)
-        #expect(plain.admissionKey == "960x544x124" && plain.envelope == nil && plain.limits == t2va)
+        #expect(plain.admissionKey == VideoAdmissionKey(profile: "960x544x124") && plain.envelope == nil && plain.limits == t2va)
 
         let anchored = try pipeline.preflight(VideoRequest(prompt: "a fox in snow", keyframes: try Self.keyframes(2)))
-        #expect(anchored.admissionKey == "960x544x124/fl2va2" && anchored.presentationTokens == 1050 + 13)
+        #expect(anchored.admissionKey == VideoAdmissionKey(profile: "960x544x124", keyframeCount: 2) && anchored.presentationTokens == 1050 + 13)
         #expect(anchored.packedRows == 1063 + 2 * 510 + 414 + 18870)
         #expect(anchored.limits == fl2va)
         // The plan's own packed layout has the rows preflight reports.

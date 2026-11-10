@@ -67945,11 +67945,11 @@
             ],
             "declKind": "Accessor",
             "kind": "Accessor",
-            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9keyframesSivg",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivg",
             "moduleName": "AetherCore",
             "name": "Get",
             "printedName": "Get()",
-            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9keyframesSivg"
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivg"
            }
           ],
           "children": [
@@ -67962,11 +67962,11 @@
           ],
           "declKind": "Var",
           "kind": "Var",
-          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9keyframesSivp",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivp",
           "moduleName": "AetherCore",
-          "name": "keyframes",
-          "printedName": "keyframes",
-          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9keyframesSivp"
+          "name": "keyframeCount",
+          "printedName": "keyframeCount",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivp"
          },
          {
           "accessors": [
@@ -75621,45 +75621,6 @@
       "name": "H3",
       "printedName": "H3",
       "usr": "s:10AetherCore8ManifestV2H3V"
-     },
-     {
-      "accessors": [
-       {
-        "accessorKind": "get",
-        "children": [
-         {
-          "kind": "TypeNominal",
-          "name": "String",
-          "printedName": "Swift.String",
-          "usr": "s:SS"
-         }
-        ],
-        "declKind": "Accessor",
-        "isFromExtension": true,
-        "kind": "Accessor",
-        "mangledName": "$s10AetherCore8ManifestV17measurementDigestSSvg",
-        "moduleName": "AetherCore",
-        "name": "Get",
-        "printedName": "Get()",
-        "usr": "s:10AetherCore8ManifestV17measurementDigestSSvg"
-       }
-      ],
-      "children": [
-       {
-        "kind": "TypeNominal",
-        "name": "String",
-        "printedName": "Swift.String",
-        "usr": "s:SS"
-       }
-      ],
-      "declKind": "Var",
-      "isFromExtension": true,
-      "kind": "Var",
-      "mangledName": "$s10AetherCore8ManifestV17measurementDigestSSvp",
-      "moduleName": "AetherCore",
-      "name": "measurementDigest",
-      "printedName": "measurementDigest",
-      "usr": "s:10AetherCore8ManifestV17measurementDigestSSvp"
      },
      {
       "children": [

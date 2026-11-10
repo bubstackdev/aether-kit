@@ -560,7 +560,8 @@ runtime pieces:
 - **Measured admission (H2):** a generation runs only under a measured envelope for its key and recipe on this export
   and Core AI architecture (`h3.envelopes`, MANIFEST.md §5.10), on a device with the profile's minimum physical memory;
   an unmeasured one is refused before anything loads. The ledger is seeded from the envelopes. The memory gate runs
-  with `VideoAdmissionPolicy.measuring` (every profile, planned from its files, nothing seeded).
+  with `VideoAdmissionPolicy.measuring` (SPI; every profile, planned from its files, nothing seeded). A refusal is a
+  typed `VideoRefusal`; the envelopes are not part of the export's identity (`contentDigest`).
 - **Preflight and clip limits:** `clipLimits(profile:keyframes:)` gives what a clip leaves its prompt
   (`VideoClipLimits`: the export's bounds, the keyframes' presentation tokens, the clip's packed rows, the longest
   and shortest prompt), before there is a prompt or keyframe pixels; `preflight(_:)` resolves a whole request as

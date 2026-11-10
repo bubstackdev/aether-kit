@@ -34,33 +34,6 @@ public struct MiniMaxH3Model: Sendable {
     }
 }
 
-/// How ``MiniMaxH3Pipeline`` admits a generation (MANIFEST.md §5.10).
-public enum VideoAdmissionPolicy: Sendable, Hashable {
-    /// The default: a generation runs only under a measured envelope (``VideoMemoryEnvelope``) for its admission key
-    /// (`<profile>`, `<profile>/fl2va1`, `<profile>/fl2va2`) and recipe, on this export and Core AI architecture, and
-    /// only on a device with the profile's minimum physical memory. Anything else is refused before anything loads.
-    /// The pipeline's ledger is seeded from the envelopes.
-    case measuredOnly
-    /// The memory gate's: every profile is admitted, planned from its graphs' files (or what the ledger has measured
-    /// so far), with nothing seeded and no physical-memory minimum, so its renders measure it.
-    case measuring
-}
-
-/// What admission holds one key to: the measured envelope (each phase's peak and held bytes, and the sampling margin)
-/// and its profile's memory class (the bar and the physical memory it needs).
-public struct VideoMemoryEnvelope: Sendable, Hashable {
-    /// The admission key: `<profile>`, `<profile>/fl2va1` or `<profile>/fl2va2`.
-    public let key: String
-    /// The recipes measured.
-    public let recipes: [String]
-    public let phases: [Manifest.Residency: PhaseFootprint]
-    public let marginBytes: Int64
-    public let barBytes: Int64
-    public let minimumPhysicalMemoryBytes: Int64
-    /// The largest phase peak.
-    public var stagePeakBytes: Int64 { phases.values.map(\.peakBytes).max() ?? 0 }
-}
-
 extension Registry {
     /// The drivers AetherVideo links: `minimax-h3@1`.
     public static let video = Registry([MiniMaxH3Driver.self])
@@ -256,7 +229,7 @@ public struct VideoPreflight: Sendable, Hashable {
     /// The clip's limits.
     public let limits: VideoClipLimits
     /// The ledger key the generation is admitted under (`<profile>`, `<profile>/fl2va<n>`).
-    public let admissionKey: String
+    public let admissionKey: VideoAdmissionKey
     /// The measured envelope it is admitted under; nil under ``VideoAdmissionPolicy/measuring`` without one.
     public let envelope: VideoMemoryEnvelope?
     /// The frames the clip decodes.
@@ -305,7 +278,7 @@ public actor MiniMaxH3Pipeline {
     /// How generations are admitted.
     public nonisolated let admissionPolicy: VideoAdmissionPolicy
     /// The measured envelopes that hold for this export and device, by admission key (``measuredEnvelopes(manifest:device:)``).
-    public nonisolated let envelopes: [String: VideoMemoryEnvelope]
+    public nonisolated let envelopes: [VideoAdmissionKey: VideoMemoryEnvelope]
 
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws {
         try await self.init(bundle: bundle, manifest: manifest, device: device, options: options, admissionPolicy: .measuredOnly)
@@ -365,8 +338,10 @@ public actor MiniMaxH3Pipeline {
             fileBytes: fileBytes)
         // The gate measures from nothing: a seeded entry would be kept as the larger value of what it measures.
         if admissionPolicy == .measuredOnly {
-            Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
+            // The manifest's envelopes first: they win over the qualified footprints for a key both measured (the
+            // G4 export keeps its digest when envelopes are recorded into it).
             Self.seed(options.ledger, model: admission.modelKey, envelopes: envelopes)
+            Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
         }
     }
 
@@ -418,7 +393,7 @@ public actor MiniMaxH3Pipeline {
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: plan.admissionKey)
+            let residency = try admission.begin(profile: plan.admissionKey.description)
             do {
                 let video = try await render(plan, residency: residency, onProgress: onProgress, frames: sink, trace: trace)
                 admission.finish()
@@ -467,7 +442,7 @@ public actor MiniMaxH3Pipeline {
         var conditioningIDs: [Int32] { presentation?.ids ?? ids }
         var textTags: [Int32] { presentation?.tags ?? [Int32](repeating: H3KeyframeRules.textTag, count: ids.count) }
         /// The ledger key the generation is admitted under: a keyframed clip has its own footprints.
-        var admissionKey: String { anchors.isEmpty ? profile.key : "\(profile.key)/fl2va\(anchors.count)" }
+        var admissionKey: VideoAdmissionKey { VideoAdmissionKey(profile: profile.key, keyframeCount: anchors.count) }
     }
 
     /// Resolves `request` as ``generate(_:onProgress:)`` does, on the CPU with no graph loaded and nothing waited for:
@@ -572,22 +547,36 @@ public actor MiniMaxH3Pipeline {
     /// recipe, on a device with the profile's minimum physical memory.
     nonisolated func admit(_ plan: Plan) throws(AetherError) {
         let p = plan.profile, key = plan.admissionKey
-        if let recipes = p.recipes, !recipes.contains(plan.recipeName) {
-            throw .unsupportedOperation("profile \(p.key) offers \(recipes.joined(separator: ", ")), not '\(plan.recipeName)'")
-        }
-        if let tables = p.shapes?["body"]?["table"], !tables.contains([6, 3 * plan.cardinality, 5376]) {
-            throw .unsupportedOperation("recipe '\(plan.recipeName)' binds [6, \(3 * plan.cardinality), 5376] modulation tables, "
-                                        + "outside profile \(p.key)'s shapes")
+        if !Self.runs(p, recipe: plan.recipeName, h3: h3, keyframes: !plan.keyframes.isEmpty) {
+            throw VideoRefusal.recipeNotOffered(
+                profile: p.key, recipe: plan.recipeName, offered: Self.offeredRecipes(p, h3: h3, keyframes: !plan.keyframes.isEmpty)).error
         }
         guard admissionPolicy == .measuredOnly else { return }
         guard let envelope = envelopes[key], envelope.recipes.contains(plan.recipeName) else {
-            throw .unsupportedOperation("\(key) with '\(plan.recipeName)' has no measured memory envelope for this export on "
-                                        + "\(device.architecture), so it is refused (unmeasured); the memory gate measures it")
+            throw VideoRefusal.unmeasured(admissionKey: key, recipe: plan.recipeName).error
         }
         if UInt64(clamping: envelope.minimumPhysicalMemoryBytes) > device.physicalMemory {
-            throw .capacity(what: "physical memory for \(key)", needed: envelope.minimumPhysicalMemoryBytes,
-                            available: Int64(clamping: device.physicalMemory))
+            throw VideoRefusal.insufficientPhysicalMemory(
+                admissionKey: key, neededBytes: envelope.minimumPhysicalMemoryBytes,
+                availableBytes: Int64(clamping: device.physicalMemory)).error
         }
+    }
+
+    /// Whether `profile` runs `recipe` for its task: the profile's `recipes` (absent, every recipe) name it, the export
+    /// has it for the task, and its modulation tables are inside the profile's body shapes.
+    static func runs(_ profile: Manifest.H3.Profile, recipe name: String, h3: Manifest.H3, keyframes: Bool) -> Bool {
+        if let recipes = profile.recipes, !recipes.contains(name) { return false }
+        guard let recipe = h3.recipes[name + (keyframes ? "/fl2va" : "/t2va")] else { return false }
+        let cardinality = recipe.steps.map(\.timesteps.count).max() ?? 1
+        if let tables = profile.shapes?["body"]?["table"], !tables.contains([6, 3 * cardinality, 5376]) { return false }
+        return true
+    }
+
+    /// The recipes `profile` runs for its task (``runs(_:recipe:h3:keyframes:)``), sorted.
+    static func offeredRecipes(_ profile: Manifest.H3.Profile, h3: Manifest.H3, keyframes: Bool) -> [String] {
+        let task = keyframes ? "/fl2va" : "/t2va"
+        let names = h3.recipes.keys.filter { $0.hasSuffix(task) }.map { String($0.dropLast(task.count)) }
+        return Set(names).filter { runs(profile, recipe: $0, h3: h3, keyframes: keyframes) }.sorted()
     }
 
     /// The envelope a request would be admitted under (its profile, recipe and keyframe count resolved as
@@ -596,7 +585,7 @@ public actor MiniMaxH3Pipeline {
     public nonisolated func envelope(for request: VideoRequest) -> VideoMemoryEnvelope? {
         guard let profile = request.profile.map({ h3.profile($0) }) ?? h3.profiles.first else { return nil }
         let count = request.keyframes?.frames.count ?? 0
-        guard let envelope = envelopes[count == 0 ? profile.key : "\(profile.key)/fl2va\(count)"],
+        guard let envelope = envelopes[VideoAdmissionKey(profile: profile.key, keyframeCount: count)],
               envelope.recipes.contains(request.recipe ?? h3.defaultRecipe) else { return nil }
         return envelope
     }
@@ -1036,24 +1025,28 @@ extension MiniMaxH3Pipeline {
     public static let qualifiedArchitecture = "h17c"
 
     /// The envelopes that hold for `manifest` on `device`, by admission key: the manifest's `h3.envelopes` measured on
-    /// this export (``Manifest/measurementDigest``) and the device's Core AI architecture, with their profiles' bars;
+    /// this export (``Manifest/contentDigest``, which leaves the envelopes out) and the device's Core AI architecture,
+    /// with their profiles' bars;
     /// and, for the export and chip ``qualifiedFootprints`` were measured on, those (turbo8, 18 GiB) where the manifest
     /// has none for the key.
-    public static func measuredEnvelopes(manifest: Manifest, device: Device) -> [String: VideoMemoryEnvelope] {
+    public static func measuredEnvelopes(manifest: Manifest, device: Device) -> [VideoAdmissionKey: VideoMemoryEnvelope] {
         guard device.platform == .macOS, let h3 = manifest.h3 else { return [:] }
-        var out: [String: VideoMemoryEnvelope] = [:]
-        let digest = manifest.measurementDigest
+        var out: [VideoAdmissionKey: VideoMemoryEnvelope] = [:]
+        let digest = manifest.contentDigest
         for e in h3.envelopes ?? [] where e.export == digest && e.architecture == device.architecture {
-            guard let memory = h3.profile(e.profile)?.memory else { continue }
-            out[e.key] = VideoMemoryEnvelope(
-                key: e.key, recipes: e.recipes,
+            guard let memory = h3.profile(e.profile)?.memory,
+                  let key = VideoAdmissionKey(e.key) else { continue }
+            out[key] = VideoMemoryEnvelope(
+                key: key, recipes: e.recipes,
                 phases: [.perPrompt: PhaseFootprint(peakBytes: e.perPrompt.peakBytes, heldBytes: e.perPrompt.heldBytes),
                          .perStep: PhaseFootprint(peakBytes: e.perStep.peakBytes, heldBytes: e.perStep.heldBytes),
                          .perImage: PhaseFootprint(peakBytes: e.perImage.peakBytes, heldBytes: e.perImage.heldBytes)],
                 marginBytes: e.marginBytes, barBytes: memory.barBytes, minimumPhysicalMemoryBytes: memory.minimumPhysicalMemoryBytes)
         }
         if device.architecture == qualifiedArchitecture, manifest.contentDigest == qualifiedExportDigest {
-            for (key, phases) in qualifiedFootprints where out[key] == nil && h3.profile(key) != nil {
+            for (profile, phases) in qualifiedFootprints where h3.profile(profile) != nil {
+                let key = VideoAdmissionKey(profile: profile)
+                guard out[key] == nil else { continue }
                 out[key] = VideoMemoryEnvelope(key: key, recipes: ["turbo8"], phases: phases, marginBytes: 256 << 20,
                                                barBytes: 18 << 30, minimumPhysicalMemoryBytes: 0)
             }
@@ -1062,10 +1055,10 @@ extension MiniMaxH3Pipeline {
     }
 
     /// Seeds `ledger` under `model` with each envelope's phases, keyed by its admission key.
-    static func seed(_ ledger: FootprintLedger, model: String, envelopes: [String: VideoMemoryEnvelope]) {
+    static func seed(_ ledger: FootprintLedger, model: String, envelopes: [VideoAdmissionKey: VideoMemoryEnvelope]) {
         for (key, envelope) in envelopes {
             for (phase, footprint) in envelope.phases {
-                let entry = FootprintLedger.Key(model: model, profile: key, phase: phase)
+                let entry = FootprintLedger.Key(model: model, profile: key.description, phase: phase)
                 if ledger.footprint(entry) == nil { ledger.record(entry, footprint) }
             }
         }
