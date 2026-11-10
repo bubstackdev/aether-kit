@@ -84,7 +84,7 @@ struct Qwen35GateTests {
         // Teacher forcing at the engine: the plan's expanded prompt, then the reference's tokens one at a time.
         let spec = try #require(engine.imageInput)
         let prepared = try images.map { try $0.prepared(for: spec) }
-        #expect(prepared.map { [1, $0.gridH, $0.gridW] } == reference.grids, "grids")
+        #expect(prepared.map { [1, $0.gridHeight, $0.gridWidth] } == reference.grids, "grids")
         let plan = try ImagePromptPlan(rendered: rendered.tokens, images: prepared, spec: spec)
         #expect(plan.tokens.count == reference.promptTokens, "expanded prompt length")
         try await engine.reset()
