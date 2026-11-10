@@ -8,8 +8,9 @@
   `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
   process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
   what the kept graphs retain after the plan, where `Krea2Pipeline.plannedResidentBytes` (and
-  `ResidentAdmission.residentBytes`) stays the last plan's held bytes (what remains reserved on a coordinator). The probe reads the whole process, so models loaded after the pipeline count too.
-  Additive; the API baselines record it.
+  `ResidentAdmission.residentBytes`) stays the last plan's held bytes (what remains reserved on a coordinator). The
+  probe reads the whole process, so models loaded after the pipeline count too. `DecoderEngine.Memory` names its live
+  reading `liveResidentBytes` too. Additive; the API baselines record it.
 - **Measured and declared model memory for the decoder engine** (`decoder-lm@1` and `vlm-static-inject@1`;
   docs/VLM.md §5, V5). Loading allocates almost nothing, so load charged the KV budget with the graph files' size
   (8.28 GiB for the 4B Qwen3-VL export, against 9.4–13.6 GiB of Metal measured over a session).
