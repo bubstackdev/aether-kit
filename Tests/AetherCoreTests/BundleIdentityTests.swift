@@ -63,6 +63,41 @@ struct BundleIdentityTests {
         }
     }
 
+    /// D292: an H3 export's identity is its content only. Recording the memory gate's envelopes into the manifest
+    /// (`h3.envelopes`), or measuring again on another chip, keeps the bundle's identity; the manifest's bytes change.
+    @Test func recordingMeasuredEnvelopesKeepsTheBundleIdentity() async throws {
+        try await withTemporaryDirectory { dir in
+            let fixture = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "Fixtures/h3/minimax-h3.json")
+            let plain = try Data(contentsOf: fixture)
+            let digest = try Manifest.decode(plain).contentDigest
+            func recorded(_ architectures: [String]) throws -> Data {
+                var json = try JSONSerialization.jsonObject(with: plain) as! [String: Any]
+                var h3 = json["h3"] as! [String: Any]
+                let phase: [String: Any] = ["peakBytes": 10 << 30, "heldBytes": 5 << 30]
+                h3["envelopes"] = architectures.map { architecture in
+                    ["key": "960x544x124", "recipes": ["turbo8"], "architecture": architecture, "export": digest,
+                     "marginBytes": 256 << 20, "perPrompt": phase, "perStep": phase, "perImage": phase] as [String: Any]
+                }
+                json["h3"] = h3
+                return try JSONSerialization.data(withJSONObject: json)
+            }
+            let ref = Self.ref()
+            let unmeasured = try Self.write(ref, at: dir.appending(path: "unmeasured"), manifest: plain)
+            let measured = try Self.write(ref, at: dir.appending(path: "measured"), manifest: try recorded(["h17c"]))
+            let again = try Self.write(ref, at: dir.appending(path: "again"), manifest: try recorded(["h17c", "h16s"]))
+            #expect(try Manifest.load(fromBundle: measured.url).h3?.envelopes?.count == 1)
+            #expect(try Data(contentsOf: Manifest.url(inBundle: measured.url)) != plain)
+            let identity = try unmeasured.contentIdentity()
+            #expect(try measured.contentIdentity() == identity && again.contentIdentity() == identity)
+            #expect(try measured.contentIdentity(capability: "fl2va") == unmeasured.contentIdentity(capability: "fl2va"))
+            // A content edit still gives a new identity.
+            var edited = try Manifest.decode(plain)
+            edited.license = "changed"
+            let other = try Self.write(ref, at: dir.appending(path: "edited"), manifest: try edited.encoded())
+            #expect(try other.contentIdentity() != identity)
+        }
+    }
+
     @Test func capabilityIdentitiesDifferFromEachOtherAndThePlainOne() async throws {
         try await withTemporaryDirectory { dir in
             let bundle = try Self.write(Self.ref(), at: dir)

@@ -28,7 +28,8 @@ extension InstalledBundle {
     static let identityFormat = "aether-bundle-identity@1"
 
     /// The bundle's content identity: lowercase hex SHA-256 over the driver, the variant key, every asset's files
-    /// (name, path, size and SHA-256, sorted) and the manifest's ``Manifest/contentDigest``.
+    /// (name, path, size and SHA-256, sorted) and the manifest's ``Manifest/contentDigest``. The manifest's measured
+    /// memory envelopes (`h3.envelopes`) are not part of the digest, so recording them keeps the identity.
     ///
     /// Location-free: the store root, the folder, the repo and the revision are not part of it, so the same bytes give
     /// the same identity wherever they are installed or restored, while any changed file or manifest gives a new one.

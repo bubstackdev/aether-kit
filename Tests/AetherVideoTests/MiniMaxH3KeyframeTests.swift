@@ -264,7 +264,7 @@ struct MiniMaxH3KeyframeTests {
         let anchors: [H3Anchor] = mode == "first" ? [.first] : mode == "last" ? [.last] : [.first, .last]
         #expect(plan.anchors == anchors && plan.keyframes == keyframes.frames)
         #expect(plan.recipe == manifest.h3!.recipes["turbo8/fl2va"], "a keyframed clip takes the fl2va recipe")
-        #expect(plan.admissionKey == "960x544x124/fl2va\(anchors.count)")
+        #expect(plan.admissionKey.description == "960x544x124/fl2va\(anchors.count)")
 
         // The presentation the conditioner sees is Diffusers' (ids, tags, positions by hash).
         let expected = try #require(f.presentations.first { $0.canvas == "960x544" && $0.anchors == mode.split(separator: "+").map(String.init) })
@@ -353,7 +353,7 @@ struct MiniMaxH3KeyframeTests {
         guard case .unsupportedOperation? = error else { Issue.record("\(String(describing: error))"); return }
         // Text to video is unchanged: the t2va recipe and the prompt's own rows.
         let plan = try await pipeline.plan(VideoRequest(prompt: f.prompt))
-        #expect(plan.presentation == nil && plan.anchors.isEmpty && plan.admissionKey == "960x544x124")
+        #expect(plan.presentation == nil && plan.anchors.isEmpty && plan.admissionKey.description == "960x544x124")
         #expect(plan.recipe == pipeline.h3.recipes["turbo8/t2va"] && plan.conditioningIDs == f.promptIds)
         #expect(throws: AetherError.self) { _ = try VideoKeyframe(rgb: [0, 0], width: 1, height: 1) }
     }
