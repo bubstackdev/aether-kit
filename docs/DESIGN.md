@@ -560,7 +560,8 @@ runtime pieces:
 - **Measured admission (H2):** a generation runs only under a measured envelope for its key and recipe on this export
   and Core AI architecture (`h3.envelopes`, MANIFEST.md §5.10), on a device with the profile's minimum physical memory;
   an unmeasured one is refused before anything loads. The ledger is seeded from the envelopes. The memory gate runs
-  with `VideoAdmissionPolicy.measuring` (every profile, planned from its files, nothing seeded).
+  with `VideoAdmissionPolicy.measuring` (SPI; every profile, planned from its files, nothing seeded). A refusal is a
+  typed `VideoRefusal`; the envelopes are not part of the export's identity (`contentDigest`).
 - macOS only (`unsupportedDevice` on iOS before loading).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph
   reference; a whole clip and its repeat bit-identical, 425 s each (the debug build's host decode and stitching

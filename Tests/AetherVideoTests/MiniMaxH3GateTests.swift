@@ -3,7 +3,7 @@ import AetherCore
 import AetherRuntime
 import Foundation
 import Testing
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// The MiniMax H3 gates (DESIGN.md §12), on the real export (`aether/forge-outputs/minimax-h3`, or AETHER_H3_EXPORT;
 /// not publicly hosted: see docs/INTEGRATION.md for the license). Off by default; run with

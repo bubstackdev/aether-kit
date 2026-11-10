@@ -61,7 +61,7 @@ extension Manifest {
             public var recipes: [String]
             /// The Core AI architecture measured on (`Device.architecture`).
             public var architecture: String
-            /// The export measured: its ``Manifest/measurementDigest``.
+            /// The export measured: its ``Manifest/contentDigest`` (which leaves the envelopes out).
             public var export: String
             /// The sampling margin added to each peak against the bar.
             public var marginBytes: Int64
@@ -75,7 +75,7 @@ extension Manifest {
             /// The profile the key admits.
             public var profile: String { String(key.split(separator: "/").first ?? "") }
             /// Keyframes the key admits: 0, 1 or 2.
-            public var keyframes: Int {
+            public var keyframeCount: Int {
                 key.hasSuffix("/fl2va2") ? 2 : key.hasSuffix("/fl2va1") ? 1 : 0
             }
             /// The largest phase peak.
@@ -229,7 +229,7 @@ extension Manifest {
                 try require(measured.insert([e.key, e.architecture]).inserted, "\(field)", "repeats its key and architecture")
                 try require(!e.recipes.isEmpty, "\(field).recipes", "must name the recipes measured")
                 for (j, recipe) in e.recipes.enumerated() {
-                    try require(recipes["\(recipe)/\(e.keyframes == 0 ? "t2va" : "fl2va")"] != nil && (p.recipes?.contains(recipe) ?? true),
+                    try require(recipes["\(recipe)/\(e.keyframeCount == 0 ? "t2va" : "fl2va")"] != nil && (p.recipes?.contains(recipe) ?? true),
                                 "\(field).recipes.\(j)", "names no recipe of the profile for its task")
                 }
                 try require(!e.architecture.isEmpty, "\(field).architecture", "must not be empty")
@@ -286,17 +286,5 @@ extension Manifest {
             try require(audio.channels == 2 && audio.rowChannels == 32 && audio.hop > 0 && audio.sampleRate > 0, "h3.audio",
                         "must be stereo rows of 32 with a positive hop and rate")
         }
-    }
-}
-
-extension Manifest {
-    /// The export's identity for memory measurements: ``contentDigest`` of the manifest without its measured
-    /// envelopes (`h3.envelopes`), so recording an envelope doesn't change the identity it was measured on. Equal to
-    /// ``contentDigest`` for a manifest that has none.
-    public var measurementDigest: String {
-        guard h3?.envelopes != nil else { return contentDigest }
-        var copy = self
-        copy.h3?.envelopes = nil
-        return copy.contentDigest
     }
 }

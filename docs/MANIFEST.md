@@ -713,14 +713,17 @@ profile whose canvas lacks the keyframe graphs is text-to-video only (no `keyfra
 `h3.envelopes` (written by `Forge/h3/record_envelopes_h3.py` from the memory gate's records, `scripts/h3-memory-gate`)
 holds one measured envelope per admission key and Core AI architecture: `key` (`<profile>` for text to video,
 `<profile>/fl2va1` for one keyframe, first or last, `<profile>/fl2va2` for first + last), `recipes` (those
-measured), `architecture`, `export` (the manifest's `measurementDigest`: its `contentDigest` without the envelopes,
-so recording them doesn't change what they were measured on), `marginBytes` (0.0.x's 256 MiB sampling margin),
+measured), `architecture`, `export` (the manifest's `contentDigest`, which leaves the envelopes out, so recording them
+doesn't change what they were measured on), `marginBytes` (0.0.x's 256 MiB sampling margin),
 `perPrompt`, `perStep`, `perImage` (`{peakBytes, heldBytes}`: the largest over the key's renders), and `renders` and
 `record` for provenance. **Admission:** by default `MiniMaxH3Pipeline` admits a request only under an envelope for
 its key and recipe whose `export` and `architecture` match the bundle and the device, and only when the device has its
-profile's minimum physical memory; anything else is refused before anything loads (unmeasured). The ledger is seeded
-from the envelopes. The memory gate runs with `VideoAdmissionPolicy.measuring`, which admits every profile, planned
-from its files, and seeds nothing. For the export the 960×544×124 footprints were measured on (G4), those stand as
+profile's minimum physical memory; anything else is refused before anything loads, with a typed `VideoRefusal`
+(`unmeasured`, `recipeNotOffered`, `insufficientPhysicalMemory`). The ledger is seeded from the envelopes. The memory
+gate runs with `VideoAdmissionPolicy.measuring` (SPI, the kit's gates only), which admits every profile, planned from
+its files, and seeds nothing. **Identity:** the envelopes are measurements, not content: `Manifest.contentDigest`
+and so the bundle's content identity leave `h3.envelopes` out (D292), so recording or re-measuring them keeps the
+export's identity, while the manifest's bytes (and its `SHA256SUMS` line) change. For the export the 960×544×124 footprints were measured on (G4), those stand as
 its turbo8 text-to-video envelope.
 
 Decoding refuses (naming the field): a profile `recipes` entry with no `t2va` recipe, a non-positive bar, `shapes`

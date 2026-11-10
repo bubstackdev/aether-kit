@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import AetherCore
 @testable import AetherRuntime
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// MiniMax H3's host recipe and contract, hermetic: the packed layout against Diffusers' own (a tiny geometry recorded
 /// by Forge/h3/layout_fixture_h3.py), the qualified geometry, the modulation padding, the scheduler arm, the decode

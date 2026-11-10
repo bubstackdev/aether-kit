@@ -11,21 +11,30 @@
   its `ShapeProfile` entries. See MANIFEST.md §5.10.
   - **Measured admission:** `h3.envelopes` records the memory gate's measurements per admission key (`<profile>`,
     `<profile>/fl2va1`, `<profile>/fl2va2`) and Core AI architecture: each phase's peak and held bytes, the recipes
-    measured, the margin, and the export they were measured on (`Manifest.measurementDigest`).
+    measured, the margin, and the export they were measured on (its `Manifest.contentDigest`).
     `MiniMaxH3Pipeline` admits only under an envelope for this export and chip, on a device with the profile's
     minimum physical memory, and seeds its ledger from them. `envelopes` and `envelope(for:)` expose them
-    (`VideoMemoryEnvelope`).
+    (`VideoMemoryEnvelope`, keyed by `VideoAdmissionKey`: a profile and its keyframe count).
+  - **Typed refusals:** `VideoRefusal` says why a request was refused before anything loaded: `.unmeasured` (no
+    envelope for the key and recipe on this export and chip; the memory gate measures it), `.recipeNotOffered` (the
+    profile's recipes or shapes don't take it), `.insufficientPhysicalMemory`. They are thrown as the usual
+    `AetherError` (`unsupportedOperation`, `capacity`); `VideoRefusal(_:)` reads one back, so hosts never match text.
+  - **Identity (D292):** the envelopes are measurements, not content. `Manifest.contentDigest`, and with it the
+    bundle's `contentIdentity()`, leaves `h3.envelopes` out, so recording or re-measuring envelopes keeps the
+    export's identity. A manifest without envelopes has the digest it always had.
   - **The memory gate's policy:** `VideoAdmissionPolicy.measuring` (`MiniMaxH3Model.admissionPolicy`, or the new
     `MiniMaxH3Pipeline.init(…, admissionPolicy:)`) admits every profile, planned from its files, and seeds nothing.
+    It is SPI (`@_spi(Testing)`), for the kit's gates only; hosts get `.measuredOnly`.
   - **Tools:** `Forge/h3/extend_h3.py` extends an export into a new folder that hard-links what it reuses. With
     `--manifest-only` it names only the profiles the graphs allow. Otherwise the exporter's new `--only-missing`
     stages convert the missing audio decoder (405 latents) and the new canvases' keyframe tails and vision towers.
     `Forge/h3/record_envelopes_h3.py` writes a gate run's records into the manifest. `scripts/h3-memory-gate` runs
     the gate matrix: one render per process under `scripts/gpu-lease`, per-render JSON records, a stop below
     100 GiB free, and a prune of its compile-cache bucket at the end. The suite is `MiniMaxH3ProfileGateTests`.
-  - **Behaviour change:** an H3 request without a measured envelope is refused (`unsupportedOperation`). On the G4
+  - **Behaviour change:** an H3 request without a measured envelope is refused (`VideoRefusal.unmeasured`, thrown as
+    `unsupportedOperation`). On the G4
     export only 960×544×124 turbo8 text-to-video is covered (its seeded footprints). Keyframed clips, turbo4 and
-    544×960 there need the H2 gate's envelopes, or `.measuring`.
+    544×960 there need the H2 gate's envelopes.
   - **Not yet measured:** the envelopes come from the H2 gate on the GPU.
 
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text

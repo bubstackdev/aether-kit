@@ -1,10 +1,11 @@
+import CryptoKit
 import AetherCore
 @_spi(Testing) import AetherHost
 import AetherRuntime
 import Foundation
 import Synchronization
 import Testing
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// Measured admission per profile (MANIFEST.md §5.10, `h3.envelopes`): the export's profiles with their recipes,
 /// memory class and shapes; an unmeasured key refused before anything loads; an envelope only for the export and chip
@@ -27,7 +28,7 @@ struct MiniMaxH3AdmissionTests {
     ) throws -> [String: Any] {
         let phase: [String: Any] = ["peakBytes": peak, "heldBytes": peak / 2]
         return ["key": key, "recipes": recipes, "architecture": architecture,
-                "export": try export ?? MiniMaxH3Tests.manifest().measurementDigest, "marginBytes": 256 << 20,
+                "export": try export ?? MiniMaxH3Tests.manifest().contentDigest, "marginBytes": 256 << 20,
                 "perPrompt": phase, "perStep": phase, "perImage": phase, "renders": 1, "record": "test.json"]
     }
 
@@ -71,7 +72,7 @@ struct MiniMaxH3AdmissionTests {
     }
 
     static func isUnmeasured(_ error: AetherError?) -> Bool {
-        if case .unsupportedOperation(let why)? = error { return why.contains("no measured memory envelope") }
+        if case .unmeasured? = error.flatMap(VideoRefusal.init) { return true }
         return false
     }
 
@@ -116,7 +117,7 @@ struct MiniMaxH3AdmissionTests {
         let device = Device(platform: .macOS, architecture: "h17c", physicalMemory: 64 << 30)
         let pipeline = try Self.pipeline(manifest, device: device, ledger: ledger, loads: loads)
         let envelope = try #require(pipeline.envelope(for: VideoRequest(prompt: "a fox")))
-        #expect(envelope.key == "960x544x124" && envelope.barBytes == 18 * Self.gib && envelope.stagePeakBytes == 10 * Self.gib)
+        #expect(envelope.key == VideoAdmissionKey(profile: "960x544x124") && envelope.barBytes == 18 * Self.gib && envelope.stagePeakBytes == 10 * Self.gib)
         #expect(envelope.minimumPhysicalMemoryBytes == 0 && envelope.marginBytes == 256 << 20)
         #expect(Self.reachedLoading(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow"))))
         #expect(Self.reachedLoading(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", recipe: "turbo4"))))
@@ -136,32 +137,35 @@ struct MiniMaxH3AdmissionTests {
             try Self.envelope("704x704x124", export: String(repeating: "a", count: 64)),
         ])
         let pipeline = try Self.pipeline(manifest)
-        #expect(pipeline.envelopes.keys.sorted() == ["960x544x124"])
+        #expect(pipeline.envelopes.keys.sorted() == [VideoAdmissionKey(profile: "960x544x124")])
         #expect(Self.isUnmeasured(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", recipe: "turbo4"))))
         #expect(Self.isUnmeasured(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", profile: "544x960x124"))))
         #expect(Self.isUnmeasured(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", profile: "704x704x124"))))
         // On another chip nothing holds.
         let other = try Self.pipeline(manifest, device: Device(platform: .macOS, architecture: "h16s", physicalMemory: 64 << 30))
-        #expect(other.envelopes.keys.sorted() == ["544x960x124"])
+        #expect(other.envelopes.keys.sorted() == [VideoAdmissionKey(profile: "544x960x124")])
     }
 
     @Test func keyframedClipsAreAdmittedUnderTheirOwnKeys() async throws {
         let manifest = try Self.manifest(envelopes: [try Self.envelope("960x544x124/fl2va1")])
         let pipeline = try Self.pipeline(manifest)
         let frame = try VideoKeyframe(rgb: [UInt8](repeating: 128, count: 960 * 544 * 3), width: 960, height: 544)
-        #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball", keyframes: .first(frame)))?.key == "960x544x124/fl2va1")
-        #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball", keyframes: .last(frame)))?.key == "960x544x124/fl2va1")
+        #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball", keyframes: .first(frame)))?.key == VideoAdmissionKey(profile: "960x544x124", keyframeCount: 1))
+        #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball", keyframes: .last(frame)))?.key == VideoAdmissionKey(profile: "960x544x124", keyframeCount: 1))
         #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball", keyframes: .firstAndLast(frame, frame))) == nil)
         #expect(pipeline.envelope(for: VideoRequest(prompt: "a ball")) == nil)
         #expect(Self.isUnmeasured(await Self.failure(pipeline, VideoRequest(prompt: "a ball"))))
+        let error = await Self.failure(pipeline, VideoRequest(prompt: "a ball"))
+        #expect(error.flatMap(VideoRefusal.init) == .unmeasured(admissionKey: VideoAdmissionKey(profile: "960x544x124"), recipe: "turbo8"))
     }
 
     @Test func anExtendedProfileNeedsItsPhysicalMemory() async throws {
         let manifest = try Self.manifest(envelopes: [try Self.envelope("960x544x243", peak: 20 << 30)])
         let small = try Self.pipeline(manifest, device: Device(platform: .macOS, architecture: "h17c", physicalMemory: 48 << 30))
         let error = await Self.failure(small, VideoRequest(prompt: "a fox in snow", profile: "960x544x243"))
-        guard case .capacity(let what, let needed, _)? = error else { Issue.record("\(String(describing: error))"); return }
-        #expect(what.contains("physical memory") && needed == 64 * Self.gib)
+        guard case .capacity? = error else { Issue.record("\(String(describing: error))"); return }
+        #expect(error.flatMap(VideoRefusal.init) == .insufficientPhysicalMemory(
+            admissionKey: VideoAdmissionKey(profile: "960x544x243"), neededBytes: 64 * Self.gib, availableBytes: 48 * Self.gib))
         let large = try Self.pipeline(manifest, device: Device(platform: .macOS, architecture: "h17c", physicalMemory: 64 << 30))
         #expect(Self.reachedLoading(await Self.failure(large, VideoRequest(prompt: "a fox in snow", profile: "960x544x243"))))
     }
@@ -169,8 +173,8 @@ struct MiniMaxH3AdmissionTests {
     @Test func aRecipeTheProfileDoesNotOfferIsRefusedEvenWhenMeasuring() async throws {
         let pipeline = try Self.pipeline(try MiniMaxH3Tests.manifest(), policy: .measuring)
         let error = await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", profile: "1280x704x124", recipe: "turbo4"))
-        guard case .unsupportedOperation(let why)? = error else { Issue.record("\(String(describing: error))"); return }
-        #expect(why.contains("offers turbo8"))
+        guard case .unsupportedOperation? = error else { Issue.record("\(String(describing: error))"); return }
+        #expect(error.flatMap(VideoRefusal.init) == .recipeNotOffered(profile: "1280x704x124", recipe: "turbo4", offered: ["turbo8"]))
         #expect(Self.reachedLoading(await Self.failure(pipeline, VideoRequest(prompt: "a fox in snow", profile: "1280x704x124"))))
     }
 
@@ -184,11 +188,52 @@ struct MiniMaxH3AdmissionTests {
         }
     }
 
-    @Test func recordingAnEnvelopeKeepsTheMeasurementDigest() throws {
+    /// D292: the export's identity is its content only. Recording envelopes, or measuring again (new figures, another
+    /// chip), keeps ``Manifest/contentDigest``; a manifest without envelopes keeps the digest it always had (the
+    /// canonical JSON's SHA-256); a content change still changes it.
+    @Test func recordingOrRemeasuringEnvelopesKeepsTheExportIdentity() throws {
         let plain = try MiniMaxH3Tests.manifest()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        let canonical = SHA256.hash(data: try encoder.encode(plain)).map { String(format: "%02x", $0) }.joined()
+        #expect(plain.h3?.envelopes == nil && plain.contentDigest == canonical)
         let measured = try Self.manifest(envelopes: [try Self.envelope("960x544x124")])
-        #expect(plain.measurementDigest == plain.contentDigest)
-        #expect(measured.measurementDigest == plain.measurementDigest && measured.contentDigest != plain.contentDigest)
+        let remeasured = try Self.manifest(envelopes: [
+            try Self.envelope("960x544x124", peak: 11 << 30), try Self.envelope("960x544x124", architecture: "h16s"),
+            try Self.envelope("960x544x124/fl2va1"),
+        ])
+        #expect(measured.h3?.envelopes?.count == 1 && remeasured.h3?.envelopes?.count == 3)
+        #expect(measured.contentDigest == plain.contentDigest && remeasured.contentDigest == plain.contentDigest)
+        #expect(try measured.encoded() != plain.encoded(), "the envelopes are in the manifest, only not in its identity")
+        // Each envelope names the export by that same digest, so it still holds after recording.
+        #expect(try Self.pipeline(remeasured).envelopes.count == 2)
+        var json = try Self.json()
+        var block = json["h3"] as! [String: Any]
+        var profiles = block["profiles"] as! [[String: Any]]
+        profiles[0]["recipes"] = ["turbo8"]
+        block["profiles"] = profiles
+        json["h3"] = block
+        #expect(try Self.decode(json).contentDigest != plain.contentDigest, "content still changes the identity")
+    }
+
+    /// A refusal goes out as its error and comes back as itself; other errors aren't refusals.
+    @Test func refusalsRoundTripThroughTheirErrors() {
+        let one = VideoAdmissionKey(profile: "960x544x124", keyframeCount: 1)
+        for refusal in [VideoRefusal.unmeasured(admissionKey: one, recipe: "turbo4"),
+                        .unmeasured(admissionKey: VideoAdmissionKey(profile: "704x704x124"), recipe: "turbo8"),
+                        .recipeNotOffered(profile: "1280x704x124", recipe: "turbo4", offered: ["turbo8"]),
+                        .recipeNotOffered(profile: "960x544x243", recipe: "x", offered: ["turbo4", "turbo8"]),
+                        .recipeNotOffered(profile: "960x544x124", recipe: "turbo4", offered: []),
+                        .insufficientPhysicalMemory(admissionKey: one, neededBytes: 64 << 30, availableBytes: 48 << 30)] {
+            #expect(VideoRefusal(refusal.error) == refusal)
+        }
+        #expect(VideoRefusal(.capacity(what: "memory", needed: 2, available: 1)) == nil)
+        #expect(VideoRefusal(.unsupportedOperation("this H3 export has no keyframe encoder and vision tower for 704x704")) == nil)
+        #expect(VideoRefusal(.memoryPressure) == nil)
+        #expect(VideoAdmissionKey("960x544x124/fl2va2") == VideoAdmissionKey(profile: "960x544x124", keyframeCount: 2))
+        #expect(VideoAdmissionKey("960x544x124") == VideoAdmissionKey(profile: "960x544x124"))
+        for bad in ["", "/fl2va1", "960x544x124/fl2va3", "960x544x124/fl2va1/x"] { #expect(VideoAdmissionKey(bad) == nil) }
+        #expect(one.description == "960x544x124/fl2va1")
     }
 
     @Test func malformedEnvelopesAndProfilesAreRefusedNamingTheField() throws {

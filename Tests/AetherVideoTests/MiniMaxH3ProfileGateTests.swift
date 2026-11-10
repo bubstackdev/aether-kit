@@ -4,7 +4,7 @@ import AetherRuntime
 import Foundation
 import Synchronization
 import Testing
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// One render of the H2 memory gate (every profile with measured admission), on the GPU. Off unless AETHER_GATES=1 and
 /// AETHER_H3_GATE_RENDER names the render; `scripts/h3-memory-gate` runs the whole matrix, one fresh process a render
@@ -135,7 +135,7 @@ struct MiniMaxH3ProfileGateTests {
             "schema": "aether-h3-memory-render/1",
             "render": ["profile": render.profile, "recipe": render.recipe, "task": render.task],
             "admissionKey": key,
-            "export": manifest.measurementDigest,
+            "export": manifest.contentDigest,
             "contentDigest": manifest.contentDigest,
             "architecture": device.architecture,
             "physicalMemoryBytes": device.physicalMemory,
