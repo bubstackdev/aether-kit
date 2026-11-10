@@ -426,22 +426,31 @@ class Decoder(nn.Module):
     float32."""
 
     def __init__(self, model, slots: int = IMAGE_SLOTS, images: int = MAX_IMAGES, dtype: torch.dtype = torch.float16,
-                 attention: torch.dtype = torch.float32, storage: torch.dtype = torch.float16) -> None:
+                 attention: torch.dtype = torch.float32, storage: torch.dtype = torch.float16,
+                 before_layer=None, after_layer=None) -> None:
+        """`before_layer(i, layer)` runs before upstream layer i is read (an exporter loads its weights there) and
+        `after_layer(i, mixer, mlp)` after its modules are built (an exporter quantizes them and frees the source)."""
         super().__init__()
         cfg = model.config.text_config
         self.cfg, self.dtype, self.storage = cfg, dtype, storage
         self.vocab, self.hidden, self.slots, self.images = cfg.vocab_size, cfg.hidden_size, slots, images
         lm = model.model.language_model
-        self.kinds = list(cfg.layer_types)
+        self.kinds = list(cfg.layer_types)[:len(lm.layers)]
         self.register_buffer("embed", lm.embed_tokens.weight.detach().to(storage).clone())
-        self.mixers = nn.ModuleList(
-            LinearAttention(layer.linear_attn, storage) if kind == "linear_attention"
-            else FullAttention(layer.self_attn, cfg, storage, attention)
-            for layer, kind in zip(lm.layers, self.kinds))
-        self.mlps = nn.ModuleList(Mlp(layer.mlp, storage) for layer in lm.layers)
-        self.register_buffer("in_norms", torch.stack([buffer(layer.input_layernorm.weight) for layer in lm.layers]))
-        self.register_buffer("post_norms",
-                             torch.stack([buffer(layer.post_attention_layernorm.weight) for layer in lm.layers]))
+        mixers, mlps, in_norms, post_norms = [], [], [], []
+        for i, (layer, kind) in enumerate(zip(lm.layers, self.kinds)):
+            if before_layer is not None:
+                before_layer(i, layer)
+            mixers.append(LinearAttention(layer.linear_attn, storage) if kind == "linear_attention"
+                          else FullAttention(layer.self_attn, cfg, storage, attention))
+            mlps.append(Mlp(layer.mlp, storage))
+            in_norms.append(buffer(layer.input_layernorm.weight))
+            post_norms.append(buffer(layer.post_attention_layernorm.weight))
+            if after_layer is not None:
+                after_layer(i, mixers[-1], mlps[-1])
+        self.mixers, self.mlps = nn.ModuleList(mixers), nn.ModuleList(mlps)
+        self.register_buffer("in_norms", torch.stack(in_norms))
+        self.register_buffer("post_norms", torch.stack(post_norms))
         self.register_buffer("norm", buffer(lm.norm.weight))
         self.head = linear(model.lm_head, storage)
         rope = lm.rotary_emb
