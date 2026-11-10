@@ -9344,6 +9344,49 @@
       "usr": "s:10AetherHost17ResidentAdmissionC13residentBytess5Int64Vvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declAttributes": [
+         "Final"
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC04liveC5Bytess5Int64Vvg",
+        "moduleName": "AetherHost",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherHost17ResidentAdmissionC04liveC5Bytess5Int64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declAttributes": [
+       "Final"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherHost17ResidentAdmissionC04liveC5Bytess5Int64Vvp",
+      "moduleName": "AetherHost",
+      "name": "liveResidentBytes",
+      "printedName": "liveResidentBytes",
+      "usr": "s:10AetherHost17ResidentAdmissionC04liveC5Bytess5Int64Vvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",

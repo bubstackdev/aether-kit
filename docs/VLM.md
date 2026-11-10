@@ -188,9 +188,24 @@ factor); below `minPixels` multiply by β = √(min/HW) and ceil; an aspect rati
 Both graphs stay resident for the engine's lifetime on macOS. A reply takes one `GPUAdmission` grant (DESIGN §10);
 `bindImages` runs inside `Generator.prepare`, so the encodes are inside it by construction.
 
+**Load-time accounting (V5).** The KV capacity is derived from the memory budget less the model's charge
+(`KVSizing.modelBytes`). Loading allocates almost nothing (the memory arrives with the first run), so the Metal delta
+across load is near zero and the charge used to be the graph files' size: 8.28 GiB for the 4B export, against
+9.4–13.6 GiB of Metal measured. The engine now measures and accepts a declared figure, for `decoder-lm@1` and
+`vlm-static-inject@1` alike:
+- `DecoderEngine.memory` (`DecoderEngine.Memory`) reads the probe (`GPUMemoryProbe.system`, Metal included) at the
+  call: the level before load, now and at its highest (read after load and the canary, and after each prefill, step,
+  greedy decode and image bind), the engine's own buffers (KV, logits, statics, the tower's buffers), the charge, and
+  `measuredModelBytes`: the most the level stood above the baseline less the engine's buffers at that read.
+- `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's `measuredModelBytes`, or a
+  gate's). Load charges the larger of it and what load measured; a declared figure the budget can't hold beside the KV
+  refuses the load with `capacity`.
+- The probe reads the whole process, so memory something else in the process allocates while the engine is loaded is
+  counted too: an overestimate, the direction admission prefers.
+
 **Retention.** 0.0.x measured retention with `expectFrequentReshapes` (257 MiB per text request on its 4B). G7
-measures the new engine: Metal by phase over 20 mixed requests; if it grows past the bar, slice V6 adds 0.0.x's
-reload budget at idle.
+measures the new engine: Metal by phase over 20 mixed requests (`DescriberRetentionGateTests`, reading
+`DecoderEngine.memory` after each); if it grows past the bar, slice V6 adds 0.0.x's reload budget at idle.
 
 **Risk: statics bound every step.** 80 MiB of fp16 bound per decode step. If Core AI copies them per call, decode
 slows; G7 records `GreedyTimings.bindings` and tok/s. The fix would be an export change (fewer slots, or statics as
@@ -251,7 +266,7 @@ the bandwidth to read it every step; the exporter's default is now fp16, as in 0
 | **V2** Preprocess + plan | smart resize in `ImagePreprocessor` (padded to the descriptor's rows, `grid`, digest), `ImagePromptPlan` | G1 |
 | **V3** Engine | `DecoderCore` statics and extension ids; the tower in `DecoderEngine`; `ImageConditionedEngine`; fake-graph tests | G2 |
 | **V4** Text stack | `ChatMessage.images`, content-part rendering, Generator image reuse and the sampler fix, `ChatSession.respond(to:images:)`, `generate(prompt:images:)`, the driver in `Registry.text`; later the FoundationModels attachments | G1, G4 |
-| **V5** Memory | G5, `KVSizing` with the tower; docs | G5 |
+| **V5** Memory | G5, `KVSizing` with the tower; the measured and declared model charge and `DecoderEngine.memory` (§5, built; the G5 run is pending); docs | G5 |
 
 V1–V4 are one PR for 0.2.0 (the describer is its blocker); V5 and the FoundationModels attachments follow.
 

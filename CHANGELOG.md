@@ -4,6 +4,24 @@
 
 ### New
 
+- **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
+  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
+  process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
+  what the kept graphs retain after the plan, where `Krea2Pipeline.plannedResidentBytes` (and
+  `ResidentAdmission.residentBytes`) stays the last plan's held bytes (what remains reserved on a coordinator). The
+  probe reads the whole process, so models loaded after the pipeline count too. `DecoderEngine.Memory` names its live
+  reading `liveResidentBytes` too. Additive; the API baselines record it.
+- **Measured and declared model memory for the decoder engine** (`decoder-lm@1` and `vlm-static-inject@1`;
+  docs/VLM.md §5, V5). Loading allocates almost nothing, so load charged the KV budget with the graph files' size
+  (8.28 GiB for the 4B Qwen3-VL export, against 9.4–13.6 GiB of Metal measured over a session).
+  - `DecoderEngine.memory` reads the engine's memory at the call: the level before load, now and at its highest, the
+    engine's own buffers, the charge, `measuredModelBytes` (the model's memory above the engine's buffers) and
+    `liveResidentBytes` (the level now above the level before load).
+  - `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's measurement, or a gate's);
+    load charges the larger of it and what it measured, and refuses with `capacity` when the KV no longer fits.
+  - Without a declaration, the charge is as before. Additive; the API baselines record it.
+  - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
+    grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
   4B pins) get CPU float32 references for `check_qwen3vl.py`.
