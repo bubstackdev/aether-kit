@@ -1,6 +1,89 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — unreleased (dated at the tag)
+
+0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
+preparation, conditioning reuse, residency control, reference images, refine and one fixed text length; MiniMax H3
+keyframes, every video profile with measured admission, clip limits and streamed frames; our own Qwen3 language-model
+exports; the `vlm-static-inject@1` vision-language driver; and location-free bundle identity, status and verification,
+compiled-cache status and GPU waiters. It is additive over 0.1.0 except for the entries under "Breaking". The
+prereleases `0.2.0-alpha.1` to `0.2.0-alpha.3` carried most of it; nothing in the public API changed between
+`0.2.0-alpha.3` and the release branch's base.
+
+### Still to merge before the tag (release PR only: replace each line with the PR's own entry, then delete this section)
+
+- [ ] **UNRELEASED, #174** (New): live resident bytes, `Krea2Pipeline.liveResidentBytes`,
+  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveHeldBytes()`; the decoder engine's measured and declared
+  model memory, `DecoderEngine.memory` (`DecoderEngine.Memory`) and `DecoderEngine.Options.modelBytes`; the G5
+  retention gate.
+- [ ] **UNRELEASED, #178** (New, on #174): qualified model bytes for known decoder exports,
+  `DecoderEngine.qualifiedModelBytes`, `qualifiedModelBytes(for:device:)`, `QualifiedExport` and
+  `declaredModelBytes`. Its table fills from the native gates' printed entries; an empty table ships as "not yet
+  measured", never as invented figures.
+- [ ] **UNRELEASED, #176** (New and Breaking): every MiniMax H3 profile in the manifest (`recipes`, `memory`, `shapes`),
+  measured envelopes (`h3.envelopes`, `Manifest.measurementDigest`, `VideoMemoryEnvelope`), `VideoAdmissionPolicy`,
+  `scripts/h3-memory-gate`. Merges only once the envelopes are recorded.
+- [ ] **UNRELEASED, #179** (New and Breaking, on #176): `clipLimits(profile:keyframes:)` / `VideoClipLimits`,
+  `preflight(_:)` / `VideoPreflight`, `VideoClipRefusal`, `generate(_:onProgress:frames:)` / `VideoFrame`,
+  `GeneratedVideo.seed` and `.frameCount`.
+- [ ] **#177** (docs only, no entry): docs/RELEASE.md's 0.2.0 pre-tag checklist.
+
+### Breaking
+
+- **`Manifest.ImagePreprocess.Resize.Mode` gains `smartResize`** (for `vlm-static-inject@1`), so an exhaustive
+  `switch` over it no longer compiles. Add a case or a `default`. This is the only source break `swift-api-digester`
+  reports against the 0.1.0 baseline.
+- **UNRELEASED, #176. MiniMax H3 refuses a profile it has no measured envelope for.** `MiniMaxH3Pipeline` admits a
+  request only under an envelope for its admission key and recipe, measured on this export and this chip, on a device
+  with the profile's minimum physical memory (`VideoAdmissionPolicy.measuredOnly`, the default, also for the 0.1.0
+  initializer). Anything else throws `unsupportedOperation` before anything loads. A 0.1.0 export without
+  `h3.envelopes` keeps only what its qualified footprints cover. Re-run `scripts/h3-memory-gate` on the export and
+  record its envelopes, or pass `.measuring` to measure.
+- **UNRELEASED, #179. MiniMax H3 prompt-length refusals change error.** A prompt too long for the clip, or a clip no
+  prompt fits, now throws `AetherError.capacity(what:needed:available:)` (read back with `VideoClipRefusal(_:)`)
+  where 0.1.0 threw `GenerationFailure.invalidParameters`. A prompt shorter than the clip's minimum is still
+  `invalidParameters`.
+
+### Migrating from 0.0.x
+
+For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's "Breaking" below and the README's
+[migration notes](README.md#migrating-from-00x) first (modules, the macOS 27 floor, `aether.json`).
+
+- **Re-export every model.** 0.2.0 doesn't read 0.0.x bundles (prototype `aether.json`, `language-model.json`, video
+  packs assembled from a source checkpoint). Export with `Forge/` and open each export from its folder with
+  `InstalledBundle(ref:url:isStale:)`:
+  - Krea 2 with `Forge/krea2`: the masked fixed-length denoisers (the default), plus the `vision` graph and the text
+    encoder's `references` function for reference images, and `vaeEncoder` for refine.
+  - MiniMax H3 with `Forge/h3`, carrying every profile you offer, then its measured envelopes from
+    `scripts/h3-memory-gate` (#176).
+  - A Qwen3 decoder with `Forge/qwen3` as `decoder-lm@1`, and Qwen3-VL with `Forge/qwen3vl` as
+    `vlm-static-inject@1`.
+- **New identities, by design.** `InstalledBundle.contentIdentity()` is a location-free digest of the driver, the
+  variant, every declared file and the manifest. It has no relation to a 0.0.x fingerprint, and nothing maps one to
+  the other. Mint identities in a new version family and never carry a 0.0.x one over. For example, prefix the content
+  identity with a role and a new major version: `krea2.text-only/2:<content identity>`,
+  `minimax-h3.fl2va-turbo/2:<content identity>`, `writer.decoder-lm/2:<content identity>` and
+  `describer.vlm-static-inject/2:<content identity>`. Use `contentIdentity(capability:)` where a reference-capable
+  identity must differ from the text-only one.
+- **Recipes and approvals made on 0.0.x are invalidated.** Every 0.2.0 export is a new export (Krea 2's at a fixed,
+  masked text length), so a saved seed doesn't reproduce a 0.0.x picture or clip exactly, even where the noise stream
+  is the same. Mark saved recipes as historical rather than rebinding them, and redo any approval bound to a 0.0.x
+  identity on the new model.
+- **Where 0.0.7's APIs went:**
+
+  | 0.0.7 | 0.2.0 |
+  | --- | --- |
+  | `KreaGenerationSession`'s `KreaGenerationEvent` progress | `Krea2Pipeline.generate(_:observing:)`: `ImageProgress`, and `ImageGeneration.metrics` (`ImageGenerationMetrics`) |
+  | prompt preflight and readiness | `Krea2Pipeline.prepare(prompt:)` → `Krea2PreparedPrompt` (`truncated`, `conditioningRows`); the host refuses a cut prompt |
+  | `KreaGenerationSession.prepare(prompt:)` → `KreaPreparedPrompt` (the encoded conditioning) | `encode(prompt:job:)` → `Krea2Conditioning`, then `generate(_:reusing:observing:)`. Note the rename: 0.2.0's `prepare(prompt:)` is the CPU-only tokenization, `encode` runs the text encoder |
+  | `KreaReferencePrompt`, `KreaReferencePixels` (AetherKrea) | `Krea2ReferenceImage`, `prepare(prompt:references:)`, `encode(prompt:references:job:)` |
+  | `encodeImage(_:encoder:)`, `refine(configuration:preparedPrompt:start:noise:progress:)`, `KreaRefineStart` | `encode(image:job:)`, `generate(_:refining:reusing:noise:observing:)`, `Krea2RefineStart` |
+  | keeping a model warm, `AetherError.memoryPressure` | `setRetention(_:)`, `releaseIfIdle()`, `residentBytes` (and `liveResidentBytes`, #174); `PipelineOptions.pressure` → `AetherError.memoryPressure` |
+  | first- and last-frame video | `VideoRequest(prompt:keyframes:…)` with `VideoKeyframes` |
+  | pack status and verification | `InstalledBundle.status(supportedDrivers:)`, `verifiedStatus(…)`, `verify(progress:)` |
+  | probing the compile cache's folders | `CompiledCache.status(of:manifest:device:roles:cache:)` |
+  | waiting tools on the GPU lock | `SharedGPULease.hasWaiters(directory:legacyWrapper:)`, `othersWaiting` |
+  | `VisionLanguageSession` (AetherLanguageCoreAI) | `ChatSession` on a `vlm-static-inject@1` bundle: `ChatMessage.user(_:images:)`, `respond(to:images:)` |
 
 ### New
 
@@ -67,9 +150,8 @@
   as an install does, then decodes the manifest. Additive; the `AetherCore` API baseline records it.
 - **Compiled-cache status:** `CompiledCache.status(of:manifest:device:roles:cache:)` asks Core AI's compile cache
   (`AIModelCache.model(for:options:)`) whether each graph already has a compiled copy for this device, using the
-  specialization options a load from the manifest uses. It compiles nothing (the lookup's own cost on a large model is
-  not yet measured), and returns each graph's
-  declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
+  specialization options a load from the manifest uses. It compiles nothing (on the Krea 2 realism export the lookup
+  took 5 ms and allocated no Metal, `Krea2ShapeQualificationTests`), and returns each graph's declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
   `AetherRuntime` API baseline records it.
 - **Bundle status** a host can show, for every driver's bundles: `InstalledBundle.status(supportedDrivers:)` returns
   `BundleStatus` `.notPrepared` (the folder is absent or empty), `.ready`, or `.blocked` with a `BundleBlockReason`:

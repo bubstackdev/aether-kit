@@ -8,3 +8,4 @@ DerivedData/
 
 # Git worktrees for parallel branches (git worktree add .worktrees/<name> -b <branch>)
 .worktrees/
+__pycache__/

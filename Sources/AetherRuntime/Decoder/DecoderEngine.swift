@@ -415,6 +415,7 @@ public actor DecoderEngine: LanguageEngine {
         if let imageBinder { try core.withStatics { statics throws(AetherError) in try imageBinder.truncate(to: position, statics) } }
     }
 
+    /// Moves the position back to 0 and clears every image the static inputs hold.
     public func reset() throws(AetherError) {
         try core.reset()
         if let imageBinder { try core.withStatics { statics throws(AetherError) in try imageBinder.clear(statics) } }

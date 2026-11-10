@@ -712,6 +712,7 @@ public struct Krea2PreparedPrompt: Sendable, Hashable {
     public let conditioningRows: Int
     /// The rendering was longer than ``maximumTokens`` and was cut (its tail kept).
     public let truncated: Bool
+    /// The export's `maxTokens`: the most ids the text encoder receives.
     public let maximumTokens: Int
 }
 
@@ -743,6 +744,7 @@ public struct Krea2Conditioning: Sendable, Hashable {
 /// `(1 − σ) · x0 + σ · noise` at that step's sigma, so a later step keeps more of the image (Turbo, 8 steps: σ ≈ 0.31 at
 /// step 7, 0.51 at step 6, 0.66 at step 5).
 public struct Krea2RefineStart: Sendable, Hashable {
+    /// Where on the schedule the refine begins.
     public enum Start: Sendable, Hashable {
         /// Steps `step…steps − 1` of the schedule run; `step` 0 would ignore the image, so it's refused.
         case step(Int)
@@ -752,7 +754,9 @@ public struct Krea2RefineStart: Sendable, Hashable {
         case lastStepFrom(sigma: Float)
     }
 
+    /// The image's packed latents (``Krea2Pipeline/encode(image:job:)``), at the canvas the refine renders.
     public let latents: ImageLatents
+    /// The step, or the off-grid sigma, the run begins at.
     public let start: Start
 
     /// Fails unless the latents are non-empty and finite, and the step is at least 1 (or the sigma finite in (0, 1)).

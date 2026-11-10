@@ -283,6 +283,7 @@ extension DecoderEngine: ImageConditionedEngine {
 public enum VLMStaticInjectDriver: ModelDriver {
     public static let id: DriverID = .vlmStaticInject
 
+    /// Reads the bundle's manifest and loads it into a ``DecoderEngine`` with `options.decoder`.
     public static func load(_ bundle: InstalledBundle, options: LoadOptions) async throws -> DecoderEngine {
         let manifest = try Manifest.load(fromBundle: bundle.url)
         return try await DecoderEngine(bundle: bundle, manifest: manifest, device: options.device, options: options.decoder)
