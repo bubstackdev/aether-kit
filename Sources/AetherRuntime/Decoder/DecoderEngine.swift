@@ -55,6 +55,11 @@ public actor DecoderEngine: LanguageEngine {
         /// Diagnostics only: use `pipelineDepth` without the canary. With `canary` off (and without this), greedy
         /// decoding uses depth 1, as documented.
         @_spi(Diagnostics) public var uncheckedPipelineDepth = false
+        /// The most tokens one call of a dynamic token axis feeds (the prefill's chunks), at most the manifest's
+        /// `limits.prefillChunk`. Nil (the default): ``DecoderEngine/reshapeSafePrefillWidth`` on a Core AI graph
+        /// specialized with `expectFrequentReshapes`, the manifest's chunk otherwise. Wider calls prefill faster, but
+        /// Core AI then retains Metal on every request (see ``DecoderEngine/reshapeSafePrefillWidth``).
+        public var prefillWidth: Int? = nil
 
         public init(
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
@@ -264,6 +269,7 @@ public actor DecoderEngine: LanguageEngine {
         guard (1...(DecoderCore.ring - 2)).contains(options.pipelineDepth) else {
             throw .unsupportedOperation("pipelineDepth \(options.pipelineDepth); supported: 1...\(DecoderCore.ring - 2)")
         }
+        let prefillWidth = try Self.prefillWidth(requested: options.prefillWidth, step: step)
         let encodable = metal != nil && step is Graph && (prefill == nil || prefill is Graph)
         let arena = encodable ? TensorArena(device: metal!) : TensorArena()
         let kernels = encodable ? try await GreedyKernels(device: metal!) : nil
@@ -303,7 +309,7 @@ public actor DecoderEngine: LanguageEngine {
         }
         let core = try DecoderCore(
             step: step, prefill: prefill, graph: graph, arena: arena, kernels: kernels, capacityLimit: maxCapacity,
-            initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
+            initialCapacity: initial, prefillWidth: prefillWidth, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
         imageBinder = binder
@@ -326,6 +332,30 @@ public actor DecoderEngine: LanguageEngine {
             // Without the canary, depth one unless a diagnostic asks otherwise.
             decodeMode = .gpu(depth: options.pipelineDepth)
         }
+    }
+
+    /// The widest dynamic call a Core AI decoder specialized with `expectFrequentReshapes` is fed by default
+    /// (``Options/prefillWidth``).
+    ///
+    /// Core AI retains Metal allocations, until the model is released, on every call wider than this and on every
+    /// decode step after one, even when each shape repeats one it already ran (the same bug 0.0.x worked around with
+    /// its reload budget). Measured on the 4B Qwen3-VL export (M5 Max, 2026-11-10; text-only prompts alike, so not the
+    /// image path): a 513-token prompt fed in calls of 40, 48, 64, 128, 256 or 512 tokens retained 123–180 MiB in
+    /// its prefill and 255–263 MiB over 60 decode steps, every time it was repeated; in calls of 8, 16, 32 or 33 it
+    /// retained nothing once its shapes had run once. The cost is the prefill's speed: 0.40 s instead of 0.11 s for
+    /// 513 tokens, 1.1 s instead of 0.33 s for 1,390.
+    public static let reshapeSafePrefillWidth = 32
+
+    /// The prefill width an engine over `step` uses: `requested` when given (at least 1), else
+    /// ``reshapeSafePrefillWidth`` when `step` is a Core AI graph specialized with `expectFrequentReshapes`, else nil
+    /// (the manifest's chunk).
+    static func prefillWidth(requested: Int?, step: any GraphBackend) throws(AetherError) -> Int? {
+        if let requested {
+            guard requested >= 1 else { throw .generation(.invalidParameters("prefillWidth \(requested); at least 1")) }
+            return requested
+        }
+        guard let graph = step as? Graph, graph.options.expectFrequentReshapes else { return nil }
+        return reshapeSafePrefillWidth
     }
 
     /// The device's current Metal allocations (diagnostics: Core AI's shape-change retention shows up here).

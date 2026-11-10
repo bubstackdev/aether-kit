@@ -99,7 +99,7 @@ final class DecoderCore {
 
     init(
         step stepGraph: any GraphBackend, prefill prefillGraph: (any GraphBackend)?, graph: Manifest.Graph,
-        arena: TensorArena, kernels: GreedyKernels?, capacityLimit: Int, initialCapacity: Int,
+        arena: TensorArena, kernels: GreedyKernels?, capacityLimit: Int, initialCapacity: Int, prefillWidth: Int? = nil,
         racingHandoff: Bool = false, staleHandoff: Bool = false
     ) throws(AetherError) {
         let prefix = "graphs.decoder"
@@ -184,7 +184,9 @@ final class DecoderCore {
         capacity = staticAxis ?? min(max(initialCapacity, 1), capacityLimit)
 
         let limits = graph.limits ?? Manifest.Limits()
-        let dynamicChunk = max(1, limits.prefillChunk ?? 512)
+        // A dynamic call feeds at most the manifest's chunk, narrowed by the engine's prefill width (Core AI's reshape
+        // retention, ``DecoderEngine/reshapeSafePrefillWidth``).
+        let dynamicChunk = max(1, min(limits.prefillChunk ?? 512, prefillWidth ?? .max))
         guard let padToken = Int32(exactly: limits.padTokenId ?? 0),
               let padPosition = Int32(exactly: graph.inputEncodings?["positions"]?.pad ?? -1) else {
             throw AetherError.manifestInvalid(field: "limits.padTokenId", reason: "the pad token and position must fit Int32")
