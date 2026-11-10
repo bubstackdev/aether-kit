@@ -97,6 +97,58 @@ struct VisionGeneratorTests {
         #expect(try await Self.reply(generator, again).tokens == (try await Self.reply(try await FakeVLM.generator(), again)).tokens)
     }
 
+    // MARK: recurrent state (a hybrid such as Qwen3.5's): live reuse only, otherwise from an empty state
+
+    /// The recurrent fake's reply equals the attention-only fake's exactly when its recurrent state is right.
+    @Test func imagesOnARecurrentModelEqualAFreshAttentionModel() async throws {
+        let messages: [ChatMessage] = [.system("Describe."), .user("What changes?", images: [Self.image(1), Self.image(2, 16, 8)])]
+        let hybrid = try await FakeVLM.generator(recurrent: true)
+        let reply = try await Self.reply(hybrid, messages)
+        #expect(reply.reusedTokens == 0)
+        #expect(try await Self.reply(try await FakeVLM.generator(), messages).tokens == reply.tokens)
+    }
+
+    @Test func aFollowUpTurnContinuesTheLiveRecurrentState() async throws {
+        let log = CallLog()
+        let generator = try await FakeVLM.generator(towerLog: log, recurrent: true)
+        let first: [ChatMessage] = [.user("Look.", images: [Self.image(1)])]
+        let one = try await Self.reply(generator, first)
+        let history = first + [.assistant(ByteChat.text(one.tokens.dropLast().map { $0 })), .user("And this?", images: [Self.image(2)])]
+        let two = try await Self.reply(generator, history)
+        #expect(log.calls.count == 2)                                                // the first picture isn't encoded again
+        #expect(two.reusedTokens > 0)
+        #expect(try await Self.reply(try await FakeVLM.generator(), history).tokens == two.tokens)
+    }
+
+    @Test func anotherPictureStartsTheRecurrentStateOver() async throws {
+        let generator = try await FakeVLM.generator(recurrent: true)
+        _ = try await Self.reply(generator, [.user("Look.", images: [Self.image(1)])])
+        let other: [ChatMessage] = [.user("Look.", images: [Self.image(7)])]
+        let two = try await Self.reply(generator, other)
+        #expect(two.reusedTokens == 0)
+        #expect(try await Self.reply(try await FakeVLM.generator(), other).tokens == two.tokens)
+        // Text after images: the images are unbound and the reply is a fresh text conversation's.
+        let text: [ChatMessage] = [.user("Only words now, please.")]
+        let after = try await Self.reply(generator, text)
+        #expect(await (generator.engine as! DecoderEngine).boundImages.isEmpty)
+        #expect(try await Self.reply(try await FakeVLM.generator(), text).tokens == after.tokens)
+        // And images again after text.
+        let again = try await Self.reply(generator, other)
+        #expect(again.tokens == two.tokens)
+    }
+
+    @Test func aFailedEncodeLeavesTheRecurrentGeneratorUsable() async throws {
+        let gate = TowerGate()
+        let generator = try await FakeVLM.generator(towerGate: gate, recurrent: true)
+        let first: [ChatMessage] = [.user("Look.", images: [Self.image(1)])]
+        let one = try await Self.reply(generator, first)
+        let history = first + [.assistant(ByteChat.text(one.tokens.dropLast().map { $0 })), .user("And this?", images: [Self.image(2)])]
+        gate.failing = true
+        await #expect(throws: AetherError.self) { _ = try await Self.reply(generator, history) }
+        gate.failing = false
+        #expect(try await Self.reply(generator, history).tokens == (try await Self.reply(try await FakeVLM.generator(), history)).tokens)
+    }
+
     @Test func refusals() async throws {
         let generator = try await FakeVLM.generator(images: 2)
         await #expect(throws: AetherError.self) {

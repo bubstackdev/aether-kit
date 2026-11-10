@@ -1,0 +1,45 @@
+{
+  "repository": "huihui-ai/Huihui-Qwen3.6-27B-abliterated",
+  "revision": "27502c8717fd5a2f8c0c77188c10c243fd4f672e",
+  "baseModel": "Qwen/Qwen3.6-27B",
+  "license": "Apache-2.0",
+  "gated": false,
+  "comment": "An abliterated fine-tune of Qwen3.6-27B (Qwen3_5ForConditionalGeneration: a 64-layer hybrid decoder, three Gated DeltaNet to each gated full-attention layer, and a 27-block vision tower; bf16 safetensors in 15 shards, 52 GB), a local Forge input read from the Hugging Face cache at this revision. The snapshot ships the Apache-2.0 text as LICENSE (the base model's license), which the bundle ships. SHA-256 of every snapshot file the exporter reads, pinned 2026-11-10. The network code is transformers' Qwen3.5 at the version Forge/uv.lock pins. Chosen by the owner 2026-11-09 for Atelier's outfit describer.",
+  "bundle": {
+    "id": "qwen3.6-27b-abliterated",
+    "title": "Qwen3.6 27B (abliterated)",
+    "assetPrefix": "qwen3_6_27b"
+  },
+  "stop": {
+    "248046": "<|im_end|>",
+    "248044": "<|endoftext|>"
+  },
+  "files": {
+    "LICENSE": "50cbab8a892c5f2993b8c7351a99182507472def3b1374558308605d99b86b32",
+    "chat_template.jinja": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+    "config.json": "69db4eb7196bc8190813231b3018ca05d8c2e3abc7b1af19d55c157af44a9d9c",
+    "generation_config.json": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+    "merges.txt": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d",
+    "model-00001-of-00015.safetensors": "fa762cd5d79c0c708cb2fddad2ff38c770692d75abf6592f19a9d5f84937881c",
+    "model-00002-of-00015.safetensors": "93f37141fb5bf205da06a5dcb671281e216510777c96c34a8d0c88fe6b792d4e",
+    "model-00003-of-00015.safetensors": "02279bcee836c0c06ac6cd48ef7ddb80573b7b74d75ae983fe3524c7ca899d9b",
+    "model-00004-of-00015.safetensors": "2165e678be19a7960ffc9ecbd3ad31cf6c1bcda4ac4ce7a4e97d65dd6b88db52",
+    "model-00005-of-00015.safetensors": "3bd4d70d4d9c6d22b4a8361380bcc2512c6994d6ad15cf0577381361d0a3c182",
+    "model-00006-of-00015.safetensors": "75707449bf0399994bf007b38598943b288193bfeb6559fa2dc26c38a2537821",
+    "model-00007-of-00015.safetensors": "1f14ce5d2996405ff6988efa44b7a35071230f8047fd851077b18ab135453987",
+    "model-00008-of-00015.safetensors": "d86981f9fded9a00f60d85270e4dbbc84dcc8a49fffe3e028ad59bdbb59c3da7",
+    "model-00009-of-00015.safetensors": "49aec55d16b90739df8adcc2ac586ac545a850564ef71f64a2c665354bc48c84",
+    "model-00010-of-00015.safetensors": "243b5c95251c814a54e176974f317e87e1181b9ee17534f80d26d4ab5a35607f",
+    "model-00011-of-00015.safetensors": "d23eea1ab532c5d798221e81ef1689dfc5e22673867e07195463dc85fd3d0265",
+    "model-00012-of-00015.safetensors": "cc7868e89018a24629be5841eb6ba8c3629ede77b62af9d036354226075cebf5",
+    "model-00013-of-00015.safetensors": "0867aab83d9d44105a3168630239098f7f3645687f8d78d425ab48aee5ea4e30",
+    "model-00014-of-00015.safetensors": "8361054c5ba438647b491f6f5457436374f636928b2606d5f3a81e5257376bcc",
+    "model-00015-of-00015.safetensors": "fa8ddc72895e9966666ba984434112a6ad23b3e225c77ffb9dfd1f882a665361",
+    "model.safetensors.index.json": "a8ad2c26fb707ff8c245806315b03e3b4b74595528492423af5dae0ce39b4d9b",
+    "preprocessor_config.json": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+    "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+    "tokenizer_config.json": "5186f0defcd7f232382c7f0aebcd2252d073bb921ab240e407b7ae8745d2b29b",
+    "video_preprocessor_config.json": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+    "vocab.json": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+  }
+}
