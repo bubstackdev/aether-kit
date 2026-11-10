@@ -104,7 +104,7 @@ extension InstalledBundle {
             let handle = try FileHandle(forReadingFrom: local)
             defer { try? handle.close() }
             var hasher = SHA256()
-            while let chunk = try handle.read(upToCount: 8 << 20), !chunk.isEmpty {
+            try FileChunks.forEach(handle) { chunk in
                 try Task.checkCancellation()
                 hasher.update(data: chunk)
                 completed += Int64(chunk.count)

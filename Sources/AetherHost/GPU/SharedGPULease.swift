@@ -167,16 +167,23 @@ public final class SharedGPULease: Sendable {
     public static func holder(of directory: URL = sharedDirectory) -> Int32? { readHolder(directory) }
 
     /// The legacy wrapper lock the lab's `with-gpu-lock.sh` holds exclusively while a job waits in its queue.
-    public static var legacyWrapperLock: URL {
+    static var legacyWrapperLock: URL {
         URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true).appendingPathComponent(".cache/aether-kit/gpu.lock")
     }
 
     /// Whether another process is waiting for the lease at `directory`: a waiting ``acquire(_:timeout:onBusy:)`` or
     /// `scripts/gpu-lease` holds a shared lock on the lease's `<name>.waiters` file (this user's single-link, mode-0600
-    /// sibling, as `<name>.reclaim`) for as long as it waits; or, with `legacyWrapper`, a lab wrapper holds that lock
-    /// file exclusively. A holder that keeps the GPU between its own jobs (a warm session) can ask this between jobs
-    /// and step aside. Never blocks; a file this user can't use reads as no waiter.
-    public static func hasWaiters(directory: URL = sharedDirectory, legacyWrapper: URL? = legacyWrapperLock) -> Bool {
+    /// sibling, as `<name>.reclaim`) for as long as it waits; or the lab's `with-gpu-lock.sh` holds its wrapper lock
+    /// (`~/.cache/aether-kit/gpu.lock`) exclusively while a job waits in its queue. A holder that keeps the GPU between
+    /// its own jobs (a warm session) can ask this between jobs and step aside. Never blocks; a file this user can't use
+    /// reads as no waiter.
+    public static func hasWaiters(directory: URL = sharedDirectory) -> Bool {
+        hasWaiters(directory: directory, legacyWrapper: legacyWrapperLock)
+    }
+
+    /// ``hasWaiters(directory:)`` with another wrapper lock in place of the lab's: `legacyWrapper` held exclusively
+    /// counts as a waiter, and `nil` checks no wrapper lock (the lease's waiters only).
+    public static func hasWaiters(directory: URL, legacyWrapper: URL?) -> Bool {
         if let legacyWrapper {
             let descriptor = open(legacyWrapper.path, O_RDONLY | O_SHLOCK | O_NONBLOCK | O_CLOEXEC)
             if descriptor >= 0 { close(descriptor) } else if errno == EWOULDBLOCK { return true }
@@ -188,7 +195,7 @@ public final class SharedGPULease: Sendable {
         return false
     }
 
-    /// Whether another process waits for this lease (``hasWaiters(directory:legacyWrapper:)`` on its directory).
+    /// Whether another process waits for this lease (``hasWaiters(directory:)`` on its directory).
     public var othersWaiting: Bool { Self.hasWaiters(directory: directory) }
 
     /// Releases an owned lease only if the pid file still names this process. Idempotent; an inherited lease is left.
