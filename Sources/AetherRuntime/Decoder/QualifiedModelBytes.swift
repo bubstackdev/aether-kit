@@ -24,8 +24,22 @@ extension DecoderEngine {
     /// Each entry comes from a native gate, which prints it ready to add (`GATE qualified model bytes entry:`): the
     /// describer's retention gate (`DescriberRetentionGateTests`, docs/VLM.md G5) for the `vlm-static-inject@1`
     /// export, and the Qwen3 export gate (`DecoderLMExportGateTests`) for the `decoder-lm@1` one. The gates check that
-    /// an entry for their export still covers what they measure.
-    package static let qualifiedModelBytesTable: [QualifiedExport: Int64] = [:]
+    /// an entry for their export still covers what they measure. Each entry is the gate's measured figure plus
+    /// ``qualifiedMarginBytes`` (256 MiB, the owner's margin, as H3's envelopes), written as `(measured + 256) << 20`.
+    package static let qualifiedModelBytesTable: [QualifiedExport: Int64] = [
+        // huihui-qwen3-4b-instruct-2507-abliterated (decoder-lm@1, writer): Qwen3 export gate, teacher-forced over
+        // 9 cases, 9,957 MiB measured (M-series h17c, 2026-11-10).
+        QualifiedExport(exportDigest: "b8e0e512a85230b1276c3e348e917470ee1a0fae72381dc3b99b7cb1454262e8", architecture: "h17c"):
+            (9957 + 256) << 20,
+        // qwen3-vl-4b-instruct-abliterated (vlm-static-inject@1, describer): G5 retention gate with the 32-token
+        // prefill width and the V6 reload budget, 20 mixed requests at capacity 4,096, 12,379 MiB measured (a 48-request
+        // run read 12,526 MiB) (h17c, 2026-11-10).
+        QualifiedExport(exportDigest: "70243c70fdba9fd91c865298abaeb7a9d0694e7c0d2b2a023390c654d1a816fa", architecture: "h17c"):
+            (12379 + 256) << 20,
+    ]
+
+    /// The margin every ``qualifiedModelBytesTable`` entry adds to its gate's measurement.
+    package static let qualifiedMarginBytes: Int64 = 256 << 20
 
     /// The kit's qualified model bytes for `manifest` on `device`: the model memory a native gate measured for this
     /// export (its ``Manifest/contentDigest``) on this chip's Core AI architecture, which a bundle load charges by
