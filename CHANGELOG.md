@@ -168,6 +168,12 @@
 
 ### Fixed
 
+- **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
+  each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop
+  kept them all until it returned. On a 94 GB local export the process reached 13.5 GB resident and was killed before
+  it finished. Each read and its hashing now run in their own autorelease pool, and memory stays flat (a 256 MiB file
+  grew the footprint by 257 MiB before, under 64 MiB now; `FileChunksTests`).
+
 - **Admission counts each shape specialization a pipeline keeps.** Graphs loaded without the reshape hint keep one
   specialization per shape (Krea 2's denoisers per prompt row count: about 27 GB each for the realism export, measured
   on a 64 GB Mac). The ledger kept one footprint per phase whatever the number of shapes behind it, so a second shape
