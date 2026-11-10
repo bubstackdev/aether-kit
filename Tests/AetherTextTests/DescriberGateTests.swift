@@ -93,7 +93,7 @@ struct DescriberGateTests {
         }
         let manifest = try Manifest.load(fromBundle: Self.url("AETHER_VLM_BUNDLE"))
         let spec = ImageInputSpec(
-            padId: 151_655, openId: 151_652, closeId: 151_653, idBase: 151_936, slots: manifest.image?.slots ?? 0,
+            padID: 151_655, openID: 151_652, closeID: 151_653, idBase: 151_936, slots: manifest.image?.slots ?? 0,
             maxImages: manifest.image?.maxImages ?? 0, patchRows: 2048, merge: 2,
             preprocessor: try ImagePreprocessor(manifest: manifest))
         for picture in reference.preprocessed {
@@ -101,7 +101,7 @@ struct DescriberGateTests {
             let theirs = try Data(contentsOf: Self.url("AETHER_VLM_REFERENCE").appending(path: picture.pixelsFile)).withUnsafeBytes {
                 Array($0.bindMemory(to: Float16.self))
             }
-            #expect([1, ours.gridH, ours.gridW] == picture.grid, "\(picture.file) grid")
+            #expect([1, ours.gridHeight, ours.gridWidth] == picture.grid, "\(picture.file) grid")
             #expect(ours.values.count == theirs.count, "\(picture.file) rows")
             let differing = zip(ours.values, theirs).filter { Float16($0) != $1 }.count
             let worst = zip(ours.values, theirs).map { abs($0 - Float($1)) }.max() ?? 0
