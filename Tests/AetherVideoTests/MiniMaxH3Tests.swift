@@ -183,7 +183,7 @@ struct MiniMaxH3Tests {
             await #expect(throws: AetherError.self) { _ = try await pipeline.generate(request) }
         }
         #expect(await pipeline.residentRoles.isEmpty)
-        let plan = try await pipeline.plan(VideoRequest(prompt: "a fox in snow"))
+        let plan = try pipeline.plan(VideoRequest(prompt: "a fox in snow"))
         #expect(plan.profile.key == "960x544x124" && plan.ids.count == 13)
         #expect(plan.cardinality == plan.recipe.steps.map(\.timesteps.count).max())
     }

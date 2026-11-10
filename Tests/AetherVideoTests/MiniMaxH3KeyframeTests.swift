@@ -260,7 +260,7 @@ struct MiniMaxH3KeyframeTests {
         case "last": .last(last)
         default: .firstAndLast(first, last)
         }
-        let plan = try await pipeline.plan(VideoRequest(prompt: f.prompt, keyframes: keyframes, seed: 7))
+        let plan = try pipeline.plan(VideoRequest(prompt: f.prompt, keyframes: keyframes, seed: 7))
         let anchors: [H3Anchor] = mode == "first" ? [.first] : mode == "last" ? [.last] : [.first, .last]
         #expect(plan.anchors == anchors && plan.keyframes == keyframes.frames)
         #expect(plan.recipe == manifest.h3!.recipes["turbo8/fl2va"], "a keyframed clip takes the fl2va recipe")
@@ -343,16 +343,16 @@ struct MiniMaxH3KeyframeTests {
         let pipeline = try Self.pipeline(manifest: try Self.manifest(), fixture: f)
         // A keyframe not at the canvas, and one at another profile's canvas.
         for frame in [try Self.keyframe(512, 288), try Self.keyframe(544, 960)] {
-            await #expect(throws: AetherError.self) { _ = try await pipeline.plan(VideoRequest(prompt: f.prompt, keyframes: .first(frame))) }
+            #expect(throws: AetherError.self) { _ = try pipeline.plan(VideoRequest(prompt: f.prompt, keyframes: .first(frame))) }
         }
         // An export without the tower can't present keyframes.
         let textOnly = try Self.pipeline(manifest: try Self.manifest(vision: false), fixture: f)
-        let error = await #expect(throws: AetherError.self) {
-            _ = try await textOnly.plan(VideoRequest(prompt: f.prompt, keyframes: .last(try Self.keyframe(960, 544))))
+        let error = #expect(throws: AetherError.self) {
+            _ = try textOnly.plan(VideoRequest(prompt: f.prompt, keyframes: .last(try Self.keyframe(960, 544))))
         }
         guard case .unsupportedOperation? = error else { Issue.record("\(String(describing: error))"); return }
         // Text to video is unchanged: the t2va recipe and the prompt's own rows.
-        let plan = try await pipeline.plan(VideoRequest(prompt: f.prompt))
+        let plan = try pipeline.plan(VideoRequest(prompt: f.prompt))
         #expect(plan.presentation == nil && plan.anchors.isEmpty && plan.admissionKey == "960x544x124")
         #expect(plan.recipe == pipeline.h3.recipes["turbo8/t2va"] && plan.conditioningIDs == f.promptIds)
         #expect(throws: AetherError.self) { _ = try VideoKeyframe(rgb: [0, 0], width: 1, height: 1) }

@@ -4,6 +4,28 @@
 
 ### New
 
+- **MiniMax H3 clip limits, preflight, streamed frames and the seed.** Additive; the `AetherVideo` API baseline records it.
+  - **Clip limits:** `MiniMaxH3Pipeline.clipLimits(profile:keyframes:)` returns a `VideoClipLimits`: the export's
+    presentation-token and packed-row bounds, the keyframes' presentation tokens, the clip's own packed rows, and the
+    longest and shortest prompt the clip takes (`maximumPromptTokens`, `minimumPromptTokens`, `fitsSomePrompt`,
+    `refusal(promptTokens:)`). It needs no prompt and no keyframe pixels.
+  - **Preflight:** `preflight(_:)` resolves a `VideoRequest` as `generate` does, on the CPU with nothing loaded, and
+    returns a `VideoPreflight`: profile, recipe, seed, the prompt's tokens, the presentation tokens, the packed rows,
+    the limits, the admission key, its envelope and the frame count. It throws what `generate` throws before waiting.
+  - **Typed length refusals:** a prompt longer than the clip leaves is `VideoClipRefusal.promptTooLong`, and a clip
+    whose keyframes and rows leave no room for any prompt is `.tooLargeAtSize`. Both `generate` and `preflight`
+    throw them as `AetherError.capacity(what:needed:available:)`, with `what` set to
+    `VideoClipRefusal.promptTooLongResource` or `.tooLargeAtSizeResource` and the counts in prompt tokens.
+    `VideoClipRefusal(_:)` reads one back from an error.
+  - **Behaviour change:** these refusals were `generation(.invalidParameters)` with a message. A prompt below the
+    shortest the clip takes is still `invalidParameters`.
+  - **Streamed frames:** `generate(_:onProgress:frames:)` delivers each decoded `VideoFrame` (index, size, RGB8,
+    time) to an async sink in order and keeps none. The pipeline holds one decoder window's frames instead of the
+    whole clip. The returned `GeneratedVideo` has empty `frames`, and its new `frameCount` counts the frames
+    delivered. A sink that throws stops the generation and releases its graphs. `generate(_:onProgress:)` is
+    unchanged.
+  - **Seed echo:** `GeneratedVideo.seed` is the seed the clip was generated from.
+
 - **MiniMax H3: every video profile, with measured admission (H2, the no-GPU part).** The exporter's profile table
   (`Forge/h3/profiles_h3.py`, standard library only) adds 10 s clips (243 frames) at 960×544 and 544×960, a 704×704
   square and 1280×704 / 704×1280 to the 5 s profiles. Each manifest profile now carries its `recipes`, its `memory`

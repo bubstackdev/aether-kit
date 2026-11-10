@@ -3875,6 +3875,98 @@
         "children": [
          {
           "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo09GeneratedB0V10frameCountSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo09GeneratedB0V10frameCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo09GeneratedB0V10frameCountSivp",
+      "moduleName": "AetherVideo",
+      "name": "frameCount",
+      "printedName": "frameCount",
+      "usr": "s:11AetherVideo09GeneratedB0V10frameCountSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt64",
+          "printedName": "Swift.UInt64",
+          "usr": "s:s6UInt64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo09GeneratedB0V4seeds6UInt64Vvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo09GeneratedB0V4seeds6UInt64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "UInt64",
+        "printedName": "Swift.UInt64",
+        "usr": "s:s6UInt64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo09GeneratedB0V4seeds6UInt64Vvp",
+      "moduleName": "AetherVideo",
+      "name": "seed",
+      "printedName": "seed",
+      "usr": "s:11AetherVideo09GeneratedB0V4seeds6UInt64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
           "name": "Duration",
           "printedName": "Swift.Duration",
           "usr": "s:s8DurationV"
@@ -3943,6 +4035,2129 @@
     "name": "GeneratedVideo",
     "printedName": "GeneratedVideo",
     "usr": "s:11AetherVideo09GeneratedB0V"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV5indexSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV5indexSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV5indexSivp",
+      "moduleName": "AetherVideo",
+      "name": "index",
+      "printedName": "index",
+      "usr": "s:11AetherVideo0B5FrameV5indexSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV5widthSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV5widthSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV5widthSivp",
+      "moduleName": "AetherVideo",
+      "name": "width",
+      "printedName": "width",
+      "usr": "s:11AetherVideo0B5FrameV5widthSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV6heightSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV6heightSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV6heightSivp",
+      "moduleName": "AetherVideo",
+      "name": "height",
+      "printedName": "height",
+      "usr": "s:11AetherVideo0B5FrameV6heightSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "UInt8",
+            "printedName": "Swift.UInt8",
+            "usr": "s:s5UInt8V"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Array",
+          "printedName": "[Swift.UInt8]",
+          "usr": "s:Sa"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV3rgbSays5UInt8VGvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV3rgbSays5UInt8VGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt8",
+          "printedName": "Swift.UInt8",
+          "usr": "s:s5UInt8V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[Swift.UInt8]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV3rgbSays5UInt8VGvp",
+      "moduleName": "AetherVideo",
+      "name": "rgb",
+      "printedName": "rgb",
+      "usr": "s:11AetherVideo0B5FrameV3rgbSays5UInt8VGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Duration",
+          "printedName": "Swift.Duration",
+          "usr": "s:s8DurationV"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV4times8DurationVvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV4times8DurationVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Duration",
+        "printedName": "Swift.Duration",
+        "usr": "s:s8DurationV"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV4times8DurationVvp",
+      "moduleName": "AetherVideo",
+      "name": "time",
+      "printedName": "time",
+      "usr": "s:11AetherVideo0B5FrameV4times8DurationVvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoFrame",
+        "printedName": "AetherVideo.VideoFrame",
+        "usr": "s:11AetherVideo0B5FrameV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoFrame",
+        "printedName": "AetherVideo.VideoFrame",
+        "usr": "s:11AetherVideo0B5FrameV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B5FrameV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherVideo",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherVideo0B5FrameV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B5FrameV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherVideo",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherVideo0B5FrameV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B5FrameV9hashValueSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B5FrameV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B5FrameV9hashValueSivp",
+      "moduleName": "AetherVideo",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherVideo0B5FrameV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherVideo0B5FrameV",
+    "moduleName": "AetherVideo",
+    "name": "VideoFrame",
+    "printedName": "VideoFrame",
+    "usr": "s:11AetherVideo0B5FrameV"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV7profileSSvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV7profileSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV7profileSSvp",
+      "moduleName": "AetherVideo",
+      "name": "profile",
+      "printedName": "profile",
+      "usr": "s:11AetherVideo0B10ClipLimitsV7profileSSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV9keyframesSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV9keyframesSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV9keyframesSivp",
+      "moduleName": "AetherVideo",
+      "name": "keyframes",
+      "printedName": "keyframes",
+      "usr": "s:11AetherVideo0B10ClipLimitsV9keyframesSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "ClosedRange",
+          "printedName": "Swift.ClosedRange<Swift.Int>",
+          "usr": "s:SN"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV22presentationTokenRangeSNySiGvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV22presentationTokenRangeSNySiGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "ClosedRange",
+        "printedName": "Swift.ClosedRange<Swift.Int>",
+        "usr": "s:SN"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV22presentationTokenRangeSNySiGvp",
+      "moduleName": "AetherVideo",
+      "name": "presentationTokenRange",
+      "printedName": "presentationTokenRange",
+      "usr": "s:11AetherVideo0B10ClipLimitsV22presentationTokenRangeSNySiGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "ClosedRange",
+          "printedName": "Swift.ClosedRange<Swift.Int>",
+          "usr": "s:SN"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV14packedRowRangeSNySiGvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV14packedRowRangeSNySiGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "ClosedRange",
+        "printedName": "Swift.ClosedRange<Swift.Int>",
+        "usr": "s:SN"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV14packedRowRangeSNySiGvp",
+      "moduleName": "AetherVideo",
+      "name": "packedRowRange",
+      "printedName": "packedRowRange",
+      "usr": "s:11AetherVideo0B10ClipLimitsV14packedRowRangeSNySiGvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV26keyframePresentationTokensSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV26keyframePresentationTokensSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV26keyframePresentationTokensSivp",
+      "moduleName": "AetherVideo",
+      "name": "keyframePresentationTokens",
+      "printedName": "keyframePresentationTokens",
+      "usr": "s:11AetherVideo0B10ClipLimitsV26keyframePresentationTokensSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV8clipRowsSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV8clipRowsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV8clipRowsSivp",
+      "moduleName": "AetherVideo",
+      "name": "clipRows",
+      "printedName": "clipRows",
+      "usr": "s:11AetherVideo0B10ClipLimitsV8clipRowsSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV19maximumPromptTokensSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV19maximumPromptTokensSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV19maximumPromptTokensSivp",
+      "moduleName": "AetherVideo",
+      "name": "maximumPromptTokens",
+      "printedName": "maximumPromptTokens",
+      "usr": "s:11AetherVideo0B10ClipLimitsV19maximumPromptTokensSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV19minimumPromptTokensSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV19minimumPromptTokensSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV19minimumPromptTokensSivp",
+      "moduleName": "AetherVideo",
+      "name": "minimumPromptTokens",
+      "printedName": "minimumPromptTokens",
+      "usr": "s:11AetherVideo0B10ClipLimitsV19minimumPromptTokensSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV14fitsSomePromptSbvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV14fitsSomePromptSbvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV14fitsSomePromptSbvp",
+      "moduleName": "AetherVideo",
+      "name": "fitsSomePrompt",
+      "printedName": "fitsSomePrompt",
+      "usr": "s:11AetherVideo0B10ClipLimitsV14fitsSomePromptSbvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV18presentationTokens06promptF0S2i_tF",
+      "moduleName": "AetherVideo",
+      "name": "presentationTokens",
+      "printedName": "presentationTokens(promptTokens:)",
+      "usr": "s:11AetherVideo0B10ClipLimitsV18presentationTokens06promptF0S2i_tF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV10packedRows12promptTokensS2i_tF",
+      "moduleName": "AetherVideo",
+      "name": "packedRows",
+      "printedName": "packedRows(promptTokens:)",
+      "usr": "s:11AetherVideo0B10ClipLimitsV10packedRows12promptTokensS2i_tF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "VideoClipRefusal",
+          "printedName": "AetherVideo.VideoClipRefusal",
+          "usr": "s:11AetherVideo0B11ClipRefusalO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherVideo.VideoClipRefusal?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV7refusal12promptTokensAA0bC7RefusalOSgSi_tF",
+      "moduleName": "AetherVideo",
+      "name": "refusal",
+      "printedName": "refusal(promptTokens:)",
+      "usr": "s:11AetherVideo0B10ClipLimitsV7refusal12promptTokensAA0bC7RefusalOSgSi_tF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipLimits",
+        "printedName": "AetherVideo.VideoClipLimits",
+        "usr": "s:11AetherVideo0B10ClipLimitsV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipLimits",
+        "printedName": "AetherVideo.VideoClipLimits",
+        "usr": "s:11AetherVideo0B10ClipLimitsV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherVideo",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherVideo0B10ClipLimitsV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherVideo",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherVideo0B10ClipLimitsV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B10ClipLimitsV9hashValueSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B10ClipLimitsV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B10ClipLimitsV9hashValueSivp",
+      "moduleName": "AetherVideo",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherVideo0B10ClipLimitsV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherVideo0B10ClipLimitsV",
+    "moduleName": "AetherVideo",
+    "name": "VideoClipLimits",
+    "printedName": "VideoClipLimits",
+    "usr": "s:11AetherVideo0B10ClipLimitsV"
+   },
+   {
+    "children": [
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "VideoClipRefusal",
+            "printedName": "AetherVideo.VideoClipRefusal",
+            "usr": "s:11AetherVideo0B11ClipRefusalO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Tuple",
+            "printedName": "(promptTokens: Swift.Int, maximumPromptTokens: Swift.Int)"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.Int, Swift.Int) -> AetherVideo.VideoClipRefusal"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "VideoClipRefusal",
+            "printedName": "AetherVideo.VideoClipRefusal",
+            "usr": "s:11AetherVideo0B11ClipRefusalO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherVideo.VideoClipRefusal.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherVideo.VideoClipRefusal.Type) -> (Swift.Int, Swift.Int) -> AetherVideo.VideoClipRefusal"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO13promptTooLongyACSi_SitcACmF",
+      "moduleName": "AetherVideo",
+      "name": "promptTooLong",
+      "printedName": "promptTooLong",
+      "usr": "s:11AetherVideo0B11ClipRefusalO13promptTooLongyACSi_SitcACmF"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "VideoClipRefusal",
+            "printedName": "AetherVideo.VideoClipRefusal",
+            "usr": "s:11AetherVideo0B11ClipRefusalO"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Tuple",
+            "printedName": "(minimumPromptTokens: Swift.Int, maximumPromptTokens: Swift.Int)"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(Swift.Int, Swift.Int) -> AetherVideo.VideoClipRefusal"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "VideoClipRefusal",
+            "printedName": "AetherVideo.VideoClipRefusal",
+            "usr": "s:11AetherVideo0B11ClipRefusalO"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Metatype",
+          "printedName": "AetherVideo.VideoClipRefusal.Type"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherVideo.VideoClipRefusal.Type) -> (Swift.Int, Swift.Int) -> AetherVideo.VideoClipRefusal"
+       }
+      ],
+      "declKind": "EnumElement",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO14tooLargeAtSizeyACSi_SitcACmF",
+      "moduleName": "AetherVideo",
+      "name": "tooLargeAtSize",
+      "printedName": "tooLargeAtSize",
+      "usr": "s:11AetherVideo0B11ClipRefusalO14tooLargeAtSizeyACSi_SitcACmF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B11ClipRefusalO21promptTooLongResourceSSvgZ",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherVideo0B11ClipRefusalO21promptTooLongResourceSSvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO21promptTooLongResourceSSvpZ",
+      "moduleName": "AetherVideo",
+      "name": "promptTooLongResource",
+      "printedName": "promptTooLongResource",
+      "static": true,
+      "usr": "s:11AetherVideo0B11ClipRefusalO21promptTooLongResourceSSvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B11ClipRefusalO22tooLargeAtSizeResourceSSvgZ",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherVideo0B11ClipRefusalO22tooLargeAtSizeResourceSSvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO22tooLargeAtSizeResourceSSvpZ",
+      "moduleName": "AetherVideo",
+      "name": "tooLargeAtSizeResource",
+      "printedName": "tooLargeAtSizeResource",
+      "static": true,
+      "usr": "s:11AetherVideo0B11ClipRefusalO22tooLargeAtSizeResourceSSvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "AetherError",
+          "printedName": "AetherCore.AetherError",
+          "usr": "s:10AetherCore0A5ErrorO"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B11ClipRefusalO5error0A4Core0A5ErrorOvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B11ClipRefusalO5error0A4Core0A5ErrorOvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "AetherError",
+        "printedName": "AetherCore.AetherError",
+        "usr": "s:10AetherCore0A5ErrorO"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO5error0A4Core0A5ErrorOvp",
+      "moduleName": "AetherVideo",
+      "name": "error",
+      "printedName": "error",
+      "usr": "s:11AetherVideo0B11ClipRefusalO5error0A4Core0A5ErrorOvp"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "VideoClipRefusal",
+          "printedName": "AetherVideo.VideoClipRefusal",
+          "usr": "s:11AetherVideo0B11ClipRefusalO"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherVideo.VideoClipRefusal?",
+        "usr": "s:Sq"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "AetherError",
+        "printedName": "AetherCore.AetherError",
+        "usr": "s:10AetherCore0A5ErrorO"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalOyACSg0A4Core0A5ErrorOcfc",
+      "moduleName": "AetherVideo",
+      "name": "init",
+      "printedName": "init(_:)",
+      "usr": "s:11AetherVideo0B11ClipRefusalOyACSg0A4Core0A5ErrorOcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipRefusal",
+        "printedName": "AetherVideo.VideoClipRefusal",
+        "usr": "s:11AetherVideo0B11ClipRefusalO"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipRefusal",
+        "printedName": "AetherVideo.VideoClipRefusal",
+        "usr": "s:11AetherVideo0B11ClipRefusalO"
+       }
+      ],
+      "declAttributes": [
+       "Implements",
+       "Semantics"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO21__derived_enum_equalsySbAC_ACtFZ",
+      "moduleName": "AetherVideo",
+      "name": "__derived_enum_equals",
+      "printedName": "__derived_enum_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherVideo0B11ClipRefusalO21__derived_enum_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherVideo",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherVideo0B11ClipRefusalO4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B11ClipRefusalO9hashValueSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B11ClipRefusalO9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B11ClipRefusalO9hashValueSivp",
+      "moduleName": "AetherVideo",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherVideo0B11ClipRefusalO9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Enum",
+    "isEnumExhaustive": true,
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherVideo0B11ClipRefusalO",
+    "moduleName": "AetherVideo",
+    "name": "VideoClipRefusal",
+    "printedName": "VideoClipRefusal",
+    "usr": "s:11AetherVideo0B11ClipRefusalO"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV7profileSSvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV7profileSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV7profileSSvp",
+      "moduleName": "AetherVideo",
+      "name": "profile",
+      "printedName": "profile",
+      "usr": "s:11AetherVideo0B9PreflightV7profileSSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV6recipeSSvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV6recipeSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV6recipeSSvp",
+      "moduleName": "AetherVideo",
+      "name": "recipe",
+      "printedName": "recipe",
+      "usr": "s:11AetherVideo0B9PreflightV6recipeSSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "UInt64",
+          "printedName": "Swift.UInt64",
+          "usr": "s:s6UInt64V"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV4seeds6UInt64Vvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV4seeds6UInt64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "UInt64",
+        "printedName": "Swift.UInt64",
+        "usr": "s:s6UInt64V"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV4seeds6UInt64Vvp",
+      "moduleName": "AetherVideo",
+      "name": "seed",
+      "printedName": "seed",
+      "usr": "s:11AetherVideo0B9PreflightV4seeds6UInt64Vvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV12promptTokensSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV12promptTokensSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV12promptTokensSivp",
+      "moduleName": "AetherVideo",
+      "name": "promptTokens",
+      "printedName": "promptTokens",
+      "usr": "s:11AetherVideo0B9PreflightV12promptTokensSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV18presentationTokensSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV18presentationTokensSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV18presentationTokensSivp",
+      "moduleName": "AetherVideo",
+      "name": "presentationTokens",
+      "printedName": "presentationTokens",
+      "usr": "s:11AetherVideo0B9PreflightV18presentationTokensSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV10packedRowsSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV10packedRowsSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV10packedRowsSivp",
+      "moduleName": "AetherVideo",
+      "name": "packedRows",
+      "printedName": "packedRows",
+      "usr": "s:11AetherVideo0B9PreflightV10packedRowsSivp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "VideoClipLimits",
+          "printedName": "AetherVideo.VideoClipLimits",
+          "usr": "s:11AetherVideo0B10ClipLimitsV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV6limitsAA0B10ClipLimitsVvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV6limitsAA0B10ClipLimitsVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipLimits",
+        "printedName": "AetherVideo.VideoClipLimits",
+        "usr": "s:11AetherVideo0B10ClipLimitsV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV6limitsAA0B10ClipLimitsVvp",
+      "moduleName": "AetherVideo",
+      "name": "limits",
+      "printedName": "limits",
+      "usr": "s:11AetherVideo0B9PreflightV6limitsAA0B10ClipLimitsVvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV12admissionKeySSvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV12admissionKeySSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV12admissionKeySSvp",
+      "moduleName": "AetherVideo",
+      "name": "admissionKey",
+      "printedName": "admissionKey",
+      "usr": "s:11AetherVideo0B9PreflightV12admissionKeySSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "VideoMemoryEnvelope",
+            "printedName": "AetherVideo.VideoMemoryEnvelope",
+            "usr": "s:11AetherVideo0B14MemoryEnvelopeV"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "AetherVideo.VideoMemoryEnvelope?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV8envelopeAA0B14MemoryEnvelopeVSgvg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV8envelopeAA0B14MemoryEnvelopeVSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "VideoMemoryEnvelope",
+          "printedName": "AetherVideo.VideoMemoryEnvelope",
+          "usr": "s:11AetherVideo0B14MemoryEnvelopeV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherVideo.VideoMemoryEnvelope?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV8envelopeAA0B14MemoryEnvelopeVSgvp",
+      "moduleName": "AetherVideo",
+      "name": "envelope",
+      "printedName": "envelope",
+      "usr": "s:11AetherVideo0B9PreflightV8envelopeAA0B14MemoryEnvelopeVSgvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV6framesSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV6framesSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV6framesSivp",
+      "moduleName": "AetherVideo",
+      "name": "frames",
+      "printedName": "frames",
+      "usr": "s:11AetherVideo0B9PreflightV6framesSivp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoPreflight",
+        "printedName": "AetherVideo.VideoPreflight",
+        "usr": "s:11AetherVideo0B9PreflightV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoPreflight",
+        "printedName": "AetherVideo.VideoPreflight",
+        "usr": "s:11AetherVideo0B9PreflightV"
+       }
+      ],
+      "declAttributes": [
+       "Implements"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B9PreflightV23__derived_struct_equalsySbAC_ACtFZ",
+      "moduleName": "AetherVideo",
+      "name": "__derived_struct_equals",
+      "printedName": "__derived_struct_equals(_:_:)",
+      "static": true,
+      "usr": "s:11AetherVideo0B9PreflightV23__derived_struct_equalsySbAC_ACtFZ"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Hasher",
+        "paramValueOwnership": "InOut",
+        "printedName": "Swift.Hasher",
+        "usr": "s:s6HasherV"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "implicit": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo0B9PreflightV4hash4intoys6HasherVz_tF",
+      "moduleName": "AetherVideo",
+      "name": "hash",
+      "printedName": "hash(into:)",
+      "usr": "s:11AetherVideo0B9PreflightV4hash4intoys6HasherVz_tF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherVideo0B9PreflightV9hashValueSivg",
+        "moduleName": "AetherVideo",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherVideo0B9PreflightV9hashValueSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "implicit": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherVideo0B9PreflightV9hashValueSivp",
+      "moduleName": "AetherVideo",
+      "name": "hashValue",
+      "printedName": "hashValue",
+      "usr": "s:11AetherVideo0B9PreflightV9hashValueSivp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSQ",
+      "name": "Equatable",
+      "printedName": "Equatable",
+      "usr": "s:SQ"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$sSH",
+      "name": "Hashable",
+      "printedName": "Hashable",
+      "usr": "s:SH"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherVideo0B9PreflightV",
+    "moduleName": "AetherVideo",
+    "name": "VideoPreflight",
+    "printedName": "VideoPreflight",
+    "usr": "s:11AetherVideo0B9PreflightV"
    },
    {
     "children": [
@@ -4801,6 +7016,90 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "GeneratedVideo",
+        "printedName": "AetherVideo.GeneratedVideo",
+        "usr": "s:11AetherVideo09GeneratedB0V"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoRequest",
+        "printedName": "AetherVideo.VideoRequest",
+        "usr": "s:11AetherVideo0B7RequestV"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             }
+            ],
+            "kind": "TypeNameAlias",
+            "name": "Void",
+            "printedName": "Swift.Void"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "VideoProgress",
+            "printedName": "AetherVideo.VideoProgress",
+            "usr": "s:11AetherVideo0B8ProgressO"
+           }
+          ],
+          "kind": "TypeFunc",
+          "name": "Function",
+          "printedName": "(AetherVideo.VideoProgress) -> Swift.Void"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "((AetherVideo.VideoProgress) -> Swift.Void)?",
+        "usr": "s:Sq"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           }
+          ],
+          "kind": "TypeNameAlias",
+          "name": "Void",
+          "printedName": "Swift.Void"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "VideoFrame",
+          "printedName": "AetherVideo.VideoFrame",
+          "usr": "s:11AetherVideo0B5FrameV"
+         }
+        ],
+        "kind": "TypeFunc",
+        "name": "Function",
+        "printedName": "(AetherVideo.VideoFrame) async throws -> Swift.Void"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC8generate_10onProgress6framesAA09GeneratedB0VAA0B7RequestV_yAA0bI0OYbcSgyAA0B5FrameVYaYbKYCctYaKF",
+      "moduleName": "AetherVideo",
+      "name": "generate",
+      "printedName": "generate(_:onProgress:frames:)",
+      "throwing": true,
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC8generate_10onProgress6framesAA09GeneratedB0VAA0B7RequestV_yAA0bI0OYbcSgyAA0B5FrameVYaYbKYCctYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Void",
         "printedName": "()"
        }
@@ -4866,6 +7165,78 @@
       "name": "residentRoles",
       "printedName": "residentRoles",
       "usr": "s:11AetherVideo17MiniMaxH3PipelineC13residentRolesSaySSGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "VideoPreflight",
+        "printedName": "AetherVideo.VideoPreflight",
+        "usr": "s:11AetherVideo0B9PreflightV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "VideoRequest",
+        "printedName": "AetherVideo.VideoRequest",
+        "usr": "s:11AetherVideo0B7RequestV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC9preflightyAA0B9PreflightVAA0B7RequestV0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherVideo",
+      "name": "preflight",
+      "printedName": "preflight(_:)",
+      "throwing": true,
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC9preflightyAA0B9PreflightVAA0B7RequestV0A4Core0A5ErrorOYKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "VideoClipLimits",
+        "printedName": "AetherVideo.VideoClipLimits",
+        "usr": "s:11AetherVideo0B10ClipLimitsV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.String?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherVideo17MiniMaxH3PipelineC10clipLimits7profile9keyframesAA0b4ClipH0VSSSg_Sit0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherVideo",
+      "name": "clipLimits",
+      "printedName": "clipLimits(profile:keyframes:)",
+      "throwing": true,
+      "usr": "s:11AetherVideo17MiniMaxH3PipelineC10clipLimits7profile9keyframesAA0b4ClipH0VSSSg_Sit0A4Core0A5ErrorOYKF"
      },
      {
       "children": [
