@@ -163,6 +163,13 @@ public actor Generator {
     /// The image contract of the engine, nil when it takes no images.
     public nonisolated var imageInput: ImageInputSpec? { (engine as? any ImageConditionedEngine)?.imageInput }
 
+    /// Reloads a ``DecoderEngine`` whose model retained more than its budget (``DecoderEngine/reloadIfRetainedPastBudget()``).
+    /// A failed reload is not the request's failure: the engine loads its graphs again at the next feed.
+    private func reloadIfRetainedPastBudget() async {
+        guard let engine = engine as? DecoderEngine else { return }
+        _ = try? await engine.reloadIfRetainedPastBudget()
+    }
+
     /// The CPU half of a request's images, off the actor, before the GPU grant.
     @concurrent nonisolated static func prepare(_ images: [ChatImage], spec: ImageInputSpec?) async throws -> [PreparedPromptImage] {
         guard !images.isEmpty else { return [] }
@@ -208,14 +215,18 @@ public actor Generator {
                 // A request cancelled while it waits for its turn leaves the queue at once: it renders and prefills
                 // nothing.
                 try await self.gate.withTurn {
+                    var failure: (any Error)?
                     do {
                         try await body(self, continuation, prepared)
-                        continuation.finish()
                     } catch AetherError.runtime(let underlying) where underlying is CancellationError {
-                        continuation.finish(throwing: CancellationError())
+                        failure = CancellationError()
                     } catch {
-                        continuation.finish(throwing: error)
+                        failure = error
                     }
+                    // The reload budget (docs/VLM.md, V6): after the request's last event, before its stream ends,
+                    // inside the turn and the grant, so the next request waits for a reload instead of racing it.
+                    await self.reloadIfRetainedPastBudget()
+                    if let failure { continuation.finish(throwing: failure) } else { continuation.finish() }
                 }
             } catch {
                 continuation.finish(throwing: error)
