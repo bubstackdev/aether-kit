@@ -6,11 +6,19 @@
 
 - **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
   It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
-  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). A Core AI decoder
-  specialized with `expectFrequentReshapes` is now fed in calls of at most 32 tokens
-  (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; set it to the manifest's
-  chunk for the old schedule). G5's growth fell to 1,139 MiB, still over its 1 GiB bar (docs/VLM.md §6); prefill is
-  about twice as slow (one picture 0.51 s instead of 0.24 s). Applies to `decoder-lm@1` exports too.
+  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
+  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
+    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
+    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
+    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
+  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
+    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
+    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
+    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
+    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
+    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
+    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
+    stayed under 12.9 GiB.
 
 ### New
 
