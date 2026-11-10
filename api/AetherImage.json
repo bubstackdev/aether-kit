@@ -6316,6 +6316,73 @@
       "printedName": "encode(prompt:references:job:)",
       "throwing": true,
       "usr": "s:11AetherImage13Krea2PipelineC6encode6prompt10references3jobAA0C12ConditioningVSS_SayAA0c9ReferenceB0VG0A4Host6GPUJobCSgtYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Krea2ReferenceImage",
+          "printedName": "AetherImage.Krea2ReferenceImage",
+          "usr": "s:11AetherImage014Krea2ReferenceB0V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherImage.Krea2ReferenceImage]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC6encode6prompt10references5width6height3jobAA0C12ConditioningVSS_SayAA0c9ReferenceB0VGS2i0A4Host6GPUJobCSgtYaKF",
+      "moduleName": "AetherImage",
+      "name": "encode",
+      "printedName": "encode(prompt:references:width:height:job:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC6encode6prompt10references5width6height3jobAA0C12ConditioningVSS_SayAA0c9ReferenceB0VGS2i0A4Host6GPUJobCSgtYaKF"
      }
     ],
     "conformances": [
