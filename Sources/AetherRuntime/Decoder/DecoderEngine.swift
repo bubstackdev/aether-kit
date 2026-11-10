@@ -55,15 +55,27 @@ public actor DecoderEngine: LanguageEngine {
         /// Diagnostics only: use `pipelineDepth` without the canary. With `canary` off (and without this), greedy
         /// decoding uses depth 1, as documented.
         @_spi(Diagnostics) public var uncheckedPipelineDepth = false
-        /// The model's own memory, declared: what a measurement of this model took (``Memory/measuredModelBytes``
-        /// from an earlier session on this device, or a gate's figure). Load charges it against the memory budget
-        /// when it is larger than what load itself can measure. Loading allocates almost nothing (Core AI's memory
-        /// arrives with the first run), so without it the charge is the graph files' size, below what the model
-        /// reaches: a 4B `vlm-static-inject@1` export of 8.28 GiB on disk read 9.4 GiB of Metal after load and
-        /// 13.6 GiB over a session (process-wide, its KV included). Nil (the default): a bundle load declares the kit's
-        /// qualified figure for the export on this chip (``DecoderEngine/qualifiedModelBytes``) when it has one;
-        /// otherwise the files' size or the load's Metal delta, as before. 0 opts out of the qualified figure.
-        public var modelBytes: Int64? = nil
+        /// What load charges for the model's own memory against the memory budget (``ModelCharge``). Loading
+        /// allocates almost nothing (Core AI's memory arrives with the first run), so what load can measure is the
+        /// graph files' size, below what the model reaches: a 4B `vlm-static-inject@1` export of 8.28 GiB on disk read
+        /// 9.4 GiB of Metal after load and 13.6 GiB over a session (process-wide, its KV included). Default
+        /// ``ModelCharge/qualified``.
+        public var modelCharge: ModelCharge = .qualified
+
+        /// What load charges for the model (``Options/modelCharge``). Every choice charges at least what load
+        /// measures: the graph files' size, or the Metal delta across the loads.
+        public enum ModelCharge: Sendable, Hashable {
+            /// The default: a bundle load charges the kit's qualified figure for the export on this chip
+            /// (``DecoderEngine/qualifiedModelBytes(for:device:)``) when it is larger than what load measures, and
+            /// what load measures when the kit has no figure.
+            case qualified
+            /// What load measures, without the kit's qualified figure.
+            case measured
+            /// A declared figure: what a measurement of this model took (``Memory/measuredModelBytes`` from an earlier
+            /// session on this device, or a gate's). Load charges it when it is larger than what load measures, and
+            /// refuses with `capacity` when the KV no longer fits beside it. At least 0.
+            case declared(bytes: Int64)
+        }
 
         public init(
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
@@ -137,7 +149,7 @@ public actor DecoderEngine: LanguageEngine {
         /// What load charged for the model against the memory budget (``KVSizing/modelBytes``).
         public var chargedModelBytes: Int64
         /// The model's own memory as measured: the most the level stood above ``baselineBytes`` at any of those
-        /// reads, less the engine's own buffers at that read. Pass it as ``Options/modelBytes`` to charge it at the
+        /// reads, less the engine's own buffers at that read. Pass it as ``Options/ModelCharge/declared(bytes:)`` to charge it at the
         /// next load.
         public var measuredModelBytes: Int64
 
@@ -201,9 +213,9 @@ public actor DecoderEngine: LanguageEngine {
     public nonisolated let sizing: KVSizing
     /// The model's measured Metal allocation delta across load and its files' size (diagnostics; zero for fakes).
     public private(set) var loadedModelBytes: (gpu: Int64, disk: Int64) = (0, 0)
-    /// The model memory load was given as declared: ``Options/modelBytes``, or, for a bundle load without one, the
-    /// kit's qualified figure for the export on this chip (``qualifiedModelBytes``). Nil when neither; the charge is
-    /// then what load measured. Load charges the larger of this and what it measured (``Memory/chargedModelBytes``).
+    /// The model memory load was given as declared: ``Options/ModelCharge/declared(bytes:)``, or, for a bundle load
+    /// with ``Options/ModelCharge/qualified``, the kit's qualified figure for the export on this chip
+    /// (``qualifiedModelBytes(for:device:)``). Nil when neither; the charge is then what load measured. Load charges the larger of this and what it measured (``Memory/chargedModelBytes``).
     public nonisolated let declaredModelBytes: Int64?
     public nonisolated let description: Description
     public nonisolated var vocab: Int { description.vocab }
@@ -223,8 +235,8 @@ public actor DecoderEngine: LanguageEngine {
     /// Loads `manifest`'s decoder graph from an installed bundle. Compute and the reshape hint come from the
     /// manifest; capacity from the memory budget (``KVSizing``). A bundle from a `ModelStore` stays leased
     /// (``InstalledBundle/readLease()``) for the engine's lifetime, so the store refuses to remove it meanwhile.
-    /// Without ``Options/modelBytes``, the model's charge is the kit's qualified figure for this export on this chip
-    /// when it has one (``qualifiedModelBytes``), else what load measures.
+    /// With ``Options/ModelCharge/qualified`` (the default), the model's charge is the kit's qualified figure for this
+    /// export on this chip when it has one (``qualifiedModelBytes(for:device:)``), else what load measures.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws(AetherError) {
         let options = Self.declaringQualified(options, manifest: manifest, device: device)
         let lease = try bundle.readLease()
@@ -373,11 +385,13 @@ public actor DecoderEngine: LanguageEngine {
         var sizing = try Self.sizing(
             step.signature, prefill: prefill?.signature, graph: graph, maxContext: maxContext, platform: device.platform,
             options: options)
-        if let declared = options.modelBytes, declared < 0 {
-            throw .generation(.invalidParameters("modelBytes \(declared); at least 0"))
+        var declared: Int64?
+        if case .declared(let bytes) = options.modelCharge {
+            guard bytes >= 0 else { throw .generation(.invalidParameters("modelCharge declared \(bytes) bytes; at least 0")) }
+            declared = bytes
         }
         // The larger of what load measured (the files, or the Metal delta across the loads) and the declared figure.
-        sizing.modelBytes = max(modelBytes, options.modelBytes ?? 0)
+        sizing.modelBytes = max(modelBytes, declared ?? 0)
         // The static inputs (image rows, rotary inputs) and the tower's buffers.
         for (_, binding) in graph.inputs(forPhase: "step") where binding.isStatic && binding.source == nil {
             if let spec = step.signature.input(binding.name), let width = spec.scalarType.byteWidth {
@@ -398,7 +412,7 @@ public actor DecoderEngine: LanguageEngine {
             initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
-        declaredModelBytes = options.modelBytes
+        declaredModelBytes = declared
         self.probe = probe
         self.memoryBaseline = memoryBaseline
         lastLevel = memoryBaseline

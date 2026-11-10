@@ -196,18 +196,20 @@ across load is near zero and the charge used to be the graph files' size: 8.28 G
 - `DecoderEngine.memory` (`DecoderEngine.Memory`) reads the probe (`GPUMemoryProbe.system`, Metal included) at the
   call: the level before load, now and at its highest (read after load and the canary, and after each prefill, step,
   greedy decode and image bind), the engine's own buffers (KV, logits, statics, the tower's buffers), the charge, and
-  `measuredModelBytes`: the most the level stood above the baseline less the engine's buffers at that read.
-- `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's `measuredModelBytes`, or a
-  gate's). Load charges the larger of it and what load measured; a declared figure the budget can't hold beside the KV
-  refuses the load with `capacity`.
+  `measuredModelBytes`: the most the level stood above the baseline less the engine's buffers at that read, and
+  `liveResidentBytes`: the level now above the baseline.
+- `DecoderEngine.Options.modelCharge` says what load charges for the model: `.qualified` (the default, below),
+  `.measured` (what load measures), or `.declared(bytes:)` (an earlier session's `measuredModelBytes`, or a gate's).
+  Load charges the larger of a declared figure and what load measured; a declared figure the budget can't hold beside
+  the KV refuses the load with `capacity`.
 - The probe reads the whole process, so memory something else in the process allocates while the engine is loaded is
   counted too: an overestimate, the direction admission prefers.
-- **Qualified figures.** The kit ships measured model bytes for known exports, `DecoderEngine.qualifiedModelBytes`,
-  keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture (`DecoderEngine.QualifiedExport`),
-  the way MiniMax H3 scopes its `qualifiedFootprints` to `qualifiedExportDigest` and `qualifiedArchitecture`. A
-  bundle load with `Options.modelBytes` nil declares the entry for its export and chip, so the first load already
-  charges the measured memory and a host doesn't have to keep `measuredModelBytes` and pass it back; an explicit
-  `modelBytes` wins (0 opts out). Another export (a requantization, a manifest edit, the other platform's variant) or
+- **Qualified figures.** The kit ships measured model bytes for known exports (a package table,
+  `qualifiedModelBytesTable`), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture,
+  the way MiniMax H3 scopes its `qualifiedFootprints` to `qualifiedExportDigest` and `qualifiedArchitecture`; hosts
+  read an entry with `DecoderEngine.qualifiedModelBytes(for:device:)`. A bundle load with `.qualified` (the default)
+  declares the entry for its export and chip, so the first load already charges the measured memory and a host
+  doesn't have to keep `measuredModelBytes` and pass it back; `.measured` or `.declared(bytes:)` wins. Another export (a requantization, a manifest edit, the other platform's variant) or
   another chip has no entry and charges as before. `DecoderEngine.declaredModelBytes` reports what load was given.
   The figures live in the kit rather than in the manifest because they are measured on an export that already exists:
   writing them into its manifest would change the digest they are keyed by. Entries come from the native gates, which

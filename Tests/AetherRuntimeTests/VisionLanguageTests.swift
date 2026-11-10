@@ -441,7 +441,7 @@ struct VisionLanguageMemoryTests {
     @Test func loadChargesTheDeclaredModelBytesWhenLarger() async throws {
         func options(declared: Int64?) -> DecoderEngine.Options {
             var options = DecoderEngine.Options(capacity: 1024, memoryBudget: .bytes(1 << 30))
-            options.modelBytes = declared
+            options.modelCharge = declared.map { .declared(bytes: $0) } ?? .qualified
             return options
         }
         let level = Level()
@@ -506,7 +506,7 @@ struct VisionLanguageMemoryTests {
     }
 }
 
-/// The kit's qualified model bytes (``DecoderEngine/qualifiedModelBytes``), hermetic: keyed by the export's digest and
+/// The kit's qualified model bytes (``DecoderEngine/qualifiedModelBytesTable``), hermetic: keyed by the export's digest and
 /// the chip, declared for a bundle load only when the caller declared nothing, and charged like a declaration.
 @Suite("Qualified model bytes")
 struct QualifiedModelBytesTests {
@@ -539,18 +539,18 @@ struct QualifiedModelBytesTests {
             for: krea, device: chip, table: [.init(exportDigest: krea.contentDigest, architecture: "h17c"): 1]) == nil)
     }
 
-    /// Nil `modelBytes` takes the entry; an explicit one (0 included) is kept.
+    /// `.qualified` takes the entry (or what load measures without one); `.measured` and a declaration are kept.
     @Test func aBundleLoadDeclaresTheEntryOnlyWithoutADeclaration() throws {
         let vlm = try Self.vlmManifest()
         let chip = Device(platform: .macOS, architecture: "h17c")
         let table: [DecoderEngine.QualifiedExport: Int64] = [.init(exportDigest: vlm.contentDigest, architecture: "h17c"): 9_000_000]
         let undeclared = DecoderEngine.Options()
-        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: table).modelBytes == 9_000_000)
-        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: [:]).modelBytes == nil)
-        for explicit: Int64 in [0, 100, 20_000_000] {
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: table).modelCharge == .declared(bytes: 9_000_000))
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: [:]).modelCharge == .measured)
+        for explicit: DecoderEngine.Options.ModelCharge in [.measured, .declared(bytes: 0), .declared(bytes: 100), .declared(bytes: 20_000_000)] {
             var options = DecoderEngine.Options()
-            options.modelBytes = explicit
-            #expect(DecoderEngine.declaringQualified(options, manifest: vlm, device: chip, table: table).modelBytes == explicit)
+            options.modelCharge = explicit
+            #expect(DecoderEngine.declaringQualified(options, manifest: vlm, device: chip, table: table).modelCharge == explicit)
         }
     }
 
@@ -582,7 +582,7 @@ struct QualifiedModelBytesTests {
 
     /// The table the kit ships holds only decoder-engine exports with positive figures.
     @Test func theShippedTableIsWellFormed() {
-        for (key, bytes) in DecoderEngine.qualifiedModelBytes {
+        for (key, bytes) in DecoderEngine.qualifiedModelBytesTable {
             #expect(bytes > 0)
             #expect(key.exportDigest.count == 64 && key.exportDigest.allSatisfy(\.isHexDigit))
             #expect(!key.architecture.isEmpty)

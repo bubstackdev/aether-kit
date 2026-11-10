@@ -17,9 +17,9 @@ import Testing
 /// text-only. The warm-up is the first pass over every case (each grid and image count seen once). Recorded per
 /// request: the engine's ``DecoderEngine/Memory`` after it (and the device's Metal allocation), prefill seconds and
 /// decode ms per token beside the 0.0.7 reference's. Bars: the level after warm-up grows by less than 1 GiB over the
-/// remaining requests; the measured model bytes, charged at a second load as `Options.modelBytes`, still leave the
+/// remaining requests; the measured model bytes, charged at a second load as `Options.modelCharge` `.declared`, still leave the
 /// capacity of 4,096. Then the second load's charge and capacity are reported, and the run prints the export's
-/// ``DecoderEngine/qualifiedModelBytes`` entry (`GATE qualified model bytes entry:`, also `qualifiedEntry` in the
+/// ``DecoderEngine/qualifiedModelBytesTable`` entry (`GATE qualified model bytes entry:`, also `qualifiedEntry` in the
 /// report) ready to add to `Sources/AetherRuntime/Decoder/QualifiedModelBytes.swift`. When the kit already has an entry
 /// for the export on this chip, it must cover the measurement.
 @Suite("DescriberRetentionGateTests", .serialized,
@@ -119,7 +119,7 @@ struct DescriberRetentionGateTests {
         }
         // The first engine is released: a second load charges the measurement.
         var options = DecoderEngine.Options(capacity: 4096)
-        options.modelBytes = measured
+        options.modelCharge = .declared(bytes: measured)
         let again = try await DecoderEngine(bundle: bundle, manifest: manifest, device: .current, options: options)
         report.redeclaredChargeBytes = again.sizing.modelBytes
         report.redeclaredCapacity = again.maxCapacity

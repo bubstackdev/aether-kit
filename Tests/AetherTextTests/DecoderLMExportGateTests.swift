@@ -159,7 +159,7 @@ extension DecoderLMExportGateTests {
     /// The engine fed each reference reply after its prompt: at every position our argmax is the reference's token or
     /// within the near-tie rule. Also reports how far our logit margin between the reference's top two moves from
     /// the reference's own (the drift between the two exports, in logits), and prints the export's
-    /// ``DecoderEngine/qualifiedModelBytes`` entry from the engine's measured model bytes over every case
+    /// ``DecoderEngine/qualifiedModelBytesTable`` entry from the engine's measured model bytes over every case
     /// (`GATE qualified model bytes entry:`), ready to add to `Sources/AetherRuntime/Decoder/QualifiedModelBytes.swift`;
     /// an entry the kit already has for the export on this chip must cover the measurement.
     @Test func teacherForcedRepliesFollowTheReference() async throws {
