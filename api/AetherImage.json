@@ -5998,6 +5998,43 @@
       "usr": "s:11AetherImage13Krea2PipelineC13residentBytess5Int64Vvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int64",
+          "printedName": "Swift.Int64",
+          "usr": "s:s5Int64V"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13Krea2PipelineC17liveResidentBytess5Int64Vvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13Krea2PipelineC17liveResidentBytess5Int64Vvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int64",
+        "printedName": "Swift.Int64",
+        "usr": "s:s5Int64V"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13Krea2PipelineC17liveResidentBytess5Int64Vvp",
+      "moduleName": "AetherImage",
+      "name": "liveResidentBytes",
+      "printedName": "liveResidentBytes",
+      "usr": "s:11AetherImage13Krea2PipelineC17liveResidentBytess5Int64Vvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",

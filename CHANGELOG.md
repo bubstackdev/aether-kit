@@ -4,6 +4,23 @@
 
 ### New
 
+- **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
+  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveHeldBytes()`) read the pipeline's probe at the call: the
+  process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
+  what the kept graphs retain after the plan, where `residentBytes` stays the last plan's held bytes (what remains
+  reserved on a coordinator). The probe reads the whole process, so models loaded after the pipeline count too.
+  Additive; the API baselines record it.
+- **Measured and declared model memory for the decoder engine** (`decoder-lm@1` and `vlm-static-inject@1`;
+  docs/VLM.md §5, V5). Loading allocates almost nothing, so load charged the KV budget with the graph files' size
+  (8.28 GiB for the 4B Qwen3-VL export, against 9.4–13.6 GiB of Metal measured over a session).
+  - `DecoderEngine.memory` reads the engine's memory at the call: the level before load, now and at its highest, the
+    engine's own buffers, the charge, and `measuredModelBytes` (the model's memory above the engine's buffers).
+  - `DecoderEngine.Options.modelBytes` declares the model's memory (an earlier session's measurement, or a gate's);
+    load charges the larger of it and what it measured, and refuses with `capacity` when the KV no longer fits.
+  - Without a declaration, the charge is as before. Additive; the API baselines record it.
+  - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
+    grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
+
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
   key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;
   `--no-text-mask` keeps the exact-length graphs). The text axis is static at 1,116 rows, the most a reference prompt

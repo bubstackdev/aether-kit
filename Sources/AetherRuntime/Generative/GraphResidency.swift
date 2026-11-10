@@ -494,6 +494,20 @@ public final class GraphResidency {
     /// The lowest level a phase began at with no graph loaded (nil until one did).
     package var levelBeforeGraphs: Int64? { unloadedLevel }
 
+    /// What the loaded graphs hold now, read on the probe at the call: the level now above the level before any graph
+    /// of this residency loaded (``levelBeforeGraphs``), so Core AI's Metal memory and whatever the graphs kept since
+    /// their last phase ended are counted. 0 with no graph loaded. Before any phase has begun (no level before the
+    /// graphs is known) it is the held bytes measured so far.
+    ///
+    /// The probe reads the whole process: memory something else in the process allocated after these graphs loaded
+    /// counts here too, and memory it freed since comes off. Between generations, with nothing else allocating, that is
+    /// what the graphs hold.
+    public func liveHeldBytes() -> Int64 {
+        guard !loaded.isEmpty else { return 0 }
+        guard let unloadedLevel else { return heldSoFar.values.reduce(0, +) }
+        return max(0, probe.allocatedBytes() - unloadedLevel)
+    }
+
 
     /// Starts measuring `phase`. A phase still open is ended first. After graphs were released (per phase, or by a
     /// profile change), the phase measures from the level before they loaded: their memory comes back seconds late,

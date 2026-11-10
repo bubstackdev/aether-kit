@@ -263,6 +263,7 @@ extension DecoderEngine: ImageConditionedEngine {
         // Held as the engine's operation across the tower calls: no prefill, decode, rewind or second bind runs while
         // a bind is suspended.
         let core = core
+        defer { sampleMemory() }
         try await core.withStatics(operation: "an image bind") { statics throws(AetherError) in
             let previous = binder.bound
             do throws(AetherError) {

@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import Synchronization
 import Testing
 @testable import AetherRuntime
 import AetherCore
@@ -421,5 +422,86 @@ enum Generatorless {
         var n = 0
         while n < a.count, n < b.count, a[n] == b[n] { n += 1 }
         return n
+    }
+}
+
+/// docs/VLM.md V5 (G5's accounting, hermetic): what load charges for the model, and the engine's live memory readings,
+/// on the fake tower and decoder with a hand-moved level.
+@Suite("Vision-language memory (fake)")
+struct VisionLanguageMemoryTests {
+    /// A level the test moves by hand.
+    final class Level: Sendable {
+        let bytes = Mutex<Int64>(10_000)
+        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in bytes.withLock { $0 } } }
+        func set(_ value: Int64) { bytes.withLock { $0 = value } }
+    }
+
+    /// Load charges the larger of what it measured (the files' size, standing in here) and the declared figure; a
+    /// declared figure the budget can't hold beside the KV refuses the load, as a measured one would.
+    @Test func loadChargesTheDeclaredModelBytesWhenLarger() async throws {
+        func options(declared: Int64?) -> DecoderEngine.Options {
+            var options = DecoderEngine.Options(capacity: 1024, memoryBudget: .bytes(1 << 30))
+            options.modelBytes = declared
+            return options
+        }
+        let level = Level()
+        let undeclared = try await FakeVLM.engine(options: options(declared: nil), probe: level.probe, modelBytes: 500)
+        #expect(undeclared.sizing.modelBytes == 500)
+        #expect(await undeclared.memory.chargedModelBytes == 500)
+        let smaller = try await FakeVLM.engine(options: options(declared: 100), probe: level.probe, modelBytes: 500)
+        #expect(smaller.sizing.modelBytes == 500)
+        let larger = try await FakeVLM.engine(options: options(declared: 9_000_000), probe: level.probe, modelBytes: 500)
+        #expect(larger.sizing.modelBytes == 9_000_000)
+        #expect(await larger.memory.chargedModelBytes == 9_000_000)
+        // The KV at 1,024 tokens no longer fits a budget the declared model fills.
+        await #expect(throws: AetherError.self) {
+            _ = try await FakeVLM.engine(options: options(declared: 1 << 30), probe: level.probe)
+        }
+        await #expect(throws: AetherError.self) {
+            _ = try await FakeVLM.engine(options: options(declared: -1), probe: level.probe)
+        }
+        // A text model on the same engine is charged the same way.
+        let text = options(declared: 1 << 30)
+        await #expect(throws: AetherError.self) {
+            let fake = FakeLM(FakeLM.Config())
+            _ = try await DecoderEngine(step: fake, graph: fake.manifestGraph(), device: DecoderEngineTests.mac, options: text)
+        }
+    }
+
+    /// The readings follow the probe at the call: the model's memory arriving with its first run (after load) is
+    /// measured above the engine's own buffers, the peak and the measured model bytes keep their highest, and what the
+    /// engine holds now falls when the level does.
+    @Test func memoryReadingsFollowTheLevelAboveTheEnginesBuffers() async throws {
+        let level = Level()
+        let engine = try await FakeVLM.engine(probe: level.probe, modelBytes: 777)
+        let loaded = await engine.memory
+        #expect(loaded.baselineBytes == 10_000 && loaded.currentBytes == 10_000 && loaded.peakBytes == 10_000)
+        #expect(loaded.residentBytes == 0 && loaded.measuredModelBytes == 0 && loaded.chargedModelBytes == 777)
+        #expect(loaded.ownedBytes > 0, "KV, logits, statics and the tower's buffers")
+        let owned = loaded.ownedBytes
+        // The engine's buffers and 5,000 bytes of the model's own arrive with the first image and prefill.
+        level.set(10_000 + owned + 5_000)
+        let (plan, prepared) = try VisionLanguageTests.plan(engine, [(8, 8, 1)])
+        try await engine.bindImages(plan, prepared: prepared)
+        _ = try await engine.prefill(plan.tokens)
+        let warm = await engine.memory
+        #expect(warm.ownedBytes == owned)
+        #expect(warm.measuredModelBytes == 5_000 && warm.peakBytes == 10_000 + owned + 5_000)
+        #expect(warm.residentBytes == owned + 5_000)
+        // Working memory given back: what it holds now falls, the peak and the measurement keep their highest.
+        level.set(10_000 + owned + 2_000)
+        let after = await engine.memory
+        #expect(after.residentBytes == owned + 2_000 && after.currentBytes == 10_000 + owned + 2_000)
+        #expect(after.peakBytes == warm.peakBytes && after.measuredModelBytes == 5_000)
+        // A greedy decode is read when it ends.
+        level.set(10_000 + owned + 7_500)
+        try await engine.beginGreedy(first: 1, limit: 2)
+        while try await engine.nextGreedy() != nil {}
+        try await engine.endGreedy()
+        level.set(10_000 + owned)
+        #expect(await engine.memory.measuredModelBytes == 7_500)
+        // Below the baseline, nothing is held.
+        level.set(1_000)
+        #expect(await engine.memory.residentBytes == 0)
     }
 }

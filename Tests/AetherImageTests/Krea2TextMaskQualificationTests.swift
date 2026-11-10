@@ -61,6 +61,8 @@ struct Krea2TextMaskQualificationTests {
         let laterStepMeanSeconds: Double
         let metalAllocatedAfter: Int
         let residentBytesAfter: Int64
+        /// `liveResidentBytes` after the render: the probe's level above the one before the graphs loaded.
+        var liveResidentBytesAfter: Int64 = 0
         let pixelsSHA256: String
         /// The footprint ledger after the render: `key: peak / held` in MiB.
         var ledger: [String] = []
@@ -142,13 +144,15 @@ struct Krea2TextMaskQualificationTests {
             firstStepSeconds: steps.first ?? 0, laterStepMeanSeconds: later.isEmpty ? 0 : later.reduce(0, +) / Double(later.count),
             metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.residentBytes,
             pixelsSHA256: digest(generation.image))
+        render.liveResidentBytesAfter = await pipeline.liveResidentBytes
         render.ledger = pipeline.options.ledger.snapshot.sorted { $0.key.description < $1.key.description }.map {
             "\($0.key): peak \($0.value.peakBytes >> 20) held \($0.value.heldBytes >> 20)"
         }
         print("mask: \(label) rows \(rows) total \(generation.metrics.totalSeconds)s step0 \(render.firstStepSeconds)s "
               + "later \(render.laterStepMeanSeconds)s prep \(generation.metrics.denoiserPreparationSeconds)s "
               + "text \(generation.metrics.conditioningSeconds)s loaded \(generation.metrics.loadedRoles) "
-              + "peak \(generation.metrics.peakAllocatedBytes >> 20) MiB metal \(metal.currentAllocatedSize >> 20) MiB")
+              + "peak \(generation.metrics.peakAllocatedBytes >> 20) MiB metal \(metal.currentAllocatedSize >> 20) MiB "
+              + "resident \(render.residentBytesAfter >> 20) MiB live \(render.liveResidentBytesAfter >> 20) MiB")
         return render
     }
 

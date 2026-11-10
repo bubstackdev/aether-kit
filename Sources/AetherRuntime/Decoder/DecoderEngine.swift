@@ -55,6 +55,14 @@ public actor DecoderEngine: LanguageEngine {
         /// Diagnostics only: use `pipelineDepth` without the canary. With `canary` off (and without this), greedy
         /// decoding uses depth 1, as documented.
         @_spi(Diagnostics) public var uncheckedPipelineDepth = false
+        /// The model's own memory, declared: what a measurement of this model took (``Memory/measuredModelBytes``
+        /// from an earlier session on this device, or a gate's figure). Load charges it against the memory budget
+        /// when it is larger than what load itself can measure. Loading allocates almost nothing (Core AI's memory
+        /// arrives with the first run), so without it the charge is the graph files' size, below what the model
+        /// reaches: a 4B `vlm-static-inject@1` export of 8.28 GiB on disk read 9.4 GiB of Metal after load and
+        /// 13.6 GiB over a session (process-wide, its KV included). Nil (the default): the files' size or the load's
+        /// Metal delta, as before.
+        public var modelBytes: Int64? = nil
 
         public init(
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
@@ -111,6 +119,50 @@ public actor DecoderEngine: LanguageEngine {
         public var wait = 0.0
     }
 
+    /// The engine's memory, read on its probe (`GPUMemoryProbe.system`: the larger of the Metal device's allocation
+    /// and the process footprint, so Core AI's memory is counted). The probe reads the whole process, so memory
+    /// anything else in the process allocates while the engine is loaded counts here too.
+    public struct Memory: Sendable, Hashable {
+        /// The level just before the engine loaded its graphs.
+        public var baselineBytes: Int64
+        /// The level at the call.
+        public var currentBytes: Int64
+        /// The highest level read since load: after load (and the canary), and after each prefill, step, greedy decode
+        /// and image bind.
+        public var peakBytes: Int64
+        /// The engine's own buffers at the call: KV and recurrent states at their allocation, logits and token
+        /// buffers, the image statics and the tower's buffers.
+        public var ownedBytes: Int64
+        /// What load charged for the model against the memory budget (``KVSizing/modelBytes``).
+        public var chargedModelBytes: Int64
+        /// The model's own memory as measured: the most the level stood above ``baselineBytes`` at any of those
+        /// reads, less the engine's own buffers at that read. Pass it as ``Options/modelBytes`` to charge it at the
+        /// next load.
+        public var measuredModelBytes: Int64
+
+        /// What the engine holds now, its buffers included: ``currentBytes`` above ``baselineBytes`` (at least 0).
+        public var residentBytes: Int64 { max(0, currentBytes - baselineBytes) }
+    }
+
+    /// The engine's memory now (``Memory``): live, read at the call.
+    public var memory: Memory {
+        sampleMemory()
+        return Memory(
+            baselineBytes: memoryBaseline, currentBytes: lastLevel, peakBytes: peakLevel, ownedBytes: ownedBytes,
+            chargedModelBytes: sizing.modelBytes, measuredModelBytes: peakModel)
+    }
+
+    /// The engine's buffers: its arena and the tower's.
+    private var ownedBytes: Int64 { Int64(core.arena.byteCount + (imageBinder?.arena.byteCount ?? 0)) }
+
+    /// Reads the probe into ``memory``'s peak and measured model bytes.
+    func sampleMemory() {
+        let level = probe.allocatedBytes()
+        lastLevel = level
+        peakLevel = max(peakLevel, level)
+        peakModel = max(peakModel, level - memoryBaseline - ownedBytes)
+    }
+
     /// Host time per greedy phase since load (diagnostics).
     @_spi(Diagnostics) public var greedyTimings: GreedyTimings { core.timings }
 
@@ -154,6 +206,11 @@ public actor DecoderEngine: LanguageEngine {
     public private(set) var canary: CanaryReport?
     /// The bundle's reader lease, held until the engine is released.
     private var bundleLease: BundleReadLease?
+    private let probe: GPUMemoryProbe
+    private let memoryBaseline: Int64
+    private var lastLevel: Int64
+    private var peakLevel: Int64
+    private var peakModel: Int64 = 0
     public private(set) var decodeMode: DecodeMode
     public var decodeModeDescription: String { decodeMode.description }
 
@@ -180,6 +237,8 @@ public actor DecoderEngine: LanguageEngine {
             throw .manifestInvalid(field: "graphs.decoder.functions.step", reason: "decoder-lm@1 needs a step phase")
         }
         let gpu = MTLCreateSystemDefaultDevice()
+        let probe = GPUMemoryProbe.system
+        let baseline = probe.allocatedBytes()
         let gpuBefore = gpu?.currentAllocatedSize ?? 0
         let loaded = try await Graph.load(url: url, functions: Array(Set(phases.values)).sorted(), options: graphOptions)
         var signatures: [String: GraphSignature] = [:]
@@ -212,7 +271,7 @@ public actor DecoderEngine: LanguageEngine {
         let metal: (any MTLDevice)? = options.execution == .automatic ? gpu : nil
         let pair = Backends(step: loaded[stepName]!, prefill: phases["prefill"].flatMap { loaded[$0] }, tower: tower)
         try await self.init(backends: pair, graph: graph, image: image, device: device, options: options, metal: metal,
-                            modelBytes: max(gpuTotal, diskBytes(url) + towerDisk))
+                            modelBytes: max(gpuTotal, diskBytes(url) + towerDisk), probe: probe, baseline: baseline)
         loadedModelBytes = (gpu: gpuTotal, disk: diskBytes(url) + towerDisk)
         bundleLease = lease
     }
@@ -224,7 +283,7 @@ public actor DecoderEngine: LanguageEngine {
         device: Device, options: Options = Options()
     ) async throws(AetherError) {
         try await self.init(backends: Backends(step: step, prefill: prefill), graph: graph, image: nil, device: device,
-                            options: options, metal: nil, modelBytes: 0)
+                            options: options, metal: nil, modelBytes: 0, probe: .system, baseline: nil)
     }
 
     /// A `vlm-static-inject@1` engine over any ``GraphBackend``s (tests drive a fake tower and decoder through this):
@@ -238,7 +297,25 @@ public actor DecoderEngine: LanguageEngine {
         try await self.init(
             backends: Backends(step: step, prefill: prefill, tower: vision), graph: graph,
             image: ImageConfiguration(vision: visionGraph, image: image, preprocess: preprocess), device: device,
-            options: options, metal: nil, modelBytes: 0)
+            options: options, metal: nil, modelBytes: 0, probe: .system, baseline: nil)
+    }
+
+    /// An engine over any ``GraphBackend``s with its memory read on `probe` and `modelBytes` as what its load measured
+    /// (tests: a hand-moved level, and a load's charge without a bundle). A `vision` backend makes it a
+    /// `vlm-static-inject@1` engine, with `visionGraph`, `image` and `preprocess`.
+    package init(
+        step: sending any GraphBackend, prefill: sending (any GraphBackend)? = nil, graph: Manifest.Graph,
+        vision: sending (any GraphBackend)? = nil, visionGraph: Manifest.Graph? = nil, image: Manifest.ImageBlock? = nil,
+        preprocess: Manifest.ImagePreprocess? = nil, device: Device, options: Options = Options(), probe: GPUMemoryProbe,
+        modelBytes: Int64 = 0
+    ) async throws(AetherError) {
+        var configuration: ImageConfiguration?
+        if let visionGraph, let image, let preprocess {
+            configuration = ImageConfiguration(vision: visionGraph, image: image, preprocess: preprocess)
+        }
+        try await self.init(
+            backends: Backends(step: step, prefill: prefill, tower: vision), graph: graph, image: configuration,
+            device: device, options: options, metal: nil, modelBytes: modelBytes, probe: probe, baseline: nil)
     }
 
     /// The step, prefill and tower backends, sent into the actor as one region.
@@ -257,8 +334,10 @@ public actor DecoderEngine: LanguageEngine {
 
     private init(
         backends: sending Backends, graph: Manifest.Graph, image: ImageConfiguration?, device: Device, options: Options,
-        metal: (any MTLDevice)?, modelBytes: Int64
+        metal: (any MTLDevice)?, modelBytes: Int64, probe: GPUMemoryProbe, baseline: Int64?
     ) async throws(AetherError) {
+        // The level before the graphs loaded: the bundle init reads it before its loads; otherwise it is now.
+        let memoryBaseline = baseline ?? probe.allocatedBytes()
         let step = backends.step, prefill = backends.prefill
         // DecoderCore keeps 8 token slots and needs ring > depth + 1; no option may reach a trap.
         guard (1...(DecoderCore.ring - 2)).contains(options.pipelineDepth) else {
@@ -285,7 +364,11 @@ public actor DecoderEngine: LanguageEngine {
         var sizing = try Self.sizing(
             step.signature, prefill: prefill?.signature, graph: graph, maxContext: maxContext, platform: device.platform,
             options: options)
-        sizing.modelBytes = modelBytes
+        if let declared = options.modelBytes, declared < 0 {
+            throw .generation(.invalidParameters("modelBytes \(declared); at least 0"))
+        }
+        // The larger of what load measured (the files, or the Metal delta across the loads) and the declared figure.
+        sizing.modelBytes = max(modelBytes, options.modelBytes ?? 0)
         // The static inputs (image rows, rotary inputs) and the tower's buffers.
         for (_, binding) in graph.inputs(forPhase: "step") where binding.isStatic && binding.source == nil {
             if let spec = step.signature.input(binding.name), let width = spec.scalarType.byteWidth {
@@ -306,6 +389,10 @@ public actor DecoderEngine: LanguageEngine {
             initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
+        self.probe = probe
+        self.memoryBaseline = memoryBaseline
+        lastLevel = memoryBaseline
+        peakLevel = memoryBaseline
         imageBinder = binder
         imageInput = binder?.spec
         if let binder { try core.withStatics { statics throws(AetherError) in try binder.clear(statics) } }
@@ -326,6 +413,8 @@ public actor DecoderEngine: LanguageEngine {
             // Without the canary, depth one unless a diagnostic asks otherwise.
             decodeMode = .gpu(depth: options.pipelineDepth)
         }
+        // After load and the canary: the decoder has run once, so its weights' memory has arrived.
+        sampleMemory()
     }
 
     /// The device's current Metal allocations (diagnostics: Core AI's shape-change retention shows up here).
@@ -400,12 +489,14 @@ public actor DecoderEngine: LanguageEngine {
 
     /// Feeds `tokens` at the current position on the prefill schedule (§6.2) and returns the rows asked for.
     public func prefill(_ tokens: [Int32], logits: LogitsSelection = .last) async throws(AetherError) -> Logits? {
-        try await core.feed(tokens, select: logits)
+        defer { sampleMemory() }
+        return try await core.feed(tokens, select: logits)
     }
 
     /// Feeds one token and returns the next-token logits (the depth-1 host path for CPU sampling).
     public func step(_ token: Int32) async throws(AetherError) -> Logits {
-        try await core.feed([token], select: .last)!
+        defer { sampleMemory() }
+        return try await core.feed([token], select: .last)!
     }
 
     /// Moves the position back. O(1) on attention-only models (stale slots are overwritten later). With recurrent
@@ -463,6 +554,7 @@ public actor DecoderEngine: LanguageEngine {
     /// is thrown after the decode has ended.
     @discardableResult
     public func endGreedy() async throws(AetherError) -> (fed: Int, overshoot: Int) {
+        defer { sampleMemory() }
         let end = try await core.endGreedy()
         return (end.fed, end.overshoot)
     }

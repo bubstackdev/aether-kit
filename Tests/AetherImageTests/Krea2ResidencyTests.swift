@@ -15,11 +15,15 @@ struct Krea2ResidencyTests {
     static let roles = ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "textEncoder", "vaeDecoder"]
 
     /// A pipeline over the fakes with `options` (unadmitted GPU, a fixed probe unless given).
-    static func pipeline(filter: any ContentFilter = Krea2Tests.RecordingFilter(), options: ImagePipelineOptions) throws -> Krea2Pipeline {
+    static func pipeline(
+        filter: any ContentFilter = Krea2Tests.RecordingFilter(), options: ImagePipelineOptions,
+        onLoad: @escaping @Sendable () -> Void = {}
+    ) throws -> Krea2Pipeline {
         try Krea2Pipeline(
             manifest: try Krea2Tests.manifest(), device: Krea2Tests.mac, filter: filter, options: options,
             encodePrompt: Krea2Tests.encode,
             load: { role throws(AetherError) in
+                onLoad()
                 let calls = Calls()
                 return switch role {
                 case "textEncoder": Krea2Tests.FakeText(calls)
@@ -108,6 +112,36 @@ struct Krea2ResidencyTests {
         #expect(await pipeline.residentBytes > 0)
         #expect(await pipeline.releaseIfIdle())
         #expect(await pipeline.residentBytes == 0)
+    }
+
+    /// The live reading follows the probe at the call: what the kept graphs retain after the plan (memory Core AI
+    /// keeps after a generation, here a hand-moved level) shows up at once, while the planned ``residentBytes`` stays.
+    @Test func liveResidentBytesReadTheProbeAtTheCall() async throws {
+        let level = Mutex<Int64>(1_000)
+        var options = Self.options
+        options.probe = GPUMemoryProbe { level.withLock { $0 } }
+        // Each graph's memory arrives as it loads: 100 bytes a graph, six graphs.
+        let pipeline = try Self.pipeline(options: options, onLoad: { level.withLock { $0 += 100 } })
+        #expect(await pipeline.liveResidentBytes == 0)
+        _ = try await pipeline.generate(Self.request)
+        #expect(await pipeline.liveResidentBytes == 600)
+        let planned = await pipeline.residentBytes
+        level.withLock { $0 += 250 }
+        #expect(await pipeline.liveResidentBytes == 850, "retained after the generation: counted at once")
+        #expect(await pipeline.residentBytes == planned, "the plan doesn't move between generations")
+        level.withLock { $0 -= 50 }
+        #expect(await pipeline.liveResidentBytes == 800, "and memory given back comes off")
+        // A warm generation loads nothing and keeps measuring from the level before the graphs loaded.
+        _ = try await pipeline.generate(Self.request)
+        #expect(await pipeline.liveResidentBytes == 800)
+        #expect(await pipeline.releaseIfIdle())
+        #expect(await pipeline.liveResidentBytes == 0)
+        // Released after each generation: nothing is kept, so nothing is read, whatever the level.
+        await pipeline.setRetention(.releaseAfterEachGeneration)
+        _ = try await pipeline.generate(Self.request)
+        #expect(await pipeline.residentRoles.isEmpty)
+        #expect(await pipeline.liveResidentBytes == 0)
+        await pipeline.unload()
     }
 
     @Test func criticalPressureRefusesLoadsButNotResidentGraphs() async throws {
