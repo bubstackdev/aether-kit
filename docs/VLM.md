@@ -129,6 +129,12 @@ public protocol ImageConditionedEngine: LanguageEngine {
 `ImagePromptPlan` (pure, AetherRuntime) expands the pads, checks each pad sits between open and close and that pads
 match images, and computes the statics. `LanguageEngineInvariants` runs unchanged on text-only prompts.
 
+As built (0.2.0 API freeze, #180 finding 7): the protocol, `ImageInputSpec`, `ImagePromptPlan` (its tokens, images
+and ids) and `PreparedPromptImage` (its grid, digest and tokens) are public, so a host can stand in its own engine. The
+planning arithmetic (`ImagePromptPlan.init(rendered:images:spec:)`, `imagePositions`, `ropeShifts`,
+`reusableLimit`), image preparation, the prepared rows, `PhasedGraphBackend` / `GraphFunctionSet` and the
+fake-backend `DecoderEngine.init` are `package`; `DecoderEngine.imageEncodes` is `@_spi(Diagnostics)`.
+
 ### 3.3 `DecoderCore` and `DecoderEngine`
 
 - **Static inputs.** Roles with `binding: static` and no `source` get one arena buffer at the descriptor's shape
@@ -188,9 +194,39 @@ factor); below `minPixels` multiply by β = √(min/HW) and ceil; an aspect rati
 Both graphs stay resident for the engine's lifetime on macOS. A reply takes one `GPUAdmission` grant (DESIGN §10);
 `bindImages` runs inside `Generator.prepare`, so the encodes are inside it by construction.
 
+**Load-time accounting (V5).** The KV capacity is derived from the memory budget less the model's charge
+(`KVSizing.modelBytes`). Loading allocates almost nothing (the memory arrives with the first run), so the Metal delta
+across load is near zero and the charge used to be the graph files' size: 8.28 GiB for the 4B export, against
+9.4–13.6 GiB of Metal measured. The engine now measures and accepts a declared figure, for `decoder-lm@1` and
+`vlm-static-inject@1` alike:
+- `DecoderEngine.memory` (`DecoderEngine.Memory`) reads the probe (`GPUMemoryProbe.system`, Metal included) at the
+  call: the level before load, now and at its highest (read after load and the canary, and after each prefill, step,
+  greedy decode and image bind), the engine's own buffers (KV, logits, statics, the tower's buffers), the charge, and
+  `measuredModelBytes`: the most the level stood above the baseline less the engine's buffers at that read, and
+  `liveResidentBytes`: the level now above the baseline.
+- `DecoderEngine.Options.modelCharge` says what load charges for the model: `.qualified` (the default, below),
+  `.measured` (what load measures), or `.declared(bytes:)` (an earlier session's `measuredModelBytes`, or a gate's).
+  Load charges the larger of a declared figure and what load measured; a declared figure the budget can't hold beside
+  the KV refuses the load with `capacity`.
+- The probe reads the whole process, so memory something else in the process allocates while the engine is loaded is
+  counted too: an overestimate, the direction admission prefers.
+- **Qualified figures.** The kit ships measured model bytes for known exports (a package table,
+  `qualifiedModelBytesTable`), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture,
+  the way MiniMax H3 scopes its `qualifiedFootprints` to `qualifiedExportDigest` and `qualifiedArchitecture`; hosts
+  read an entry with `DecoderEngine.qualifiedModelBytes(for:device:)`. A bundle load with `.qualified` (the default)
+  declares the entry for its export and chip, so the first load already charges the measured memory and a host
+  doesn't have to keep `measuredModelBytes` and pass it back; `.measured` or `.declared(bytes:)` wins. Another export (a requantization, a manifest edit, the other platform's variant) or
+  another chip has no entry and charges as before. `DecoderEngine.declaredModelBytes` reports what load was given.
+  The figures live in the kit rather than in the manifest because they are measured on an export that already exists:
+  writing them into its manifest would change the digest they are keyed by. Entries come from the native gates, which
+  print each one ready to add (`GATE qualified model bytes entry:`): G5 (`DescriberRetentionGateTests`) for the 4B
+  Qwen3-VL export and the Qwen3 export gate (`DecoderLMExportGateTests`, teacher-forced test) for the `decoder-lm@1`
+  one; once an entry exists, its gate checks that it still covers the measurement. Both entries are pending their
+  gate runs.
+
 **Retention.** 0.0.x measured retention with `expectFrequentReshapes` (257 MiB per text request on its 4B). G7
-measures the new engine: Metal by phase over 20 mixed requests; if it grows past the bar, slice V6 adds 0.0.x's
-reload budget at idle.
+measures the new engine: Metal by phase over 20 mixed requests (`DescriberRetentionGateTests`, reading
+`DecoderEngine.memory` after each); if it grows past the bar, slice V6 adds 0.0.x's reload budget at idle.
 
 **Risk: statics bound every step.** 80 MiB of fp16 bound per decode step. If Core AI copies them per call, decode
 slows; G7 records `GreedyTimings.bindings` and tok/s. The fix would be an export change (fewer slots, or statics as
@@ -230,6 +266,30 @@ Decode binds the 80 MiB of image statics on every step. With the fp16 head it's 
 cost, so the default slots stay. The fp32 head's extra cost is its float32 copy of the embedding (4·vocab·H bytes) and
 the bandwidth to read it every step; the exporter's default is now fp16, as in 0.0.7's recipe (`--head-compute`).
 
+**G5, first runs (2026-11-10, same export and build).** The first run grew 5,577 MiB after warm-up, every picture
+request adding 200–1,400 MiB. None of it is the image path: a text prompt of the same length grows alike and the
+tower's bind adds nothing. It is Core AI's reshape retention, triggered by the prefill's width: any decoder call wider
+than about 32 tokens (the manifest's 512-token chunks, or 40 to 256) retains memory, and so does every decode step
+after one, each time even when the shapes repeat; calls of up to 32 or 33 tokens retain nothing once their shapes have
+run. So the engine now feeds a reshaping Core AI decoder in calls of at most 32 tokens
+(`DecoderEngine.Options.prefillWidth`, default `reshapeSafePrefillWidth`), at the cost of prefill speed (a one-picture
+prefill 0.51 s instead of 0.24 s, three pictures 1.53 s instead of 0.78 s; the owner accepted the trade). G5 then grew
+1,139 MiB, still over its bar: two of the eight cases (one picture at an unshared offset, and the three-frame turn's
+long context) grow 258 and 610 MiB again each time they come round, the narrow calls' shapes being retained anew once
+others have run in between.
+
+**V6, the reload budget (built).** Once the model retains more than `Options.reloadBudgetBytes` (default 2 GiB,
+0.0.x's) past its level after the first request, the engine drops the decoder's graphs, loads them again through the
+compile cache and runs one warming step (`DecoderEngine.reloadIfRetainedPastBudget()`; the KV state, position, images
+and statics stay, the tower stays loaded). The `Generator` checks at the end of every request, inside its turn and GPU
+grant, before the stream ends, so the next request waits for a reload rather than racing it. Retained is the device's
+Metal allocation less the engine's buffers, so other allocations in the process count too. Only bundle-loaded Core AI
+decoders with `expectFrequentReshapes` and no recurrent state reload by default. G5 passes at 880 MiB after warm-up
+(one reload, after request 16). Over 48 requests it reloaded after requests 16 and 37: 0.18 s to drop the graphs
+(Metal 12.8 to 1.9 GiB), 1.2 s to load them, 1.3 s for the warming step (back to 10.0–10.3 GiB), 2.7 s in all (one
+earlier run measured 9.9 s). The next request's prefill was as fast as before. The level stays under the first
+request's level plus the budget plus one request (12.9 GiB here); that is what the qualified figure has to cover.
+
 ## 7. From 0.0.7: port, and what changes
 
 | 0.0.7 | Here |
@@ -251,7 +311,7 @@ the bandwidth to read it every step; the exporter's default is now fp16, as in 0
 | **V2** Preprocess + plan | smart resize in `ImagePreprocessor` (padded to the descriptor's rows, `grid`, digest), `ImagePromptPlan` | G1 |
 | **V3** Engine | `DecoderCore` statics and extension ids; the tower in `DecoderEngine`; `ImageConditionedEngine`; fake-graph tests | G2 |
 | **V4** Text stack | `ChatMessage.images`, content-part rendering, Generator image reuse and the sampler fix, `ChatSession.respond(to:images:)`, `generate(prompt:images:)`, the driver in `Registry.text`; later the FoundationModels attachments | G1, G4 |
-| **V5** Memory | G5, `KVSizing` with the tower; docs | G5 |
+| **V5** Memory | G5, `KVSizing` with the tower; the measured and declared model charge, `DecoderEngine.memory` and the qualified figures (§5, built; the G5 run and the entry it prints are pending); docs | G5 |
 
 V1–V4 are one PR for 0.2.0 (the describer is its blocker); V5 and the FoundationModels attachments follow.
 
