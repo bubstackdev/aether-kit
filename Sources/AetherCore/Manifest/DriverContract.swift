@@ -479,15 +479,26 @@ extension DriverContract {
                 outputs: ["video": h3Float(3), "audio": h3Float(3)]),
             "videoDecoder": stateless(inputs: ["rows": h3Float(2)], outputs: ["pixels": h3Float(5)]),
         ],
-        optionalGraphs: [
-            "audioDecoder207": stateless(inputs: ["rows": h3Float(3)], outputs: ["pcm": h3Float(2)]),
-            "videoEncoderTile": stateless(inputs: ["pixels": h3Float(5)], outputs: ["moments": h3Float(5)]),
-            "videoEncoderTail960x544": stateless(inputs: ["tiles": h3Float(5)], outputs: ["condition": h3Float(5)]),
-            "videoEncoderTail544x960": stateless(inputs: ["tiles": h3Float(5)], outputs: ["condition": h3Float(5)]),
-            "conditionerVision960x544": h3Vision,
-            "conditionerVision544x960": h3Vision,
-        ],
+        optionalGraphs: h3OptionalGraphs,
         requiresTokenizer: false)
+
+    /// The canvases and audio latent counts of the export's profiles (5 s and 10 s at 960×544 and 544×960; 704×704;
+    /// 1280×704 and 704×1280): an audio decoder per count, a keyframe encoder tail and a vision tower per canvas.
+    static let h3Canvases = ["960x544", "544x960", "704x704", "1280x704", "704x1280"]
+    static let h3AudioLatents = [207, 405]
+    private static var h3OptionalGraphs: [String: GraphContract] {
+        var graphs: [String: GraphContract] = [
+            "videoEncoderTile": stateless(inputs: ["pixels": h3Float(5)], outputs: ["moments": h3Float(5)]),
+        ]
+        for count in h3AudioLatents {
+            graphs["audioDecoder\(count)"] = stateless(inputs: ["rows": h3Float(3)], outputs: ["pcm": h3Float(2)])
+        }
+        for canvas in h3Canvases {
+            graphs["videoEncoderTail\(canvas)"] = stateless(inputs: ["tiles": h3Float(5)], outputs: ["condition": h3Float(5)])
+            graphs["conditionerVision\(canvas)"] = h3Vision
+        }
+        return graphs
+    }
 
     private static func h3Float(_ rank: Int) -> RoleSpec { RoleSpec(required: true, rank: rank, scalar: .floatingPoint) }
     private static func h3Int(_ rank: Int) -> RoleSpec { RoleSpec(required: true, rank: rank, scalar: .integer) }

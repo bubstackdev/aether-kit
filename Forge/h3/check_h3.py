@@ -121,7 +121,7 @@ def main() -> None:
     wait_for_gpu(args.wait)
     if args.only == "condition":
         g = torch.Generator().manual_seed(20261108)
-        for p in ex.PROFILES:
+        for p in [q for i, q in enumerate(ex.PROFILES) if q.canvas not in {r.canvas for r in ex.PROFILES[:i]}]:   # each canvas once
             check_condition(args, bundle, meta, p, g, record, name=f"condition_{p.width}x{p.height}")
         finish(args, profile, results, started)
         return

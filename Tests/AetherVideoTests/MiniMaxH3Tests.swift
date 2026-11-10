@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import AetherCore
 @testable import AetherRuntime
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// MiniMax H3's host recipe and contract, hermetic: the packed layout against Diffusers' own (a tiny geometry recorded
 /// by Forge/h3/layout_fixture_h3.py), the qualified geometry, the modulation padding, the scheduler arm, the decode
@@ -119,7 +119,8 @@ struct MiniMaxH3Tests {
     @Test func manifestBlockDecodesAndRefuses() throws {
         let manifest = try Self.manifest()
         let h3 = try #require(manifest.h3)
-        #expect(h3.profiles.map(\.key) == ["960x544x124", "544x960x124"])
+        #expect(h3.profiles.map(\.key) == ["960x544x124", "544x960x124", "960x544x243", "544x960x243", "704x704x124",
+                                           "1280x704x124", "704x1280x124"])
         #expect(h3.video.noise.order == .sourceVideoThenAudio)
         #expect(try h3.recipes["turbo8/t2va"]!.steps[3].table(7) == AssetPath(asset: "main", path: "tables/turbo8/t2va/step-3/block-07.raw"))
         try DriverContract.minimaxH3.validate(manifest)
@@ -156,7 +157,7 @@ struct MiniMaxH3Tests {
         let latch = Latch()
         let pipeline = try MiniMaxH3Pipeline(
             manifest: try Self.manifest(), device: Device(platform: .macOS, architecture: "h17c"), bundle: nil,
-            options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }), tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
+            options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }), admissionPolicy: .measuring, tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
             load: { role throws(AetherError) in
                 await latch.enter()
                 throw .manifestInvalid(field: role, reason: "no graphs in this test")
@@ -182,7 +183,7 @@ struct MiniMaxH3Tests {
             await #expect(throws: AetherError.self) { _ = try await pipeline.generate(request) }
         }
         #expect(await pipeline.residentRoles.isEmpty)
-        let plan = try await pipeline.plan(VideoRequest(prompt: "a fox in snow"))
+        let plan = try pipeline.plan(VideoRequest(prompt: "a fox in snow"))
         #expect(plan.profile.key == "960x544x124" && plan.ids.count == 13)
         #expect(plan.cardinality == plan.recipe.steps.map(\.timesteps.count).max())
     }
