@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import Synchronization
 import Testing
-@testable import AetherRuntime
+@_spi(Diagnostics) @testable import AetherRuntime
 import AetherCore
 import AetherTestSupport
 
@@ -56,9 +56,9 @@ struct VisionLanguageTests {
         while index < tokens.count {
             if k < images.count, images[k].start == index {
                 let image = images[k]
-                for hi in 0..<image.gridH { for wi in 0..<image.gridW { rows.append([Int32(p), Int32(p + hi), Int32(p + wi)]) } }
+                for hi in 0..<image.gridHeight { for wi in 0..<image.gridWidth { rows.append([Int32(p), Int32(p + hi), Int32(p + wi)]) } }
                 index += image.count
-                p += max(image.gridH, image.gridW)
+                p += max(image.gridHeight, image.gridWidth)
                 k += 1
             } else {
                 rows.append([Int32(p), Int32(p), Int32(p)])
@@ -84,7 +84,7 @@ struct VisionLanguageTests {
     }
 
     static func spec(slots: Int = 64, images: Int = 4, rows: Int = 64) throws -> ImageInputSpec {
-        ImageInputSpec(padId: FakeVLM.pad, openId: FakeVLM.open, closeId: FakeVLM.close, idBase: Int32(FakeVLM.vocab),
+        ImageInputSpec(padID: FakeVLM.pad, openID: FakeVLM.open, closeID: FakeVLM.close, idBase: Int32(FakeVLM.vocab),
                        slots: slots, maxImages: images, patchRows: rows, merge: 2,
                        preprocessor: try ImagePreprocessor(FakeVLM.preprocess(patchRows: rows)))
     }
@@ -121,7 +121,7 @@ struct VisionLanguageTests {
         }
         // The grids: 8 × 16 pixels is a 4 × 8 patch grid, 2 × 4 tokens.
         let wide = try Self.prepared(width: 16, height: 8, seed: 0, spec: spec)
-        #expect((wide.gridH, wide.gridW, wide.tokens) == (4, 8, 8))
+        #expect((wide.gridHeight, wide.gridWidth, wide.tokens) == (4, 8, 8))
     }
 
     @Test func planRefusesWhatTheDecoderCannotHold() throws {
@@ -170,7 +170,7 @@ struct VisionLanguageTests {
         #expect(a.values.count == 16 * FakeVLM.rowLength)
         // Larger than the tower: smart resize brings it within (64 rows of 2 × 2 pixels: 256 pixels).
         let big = try Self.prepared(width: 64, height: 32, seed: 0, spec: spec)
-        #expect(big.gridH * big.gridW <= 64)
+        #expect(big.gridHeight * big.gridWidth <= 64)
     }
 
     // MARK: the manifest

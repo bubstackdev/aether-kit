@@ -334,8 +334,8 @@ public actor DecoderEngine: LanguageEngine {
 
     /// A `vlm-static-inject@1` engine over any ``GraphBackend``s (tests drive a fake tower and decoder through this):
     /// `graph` and `visionGraph` supply the roles, `image` and `preprocess` the image contract, all checked against
-    /// the backends' signatures.
-    public init(
+    /// the backends' signatures. Package-only: hosts load a bundle (``init(bundle:manifest:device:options:)``).
+    package init(
         step: sending any GraphBackend, prefill: sending (any GraphBackend)? = nil, graph: Manifest.Graph,
         vision: sending any GraphBackend, visionGraph: Manifest.Graph, image: Manifest.ImageBlock,
         preprocess: Manifest.ImagePreprocess, device: Device, options: Options = Options()

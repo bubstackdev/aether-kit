@@ -225,6 +225,21 @@
     reading is a different figure. (`ResidentAdmission.residentBytes`, frozen in 0.1.0, keeps its name.)
   - `SharedGPULease.legacyWrapperLock` is no longer public. `hasWaiters(directory:)` checks the lab wrapper's lock
     itself; `hasWaiters(directory:legacyWrapper:)` stays for another lock, or `nil` for none, with no default.
+- **API freeze review (#180 finding 7, approved by the owner): the VLM plumbing is mostly package-only.** All of it
+  was public only in the 0.2.0 alphas.
+  - Now `package`: `PhasedGraphBackend` and `GraphFunctionSet`; the 9-argument `DecoderEngine.init(step:prefill:graph:
+    vision:visionGraph:image:preprocess:device:options:)` (hosts load a bundle); `ImagePromptPlan.init(rendered:images:
+    spec:)`, `placeholderTokens`, `imagePositions(slots:)`, `ropeShifts(entries:)`, `reusableLimit(bound:)`,
+    `unusedShiftStart` and `Image.shiftAmount`; `ImageInputSpec.prepare(_:)`; `PreparedPromptImage`'s `init`,
+    `values`, `rowLength`, `merge` and `geometry`.
+  - `DecoderEngine.imageEncodes` is `@_spi(Diagnostics)`.
+  - Still public, so a host can stand in its own engine for the describer (Atelier's tests do):
+    `ImageConditionedEngine`, `ImageInputSpec` (and its init), `ImagePromptPlan` with `tokens`, `images`, `idBase` and
+    `ImagePromptPlan.Image`, and `PreparedPromptImage` with its grid, `digest` and `tokens`.
+  - Those that stay are renamed to the Swift-side convention: `gridH`/`gridW` → `gridHeight`/`gridWidth`
+    (`PreparedPromptImage`, `ImagePromptPlan.Image`) and `padId`/`openId`/`closeId` → `padID`/`openID`/`closeID`
+    (`ImageInputSpec`, `ImagePromptPlan.padID`). `idBase` keeps its name, which already follows the convention.
+    Manifest `Codable` fields (`image.tokens.padId`, …) keep their JSON spelling.
 
 ### Fixed
 
