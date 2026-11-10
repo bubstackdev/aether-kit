@@ -291,7 +291,11 @@ backend runs the same suite.
     `states.kv` / `states.recurrent` roles must come from the manifest, because shape heuristics misread `recState`
     as a KV cache.
 - **KV capacity is derived from memory at load.** The default capacity is `min(maxContext, kvCapacityCap[platform],
-  what fits the device memory budget after weights)`, and a dynamic axis grows geometrically up to it. What must fit
+  what fits the device memory budget after weights)`, and a dynamic axis grows geometrically up to it. "After
+  weights" is the model's charge: the larger of what load measured (the files' size, or the Metal delta across the
+  loads) and a declared figure, `Options.modelBytes` or, for a bundle load without one, the kit's qualified figure for
+  the export on the chip (`DecoderEngine.qualifiedModelBytes`, keyed by the manifest's `contentDigest` and the Core AI
+  architecture, as H3's `qualifiedFootprints` are; docs/VLM.md §5). What must fit
   is the peak, not just the state at capacity (`KVSizing.peakBytes`): the last growth's copy holds the previous
   allocation beside the new one, and on recurrent models `Options.reservedSnapshots` host snapshots at capacity
   (default 3, `Generator.maxSnapshots`: the two it keeps plus the one it reuses while taking their replacements). The

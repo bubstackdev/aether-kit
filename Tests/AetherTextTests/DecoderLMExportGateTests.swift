@@ -158,7 +158,10 @@ struct DecoderLMExportGateTests {
 extension DecoderLMExportGateTests {
     /// The engine fed each reference reply after its prompt: at every position our argmax is the reference's token or
     /// within the near-tie rule. Also reports how far our logit margin between the reference's top two moves from
-    /// the reference's own (the drift between the two exports, in logits).
+    /// the reference's own (the drift between the two exports, in logits), and prints the export's
+    /// ``DecoderEngine/qualifiedModelBytes`` entry from the engine's measured model bytes over every case
+    /// (`GATE qualified model bytes entry:`), ready to add to `Sources/AetherRuntime/Decoder/QualifiedModelBytes.swift`;
+    /// an entry the kit already has for the export on this chip must cover the measurement.
     @Test func teacherForcedRepliesFollowTheReference() async throws {
         let (bundle, manifest) = try Self.localBundle()
         let engine = try await DecoderEngine(bundle: bundle, manifest: manifest, device: Self.mac)
@@ -186,6 +189,15 @@ extension DecoderLMExportGateTests {
         }
         print("GATE decoder-lm export, teacher-forced: \(positions - differing)/\(positions) positions take the reference's "
               + "token; top-two margin drift mean \(drift / Float(positions)), worst \(worstDrift) (logits)")
+        let memory = await engine.memory
+        print("GATE decoder-lm export memory: charged \(memory.chargedModelBytes >> 20) MiB, measured model "
+              + "\(memory.measuredModelBytes >> 20) MiB, peak \((memory.peakBytes - memory.baselineBytes) >> 20) MiB above the baseline")
+        print("GATE qualified model bytes entry: " + DecoderEngine.qualifiedEntry(
+            measured: memory.measuredModelBytes, manifest: manifest, device: Self.mac,
+            note: "Qwen3 export gate, teacher-forced over \(Self.reference.cases.count) cases"))
+        if let qualified = DecoderEngine.qualifiedModelBytes(for: manifest, device: Self.mac) {
+            #expect(qualified >= memory.measuredModelBytes, "the qualified entry no longer covers the measurement; replace it")
+        }
     }
 }
 

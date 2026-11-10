@@ -20,6 +20,15 @@
   - Without a declaration, the charge is as before. Additive; the API baselines record it.
   - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
     grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
+- **Qualified model bytes for known decoder exports.** `DecoderEngine.qualifiedModelBytes` is the kit's table of
+  measured model memory, keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture
+  (`DecoderEngine.QualifiedExport`), as H3's qualified footprints are. A `decoder-lm@1` or `vlm-static-inject@1`
+  bundle load without `Options.modelBytes` declares its export's entry, so the first load charges the measured memory
+  without the host persisting `measuredModelBytes`; an explicit `modelBytes` wins (0 opts out), and an export or chip
+  without an entry charges as before. `DecoderEngine.declaredModelBytes` reports the figure load was given, and
+  `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. The table ships empty: the G5 retention gate and the
+  Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
+  covers what they measure. Additive; the API baselines record it.
 
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
   key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;

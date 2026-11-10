@@ -505,3 +505,87 @@ struct VisionLanguageMemoryTests {
         #expect(await engine.memory.residentBytes == 0)
     }
 }
+
+/// The kit's qualified model bytes (``DecoderEngine/qualifiedModelBytes``), hermetic: keyed by the export's digest and
+/// the chip, declared for a bundle load only when the caller declared nothing, and charged like a declaration.
+@Suite("Qualified model bytes")
+struct QualifiedModelBytesTests {
+    static func vlmManifest() throws -> Manifest {
+        let url = try #require(Bundle.module.url(forResource: "Fixtures/qwen3vl-4b-sample-aether", withExtension: "json"))
+        return try Manifest.decode(Data(contentsOf: url))
+    }
+
+    @Test func anEntryMatchesOnlyItsExportAndChip() throws {
+        let vlm = try Self.vlmManifest()
+        let text = try Fixtures.manifest("qwen3-0.6b")
+        #expect(text.driver == .decoderLM)
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let other = Device(platform: .macOS, architecture: "h16g")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [
+            .init(exportDigest: vlm.contentDigest, architecture: "h17c"): 12 << 30,
+            .init(exportDigest: text.contentDigest, architecture: "h17c"): 2 << 30,
+        ]
+        #expect(DecoderEngine.qualifiedModelBytes(for: vlm, device: chip, table: table) == 12 << 30)
+        #expect(DecoderEngine.qualifiedModelBytes(for: text, device: chip, table: table) == 2 << 30)
+        #expect(DecoderEngine.qualifiedModelBytes(for: vlm, device: other, table: table) == nil, "another chip")
+        // Another export: any change to the manifest changes its digest.
+        var edited = vlm
+        edited.id += "-requantized"
+        #expect(edited.contentDigest != vlm.contentDigest)
+        #expect(DecoderEngine.qualifiedModelBytes(for: edited, device: chip, table: table) == nil, "another export")
+        // Only the decoder engine's drivers.
+        let krea = try Manifest.decode(Data(contentsOf: Fixtures.zoo.deletingLastPathComponent().appending(path: "krea2/vanilla.json")))
+        #expect(DecoderEngine.qualifiedModelBytes(
+            for: krea, device: chip, table: [.init(exportDigest: krea.contentDigest, architecture: "h17c"): 1]) == nil)
+    }
+
+    /// Nil `modelBytes` takes the entry; an explicit one (0 included) is kept.
+    @Test func aBundleLoadDeclaresTheEntryOnlyWithoutADeclaration() throws {
+        let vlm = try Self.vlmManifest()
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [.init(exportDigest: vlm.contentDigest, architecture: "h17c"): 9_000_000]
+        let undeclared = DecoderEngine.Options()
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: table).modelBytes == 9_000_000)
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: [:]).modelBytes == nil)
+        for explicit: Int64 in [0, 100, 20_000_000] {
+            var options = DecoderEngine.Options()
+            options.modelBytes = explicit
+            #expect(DecoderEngine.declaringQualified(options, manifest: vlm, device: chip, table: table).modelBytes == explicit)
+        }
+    }
+
+    /// The declared entry is charged like any declaration, and the engine reports it.
+    @Test func theQualifiedFigureIsChargedAndReported() async throws {
+        let vlm = try Self.vlmManifest()
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [.init(exportDigest: vlm.contentDigest, architecture: "h17c"): 9_000_000]
+        let options = DecoderEngine.declaringQualified(
+            DecoderEngine.Options(capacity: 1024, memoryBudget: .bytes(1 << 30)), manifest: vlm, device: chip, table: table)
+        let level = VisionLanguageMemoryTests.Level()
+        let engine = try await FakeVLM.engine(options: options, probe: level.probe, modelBytes: 500)
+        #expect(engine.declaredModelBytes == 9_000_000)
+        let charged = await engine.memory.chargedModelBytes
+        #expect(engine.sizing.modelBytes == 9_000_000 && charged == 9_000_000)
+        let plain = try await FakeVLM.engine(probe: level.probe, modelBytes: 500)
+        #expect(plain.declaredModelBytes == nil && plain.sizing.modelBytes == 500)
+    }
+
+    /// What the gates print is the table's literal for the export and chip, rounded up to a whole MiB.
+    @Test func theGateEntryIsTheTablesLiteral() throws {
+        let vlm = try Self.vlmManifest()
+        let entry = DecoderEngine.qualifiedEntry(
+            measured: (3 << 30) + 1, manifest: vlm, device: Device(platform: .macOS, architecture: "h17c"), note: "a gate")
+        #expect(entry == "QualifiedExport(exportDigest: \"\(vlm.contentDigest)\", architecture: \"h17c\"): 3073 << 20, // \(vlm.id), a gate")
+        #expect(DecoderEngine.qualifiedEntry(measured: 0, manifest: vlm, device: .init(platform: .macOS, architecture: "x"), note: "n")
+            .contains(": 0 << 20,"))
+    }
+
+    /// The table the kit ships holds only decoder-engine exports with positive figures.
+    @Test func theShippedTableIsWellFormed() {
+        for (key, bytes) in DecoderEngine.qualifiedModelBytes {
+            #expect(bytes > 0)
+            #expect(key.exportDigest.count == 64 && key.exportDigest.allSatisfy(\.isHexDigit))
+            #expect(!key.architecture.isEmpty)
+        }
+    }
+}

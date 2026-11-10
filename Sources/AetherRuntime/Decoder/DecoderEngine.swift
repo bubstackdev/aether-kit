@@ -60,8 +60,9 @@ public actor DecoderEngine: LanguageEngine {
         /// when it is larger than what load itself can measure. Loading allocates almost nothing (Core AI's memory
         /// arrives with the first run), so without it the charge is the graph files' size, below what the model
         /// reaches: a 4B `vlm-static-inject@1` export of 8.28 GiB on disk read 9.4 GiB of Metal after load and
-        /// 13.6 GiB over a session (process-wide, its KV included). Nil (the default): the files' size or the load's
-        /// Metal delta, as before.
+        /// 13.6 GiB over a session (process-wide, its KV included). Nil (the default): a bundle load declares the kit's
+        /// qualified figure for the export on this chip (``DecoderEngine/qualifiedModelBytes``) when it has one;
+        /// otherwise the files' size or the load's Metal delta, as before. 0 opts out of the qualified figure.
         public var modelBytes: Int64? = nil
 
         public init(
@@ -199,6 +200,10 @@ public actor DecoderEngine: LanguageEngine {
     public nonisolated let sizing: KVSizing
     /// The model's measured Metal allocation delta across load and its files' size (diagnostics; zero for fakes).
     public private(set) var loadedModelBytes: (gpu: Int64, disk: Int64) = (0, 0)
+    /// The model memory load was given as declared: ``Options/modelBytes``, or, for a bundle load without one, the
+    /// kit's qualified figure for the export on this chip (``qualifiedModelBytes``). Nil when neither; the charge is
+    /// then what load measured. Load charges the larger of this and what it measured (``Memory/chargedModelBytes``).
+    public nonisolated let declaredModelBytes: Int64?
     public nonisolated let description: Description
     public nonisolated var vocab: Int { description.vocab }
     public nonisolated var maxCapacity: Int { description.maxCapacity }
@@ -217,7 +222,10 @@ public actor DecoderEngine: LanguageEngine {
     /// Loads `manifest`'s decoder graph from an installed bundle. Compute and the reshape hint come from the
     /// manifest; capacity from the memory budget (``KVSizing``). A bundle from a `ModelStore` stays leased
     /// (``InstalledBundle/readLease()``) for the engine's lifetime, so the store refuses to remove it meanwhile.
+    /// Without ``Options/modelBytes``, the model's charge is the kit's qualified figure for this export on this chip
+    /// when it has one (``qualifiedModelBytes``), else what load measures.
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws(AetherError) {
+        let options = Self.declaringQualified(options, manifest: manifest, device: device)
         let lease = try bundle.readLease()
         let vlm = manifest.driver == .vlmStaticInject
         guard manifest.driver == .decoderLM || vlm else {
@@ -389,6 +397,7 @@ public actor DecoderEngine: LanguageEngine {
             initialCapacity: initial, racingHandoff: options.racingTokenHandoff,
             staleHandoff: options.staleTokenHandoff)
         self.core = core
+        declaredModelBytes = options.modelBytes
         self.probe = probe
         self.memoryBaseline = memoryBaseline
         lastLevel = memoryBaseline
