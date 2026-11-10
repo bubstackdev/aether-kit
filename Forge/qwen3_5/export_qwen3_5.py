@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Export a Qwen3.5 / Qwen3.6 checkpoint (Qwen3_5ForConditionalGeneration, Apache-2.0) as an Aether-Kit
-`vlm-static-inject@1` bundle whose decoder is a hybrid with two functions over recurrent states.
+`vlm-static-inject@1` bundle whose decoder is a hybrid with recurrent states beside its KV.
 
     uv sync --frozen --project Forge
     scripts/gpu-lease -- Forge/.venv/bin/python -I Forge/qwen3_5/export_qwen3_5.py \
@@ -12,11 +12,10 @@ read is verified against its SHA-256 (the pins). Every size comes from the check
 laid out as an installed revision root (`<prefix>` from the pins):
 
     OUTPUT/
-      .aether/aether.json          the Aether manifest (MANIFEST.md §1.2 vlm-static-inject@1, §2.3 functions, §2.3.1
-                                   recurrent states)
+      .aether/aether.json          the Aether manifest (MANIFEST.md §1.2 vlm-static-inject@1, §2.3.1 recurrent states)
       <prefix>_vision.aimodel      vision-tower@1: patches f32 [2048,1536], grid i32 [2] -> image_embeds f16 [512,H]
-      <prefix>_decoder.aimodel     functions `main` (S=1) and `prefill` (S=64) sharing keyCache/valueCache (sequence)
-                                   and convState/recState (recurrent); static image inputs; logits f32 [1,1,vocab]
+      <prefix>_decoder.aimodel     one function, input_ids [1,S] (S 1..32); keyCache/valueCache (sequence) and
+                                   convState/recState (recurrent) states; static image inputs; logits f32 [1,1,vocab]
       tokenizer/                   upstream's tokenizer.json, tokenizer_config.json, vocab.json, merges.txt,
                                    chat_template.jinja
       LICENSE, NOTICE, README.md, SHA256SUMS, export-report.json, forge-log.jsonl
@@ -67,7 +66,6 @@ DECODER_INPUTS = ["input_ids", "position_ids", "image_embeds", "image_positions"
                   "rope_shift_amount"]
 SEQUENCE_STATES, RECURRENT_STATES = ["keyCache", "valueCache"], ["convState", "recState"]
 DECODER_STATES, DECODER_OUTPUTS = SEQUENCE_STATES + RECURRENT_STATES, ["logits"]
-FUNCTIONS = {"step": "main", "prefill": "prefill"}
 TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt")
 NOT_BUNDLE = {".aether/aether.json", "SHA256SUMS", "export-report.json", "forge-log.jsonl"}
 COMPUTE = "gpu"
@@ -313,8 +311,7 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                             "zero. Qwen3-VL's tower without DeepStack (Qwen3.5 has none)."),
             },
             "decoder": {
-                "file": f"main:{names.decoder}",
-                "functions": dict(FUNCTIONS),
+                "file": f"main:{names.decoder}", "function": "main",
                 "inputs": {
                     "tokens": "input_ids", "positions": "position_ids",
                     "imageEmbeds": {"name": "image_embeds", "binding": "static"},
@@ -329,17 +326,17 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
                     "recurrent": [{"name": "convState", "kind": "conv", "init": "zeros"},
                                   {"name": "recState", "kind": "ssm", "init": "zeros"}],
                 },
-                "limits": {"maxContext": qg.CONTEXT_MAX, "staticSequence": {"step": 1, "prefill": qg.PREFILL},
-                           "prefillChunk": qg.PREFILL, "padTail": False},
+                "limits": {"maxContext": qg.CONTEXT_MAX, "prefillChunk": qg.CALL_TOKENS},
                 "compute": COMPUTE, "expectFrequentReshapes": True,
-                "x-notes": ("Running contract with a static token axis: `main` takes input_ids [1,1], `prefill` "
-                            f"[1,{qg.PREFILL}] (the remainder of a prompt goes through `main`); position_ids [1,T] = "
-                            "0..T-1, the last S the fed tokens'; keyCache/valueCache (the full-attention layers) "
-                            "written in place at rows T-S..T-1; convState (the last kernel-1 inputs of each Gated "
-                            "DeltaNet's causal conv) and recState (its float32 delta-rule state) replaced on every "
-                            "call, so a rewind restores a snapshot. logits are the last fed row. Image tokens are "
-                            f"extension ids vocab + slot ({slots} slots, {images} images), the static inputs hold each "
-                            "slot's rows and rotary positions and each image's rope shift (image.rope)."),
+                "x-notes": (f"Running contract: input_ids [1,S] (S 1..{qg.CALL_TOKENS}: one function, not a "
+                            "one-token function beside a prefill one, because Core AI keeps a copy of the weights for "
+                            "every function that runs), position_ids [1,T] = 0..T-1, the last S the fed tokens'; "
+                            "keyCache/valueCache (the full-attention layers) written in place at rows T-S..T-1; "
+                            "convState (the last kernel-1 inputs of each Gated DeltaNet's causal conv) and recState "
+                            "(its float32 delta-rule state) replaced on every call, so a rewind restores a snapshot. "
+                            "logits are the last fed row. Image tokens are extension ids vocab + slot "
+                            f"({slots} slots, {images} images), the static inputs hold each slot's rows and rotary "
+                            "positions and each image's rope shift (image.rope)."),
             },
         },
         "tokenizer": {
@@ -432,8 +429,8 @@ def notice(weight_bits: int) -> str:
         f"{origin} licensed under the Apache License, Version 2.0 (LICENSE).",
         "",
         "Modifications: Aether-Kit's Forge exporter (Forge/qwen3_5/) re-expressed the vision tower as one static Core AI",
-        f"graph over a fixed {qg.PATCH_CAPACITY}-patch buffer and the hybrid text decoder as a Core AI graph with two",
-        "functions (one token, and 64-token prompt blocks) over in-place KV and recurrent states, image embeddings",
+        f"graph over a fixed {qg.PATCH_CAPACITY}-patch buffer and the hybrid text decoder as a Core AI graph of up to",
+        f"{qg.CALL_TOKENS} tokens a call over in-place KV and recurrent states, image embeddings",
         "injected through extension token ids and 3-axis rotary positions synthesized in the graph; "
         + (f"the decoder's linear weights were quantized to {weight_bits} bits and the remaining weights rounded from "
            "bfloat16 to float16." if weight_bits < 16 else "the weights were rounded from bfloat16 to float16."),
@@ -464,8 +461,8 @@ def readme(cfg: dict, weight_bits: int) -> str:
         f"  {qg.PATCH_CAPACITY}-patch buffer, any image up to {qg.PATCH_CAPACITY * 256:,} pixels; up to",
         f"  {qg.PATCH_CAPACITY // 4} image tokens.",
         f"- `{names.decoder}`: the hybrid decoder ({text['num_hidden_layers']} layers, three Gated DeltaNet to each",
-        "  gated full-attention layer) with two functions over the same states: `main` (one token) and `prefill`",
-        f"  ({qg.PREFILL}-token blocks); image tokens are extension ids, M-RoPE positions computed in the graph.",
+        f"  gated full-attention layer), up to {qg.CALL_TOKENS} tokens a call over in-place KV and recurrent states;",
+        "  image tokens are extension ids, M-RoPE positions computed in the graph.",
         "",
         (f"Decoder Linears int{weight_bits} (blocks of 32), " if weight_bits < 16 else "Weights float16, ")
         + "float16 compute with float32 attention, norms, rotary and recurrence. Load it with Aether-Kit "
@@ -527,7 +524,7 @@ def main() -> None:
         "source": {"repository": qg.REPO, "revision": qg.REVISION, "snapshot": str(args.snapshot.resolve()),
                    "verified": {}},
         "graphs": sorted(graphs), "precision": prec, "weightBits": args.weight_bits, "headBits": args.head_bits,
-        "patchCapacity": qg.PATCH_CAPACITY, "prefill": qg.PREFILL, "scanPiece": qg.SCAN_PIECE,
+        "patchCapacity": qg.PATCH_CAPACITY, "callTokens": qg.CALL_TOKENS, "scanPiece": qg.SCAN_PIECE,
         "contextMax": qg.CONTEXT_MAX, "imageSlots": args.slots, "maxImages": args.images,
         "compute": COMPUTE, "conversion": {}, "stages": {}, "quantized": {},
     }
@@ -605,11 +602,11 @@ def main() -> None:
         report["stages"]["build-decoder"] = log.done("build-decoder")
         save()
         log.start("export-decoder")
-        functions = {"main": (decoder, *decoder.example(1)), "prefill": (decoder, *decoder.example(qg.PREFILL))}
-        description = (f"{names.title} hybrid decoder ({qg.REPO}@{qg.REVISION[:12]}): main (1 token) and prefill "
-                       f"({qg.PREFILL} tokens), input_ids and position_ids i32 with static image inputs ({args.slots} "
-                       f"slots, {args.images} images), keyCache/valueCache and convState/recState states -> last-row "
-                       f"logits f32 [1,1,{text.vocab_size}].")
+        functions = {"main": (decoder, *decoder.example())}
+        description = (f"{names.title} hybrid decoder ({qg.REPO}@{qg.REVISION[:12]}): input_ids [1,S] (S "
+                       f"1..{qg.CALL_TOKENS}) and position_ids i32 with static image inputs ({args.slots} slots, "
+                       f"{args.images} images), keyCache/valueCache and convState/recState states -> last-row logits "
+                       f"f32 [1,1,{text.vocab_size}].")
         report["conversion"]["decoder"] = convert(functions, args.output / names.decoder, creation_date,
                                                   DECODER_INPUTS, DECODER_OUTPUTS, DECODER_STATES, description)
         del decoder, functions

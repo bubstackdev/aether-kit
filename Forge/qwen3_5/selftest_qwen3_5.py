@@ -3,10 +3,10 @@
 
     scripts/gpu-lease -- Forge/.venv/bin/python -I Forge/qwen3_5/selftest_qwen3_5.py [--compute float32|float16]
 
-Converts the tower and the decoder's two functions (`main` S=1 and `prefill` S=PREFILL over the same states, the
-running position and KV capacity axes dynamic) and runs them on the GPU through the Python runtime as the Swift driver
-feeds them: each image through the tower into the static slots, the prompt in `prefill` chunks with the remainder
-through `main`, then greedy tokens through `main`. Compared with the eager graphs (the hermetic test's float32 parity
+Converts the tower and the decoder (one function: the token axis 1..CALL_TOKENS, the running positions and the KV
+capacity dynamic) and runs them on the GPU through the Python runtime as the Swift driver feeds them: each image
+through the tower into the static slots, the prompt in calls of CALL_TOKENS (the last one shorter), then greedy tokens
+one at a time. Compared with the eager graphs (the hermetic test's float32 parity
 with upstream carries over): every call's logits, and every state after the prompt. This is where Core AI's own
 rules show (2026-11-10 spike: an integer-index write into the conv state was dropped; a one-row matmul wrote the value
 cache in the wrong layout). A tiny model: each new length re-specializes, but at kilobytes a graph; the run still
@@ -85,12 +85,11 @@ def main() -> None:
     try:
         convert({"main": (tower, tower.example((8, 8)), None)}, work / "vision.aimodel", [], ["patches", "grid"],
                 ["image_embeds"])
-        convert({"main": (decoder, *decoder.example(1)), "prefill": (decoder, *decoder.example(qg.PREFILL))},
-                work / "decoder.aimodel", STATES, INPUTS, ["logits"])
+        convert({"main": (decoder, *decoder.example())}, work / "decoder.aimodel", STATES, INPUTS, ["logits"])
         gpu = rt.SpecializationOptions.from_preferred_compute_unit_kind(rt.ComputeUnitKind.gpu())
         vision = asyncio.run(rt.AIModel.load(work / "vision.aimodel", gpu)).load_function("main")
         graph = asyncio.run(rt.AIModel.load(work / "decoder.aimodel", gpu))
-        fns = {"main": graph.load_function("main"), "prefill": graph.load_function("prefill")}
+        fns = {"main": graph.load_function("main")}
 
         def call(fn, feeds, state=None):
             guard()
@@ -105,7 +104,7 @@ def main() -> None:
         grids = [(6, 6), (4, 16), (8, 8), (12, 8), (10, 10)]
         while True:
             ids, starts = tt.prompt(grids, rng)
-            if any(st < qg.PREFILL < st + h * w // 4 for st, (h, w) in zip(starts, grids)):
+            if any(st < qg.CALL_TOKENS < st + h * w // 4 for st, (h, w) in zip(starts, grids)):
                 break
         npdt = np.float32 if dt == torch.float32 else np.float16
         image = np.zeros((tt.SLOTS, tt.HIDDEN), dtype=npdt)
@@ -141,14 +140,11 @@ def main() -> None:
             return got, want
 
         i, worst = 0, 0.0
-        while i + qg.PREFILL <= length:
-            got, want = both("prefill", i, i + qg.PREFILL)
-            worst = max(worst, qg.rel_l2(got, want))
-            i += qg.PREFILL
         while i < length:
-            got, want = both("main", i, i + 1)
+            n = min(qg.CALL_TOKENS, length - i)
+            got, want = both("main", i, i + n)
             worst = max(worst, qg.rel_l2(got, want))
-            i += 1
+            i += n
         check("decoder.prompt.logits", worst <= bar, f"worst rel L2 {worst:.3g}")
         for name, t in zip(STATES, mine):
             g_, w_ = state[name].numpy().astype(np.float32), t.float().numpy()

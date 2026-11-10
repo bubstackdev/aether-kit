@@ -7,12 +7,12 @@ Builds a randomly initialised Qwen3_5ForConditionalGeneration with a small confi
 DeltaNet layers to a gated full-attention layer, partial interleaved M-RoPE, untied head; every size shrunk) and
 checks, in float32:
 - `delta_scan` on a block equals the one-token recurrence, piece by piece, on large values (the case that broke a
-  64-token block in float32);
+  64-token block in float32), and padded to CALL_TOKENS rows its padding leaves the state exactly as it was;
 - `plan_images` + `mrope_positions` equal upstream's `get_rope_index` for prompts with zero to three images;
 - `VisionTower` on zero-padded patches equals upstream's tower per image, padding rows zero;
-- `Decoder`, fed upstream's tower outputs packed into the slots, gives upstream's last-row logits for a three-image
-  prompt as the runtime feeds it: PREFILL-token `prefill` calls with the remainder through one-token `main` calls (a
-  chunk boundary inside an image), and then greedy tokens one at a time (rel L2 <= 1e-4).
+- `Decoder`, fed upstream's tower outputs packed into the slots, gives upstream's last-row logits for a five-image
+  prompt as the runtime feeds it (calls of CALL_TOKENS, the last one shorter, a call boundary inside an image), and in
+  calls of irregular sizes, and then greedy tokens one at a time (rel L2 <= 1e-4).
 Exits nonzero on a failure. A few seconds.
 """
 from __future__ import annotations
@@ -103,6 +103,18 @@ def main() -> None:
     # The same data as one 64-token block (the size that failed on the 27B): the reason for SCAN_PIECE.
     _, whole = qg.delta_block(q[:, :, :64], k[:, :, :64], v[:, :, :64], g[:, :, :64], beta[:, :, :64], state0)
     _, pieces = qg.delta_scan(q[:, :, :64], k[:, :, :64], v[:, :, :64], g[:, :, :64], beta[:, :, :64], state0)
+    # Padded: the first 20 tokens in a CALL_TOKENS-row call equal their recurrence, state included.
+    state, outs = state0, []
+    for t in range(20):
+        o, state = qg.delta_step(q[:, :, t:t + 1], k[:, :, t:t + 1], v[:, :, t:t + 1], g[:, :, t:t + 1],
+                                 beta[:, :, t:t + 1], state)
+        outs.append(o)
+    got_out, got_state = qg.delta_scan(q[:, :, :20], k[:, :, :20], v[:, :, :20], g[:, :, :20], beta[:, :, :20], state0,
+                                       rows=qg.CALL_TOKENS)
+    check("scan.padded.out", qg.rel_l2(got_out.numpy(), torch.cat(outs, 2).numpy()) <= 1e-4,
+          qg.rel_l2(got_out.numpy(), torch.cat(outs, 2).numpy()))
+    check("scan.padded.state", qg.rel_l2(got_state.numpy(), state.numpy()) <= 1e-4,
+          qg.rel_l2(got_state.numpy(), state.numpy()))
     print(f"[test] info scan: one 64-token block rel L2 {qg.rel_l2(whole.numpy(), pieces.numpy()):.3g} against "
           f"{qg.SCAN_PIECE}-token pieces", file=sys.stderr)
 
@@ -128,7 +140,7 @@ def main() -> None:
     grids = [(6, 6), (4, 16), (8, 8), (12, 8), (10, 10)]
     while True:                                    # a prompt whose first prefill boundary falls inside an image
         ids, starts = prompt(grids, rng)
-        if any(st < qg.PREFILL < st + h * w // 4 for st, (h, w) in zip(starts, grids)):
+        if any(st < qg.CALL_TOKENS < st + h * w // 4 for st, (h, w) in zip(starts, grids)):
             break
     pixels = [torch.randn(h * w, 1536) for h, w in grids]
     image = torch.zeros(SLOTS, HIDDEN)
@@ -153,23 +165,30 @@ def main() -> None:
     statics = (image, torch.from_numpy(positions), torch.from_numpy(start), torch.from_numpy(amount))
     ext = torch.from_numpy(qg.extension_ids(ids, VOCAB, PAD))[None]
     length = ext.shape[1]
-    if length <= qg.PREFILL:
-        raise SystemExit(f"the test prompt ({length}) must exceed one prefill chunk")
+    if length <= 2 * qg.CALL_TOKENS:
+        raise SystemExit(f"the test prompt ({length}) must take several calls")
+
+    def feed(sizes, state):
+        i, out = 0, None
+        for n in sizes:
+            out = decoder(ext[:, i:i + n], torch.arange(i + n, dtype=torch.int32)[None], *statics, *state)
+            i += n
+        assert i == length
+        return out[0, 0].numpy()
+
     state = decoder.empty_state(length + 8)
-    i, got = 0, None
-    while i + qg.PREFILL <= length:                # `prefill` chunks, then `main` one token at a time
-        got = decoder(ext[:, i:i + qg.PREFILL], torch.arange(i + qg.PREFILL, dtype=torch.int32)[None], *statics,
-                      *state)
-        i += qg.PREFILL
-    while i < length:
-        got = decoder(ext[:, i:i + 1], torch.arange(i + 1, dtype=torch.int32)[None], *statics, *state)
-        i += 1
-    got = got[0, 0].numpy()
-    check("decoder.prompt.relL2 (a prefill boundary inside an image)", qg.rel_l2(got, want) <= 1e-4,
+    runtime = [qg.CALL_TOKENS] * (length // qg.CALL_TOKENS) + ([length % qg.CALL_TOKENS] if length % qg.CALL_TOKENS else [])
+    got = feed(runtime, state)
+    check("decoder.prompt.relL2 (calls of CALL_TOKENS, a boundary inside an image)", qg.rel_l2(got, want) <= 1e-4,
           qg.rel_l2(got, want))
-    whole = decoder.empty_state(length + 8)
-    one = decoder(ext, torch.arange(length, dtype=torch.int32)[None], *statics, *whole)[0, 0].numpy()
-    check("decoder.oneCall.relL2", qg.rel_l2(one, want) <= 1e-4, qg.rel_l2(one, want))
+    irregular, left = [], length
+    for n in [1, 7, qg.CALL_TOKENS, 3, 19, qg.CALL_TOKENS, 2] * 20:
+        if left == 0:
+            break
+        irregular.append(min(n, left))
+        left -= irregular[-1]
+    other = feed(irregular, decoder.empty_state(length + 8))
+    check("decoder.irregularCalls.relL2", qg.rel_l2(other, want) <= 1e-4, qg.rel_l2(other, want))
     past, row = out.past_key_values, out.logits[0, -1]
     for step in range(4):
         token = int(row.argmax())

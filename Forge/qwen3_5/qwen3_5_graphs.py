@@ -5,16 +5,16 @@ fine-tunes) are a ViT vision tower (Qwen3-VL's: patch 16, temporal patch 2, 2x2 
 position table, axial 2-D rotary; no DeepStack) in front of a hybrid decoder: three Gated DeltaNet (linear attention)
 layers to every gated full-attention layer, untied head, interleaved 3-axis M-RoPE over a partial rotary (a quarter of
 the head). Every size is read from the checkpoint's config; nothing here names one. The bundle is
-`vlm-static-inject@1` (MANIFEST.md §1.2) with the hybrid's two decoder functions sharing four states.
+`vlm-static-inject@1` (MANIFEST.md §1.2), its decoder carrying the hybrid's recurrent states beside the KV.
 
 **`vision` (graph kind `vision-tower@1`)**, one static function, `VisionTower`: `patches` [P, 1536] (the processor's
 block-major patch rows, the first h*w real, zero after) and `grid` int32 [2] = (h, w) -> `image_embeds` [P/4, H], rows
 past h*w/4 zero. Qwen3-VL's tower (Forge/qwen3vl) without the DeepStack levels.
 
-**`decoder`**, `Decoder`, two functions over the same weights and states (`functions: {step: main, prefill: prefill}`):
+**`decoder`**, `Decoder`, one function (the `decoder-lm@1` running contract, as Forge/qwen3vl's):
 
-* `input_ids` int32 [1, S], S = 1 (`main`) or PREFILL (`prefill`), static: token ids, image pads rewritten by the
-  host to extension ids `vocab + slot` (Qwen3-VL's packing: image k's tokens take base_k .. base_k + count_k - 1);
+* `input_ids` int32 [1, S], S dynamic, 1..CALL_TOKENS: token ids, image pads rewritten by the host to extension ids
+  `vocab + slot` (Qwen3-VL's packing: image k's tokens take base_k .. base_k + count_k - 1);
 * `position_ids` int32 [1, T] (T dynamic): the running positions 0..T-1, the last S of them the fed tokens';
 * static inputs (N = slots, M = most images): `image_embeds` [N, H], `image_positions` int32 [N, 3],
   `rope_shift_start`, `rope_shift_amount` int32 [M] (the `qwen3vl-mrope` rule, see Forge/qwen3vl/qwen3vl_graphs.py);
@@ -23,11 +23,17 @@ past h*w/4 zero. Qwen3-VL's tower (Forge/qwen3vl) without the DeepStack levels.
   layers, 1, value heads, key dim, value dim] float32 (the `recurrent` states, replaced each call);
 * output `logits` [1, 1, vocab] float32, the last fed row.
 
-The Gated DeltaNet scan runs in float32. One token (`main`) is the closed-form single step. A block of S tokens is
-scanned in pieces of SCAN_PIECE tokens in sequence, each by the chunked (WY) form with the triangular inverse taken as
-a fixed product of doublings: the inverse is exact in arithmetic, but its powers grow combinatorially, and at 64 tokens
-the float32 result is wrong (the 2026-11-10 spike: Qwen3.6-27B layer 0's state 2.1e6 against 32 after 64 tokens; 16
-tokens is exact to 6e-7). The projections still see the whole block.
+One function, not a one-token function beside a prefill function: Core AI keeps a copy of the weights for every
+function that runs (measured on the 27B, 2026-11-10: 16.6 GB of Metal after the first one-token call, 33.0 GB once a
+64-token prefill function had also run). The runtime feeds a prompt in calls of at most CALL_TOKENS (its
+`reshapeSafePrefillWidth`: wider calls on a reshaping graph retain Metal, docs/VLM.md G5) and decodes one token a call.
+
+The Gated DeltaNet scan runs in float32 over a fixed CALL_TOKENS + 1 rows, since a graph can't loop a dynamic number of
+times: the S real tokens are written into zero buffers, whose padding rows are exactly inert (decay 0, so exp(0) = 1,
+and beta 0 leave the state bit for bit), and the first S rows of the result are kept. The rows are scanned in pieces of
+SCAN_PIECE in sequence, each by the chunked (WY) form with the triangular inverse taken as a fixed product of
+doublings: exact in arithmetic, but its powers grow combinatorially, and at 64 tokens the float32 result is wrong (the
+2026-11-10 spike: Qwen3.6-27B layer 0's state 2.1e6 against 32 after 64 tokens; 16 tokens is exact to 6e-7).
 
 Two Core AI rules every state write here follows (both found the hard way on the 2026-11-10 spike): a write is a slice
 assignment at a slice (never an integer) layer index, and nothing writes through a matmul with a one-row operand.
@@ -50,7 +56,7 @@ REPO = REVISION = ""
 DEFAULT_SNAPSHOT = Path()
 
 PATCH_CAPACITY = 2048          # tower rows: 512 image tokens, 524,288 pixels a picture
-PREFILL = 64                   # the `prefill` function's static token axis
+CALL_TOKENS = 32               # the most tokens one decoder call takes (the runtime's reshapeSafePrefillWidth)
 SCAN_PIECE = 16                # the Gated DeltaNet block scan's piece (exact in float32; 64 is not)
 CONTEXT_MAX = 32768            # the KV capacity axis' upper bound in the graph
 TEXT_ONLY_SHIFT_START = 1 << 30
@@ -314,15 +320,29 @@ def delta_block(q, k, v, g, beta, state):
     return out, state
 
 
-def delta_scan(q, k, v, g, beta, state):
-    if q.shape[2] == 1:
-        return delta_step(q, k, v, g, beta, state)
+def delta_scan(q, k, v, g, beta, state, rows: int | None = None):
+    """S tokens (S <= rows) through the recurrence: written into `rows`-row zero buffers (padding inert: g = beta = 0),
+    scanned in SCAN_PIECE pieces, the first S output rows kept. rows=None scans exactly S rows (S a static size)."""
+    s = q.shape[2]
+    if rows is not None:
+        def pad(x):
+            buffer = x.new_zeros(*x.shape[:2], rows, *x.shape[3:])
+            buffer[:, :, :s] = x
+            return buffer
+        q, k, v, g, beta = pad(q), pad(k), pad(v), pad(g), pad(beta)
+        # The padding must be zero whatever the buffers hold: a converted graph may fill them in place (a garbage
+        # decay or beta in a padding row would enter the state). torch.where also drops a NaN it doesn't select.
+        real = torch.arange(rows) < s
+        q, k, v = (torch.where(real[None, None, :, None], t, 0.0) for t in (q, k, v))
+        g, beta = (torch.where(real[None, None, :], t, 0.0) for t in (g, beta))
+    n = rows if rows is not None else s
     outs = []
-    for i in range(0, q.shape[2], SCAN_PIECE):
+    for i in range(0, n, SCAN_PIECE):
         out, state = delta_block(q[:, :, i:i + SCAN_PIECE], k[:, :, i:i + SCAN_PIECE], v[:, :, i:i + SCAN_PIECE],
                                  g[:, :, i:i + SCAN_PIECE], beta[:, :, i:i + SCAN_PIECE], state)
         outs.append(out)
-    return torch.cat(outs, dim=2), state
+    out = outs[0] if len(outs) == 1 else torch.cat(outs, dim=2)
+    return out[:, :, :s], state
 
 
 # MARK: the decoder
@@ -356,18 +376,23 @@ class LinearAttention(nn.Module):
         conv = F.silu(conv).transpose(1, 2)                                           # [1, S, conv dim]
         new_conv = window[..., s:]                                                    # the last K-1 inputs
         q, k, v = torch.split(conv, [self.key_dim, self.key_dim, self.value_dim], dim=-1)
-        q = q.reshape(b, s, self.hk, self.dk).transpose(1, 2).float()
-        k = k.reshape(b, s, self.hk, self.dk).transpose(1, 2).float()
-        v = v.reshape(b, s, self.hv, self.dv).transpose(1, 2).float()
+        q = q.reshape(b, s, self.hk, self.dk)
+        k = k.reshape(b, s, self.hk, self.dk)
         if self.hv != self.hk:                                                        # each key head serves r values
+            # Repeated before the transpose, on the contiguous [S, heads, dim] layout (after it, a dynamic S makes the
+            # reshape's contiguity something torch.export can't decide).
             r = self.hv // self.hk
-            q = q.unsqueeze(2).expand(b, self.hk, r, s, self.dk).reshape(b, self.hv, s, self.dk)
-            k = k.unsqueeze(2).expand(b, self.hk, r, s, self.dk).reshape(b, self.hv, s, self.dk)
+            q = q.unsqueeze(3).expand(b, s, self.hk, r, self.dk).reshape(b, s, self.hv, self.dk)
+            k = k.unsqueeze(3).expand(b, s, self.hk, r, self.dk).reshape(b, s, self.hv, self.dk)
+        q, k = q.transpose(1, 2).float(), k.transpose(1, 2).float()
+        v = v.reshape(b, s, self.hv, self.dv).transpose(1, 2).float()
         q = l2norm(q) * self.dk ** -0.5
         k = l2norm(k)
         beta = torch.sigmoid(self.in_proj_b(x).float()).transpose(1, 2)               # [1, Hv, S]
         g = (-self.A * F.softplus(self.in_proj_a(x).float() + self.dt_bias)).transpose(1, 2)
-        out, new_rec = delta_scan(q, k, v, g, beta, rec_in.float())
+        # One row more than a call can hold: a call of exactly CALL_TOKENS would otherwise overwrite the whole buffer,
+        # a special case torch.export can't prove (it refuses S == CALL_TOKENS). The extra row is a one-token piece.
+        out, new_rec = delta_scan(q, k, v, g, beta, rec_in.float(), rows=CALL_TOKENS + 1)
         out = out.transpose(1, 2).reshape(-1, self.dv).to(x.dtype)                     # [S*Hv, dv]
         z = self.in_proj_z(x).reshape(-1, self.dv)
         out = rms_norm_gated(out, z, self.norm_weight, self.eps).reshape(b, s, self.value_dim)
@@ -513,18 +538,17 @@ class Decoder(nn.Module):
         return (torch.zeros(n, h, dtype=image_dtype or self.storage), torch.zeros(n, 3, dtype=torch.int32),
                 torch.full((m,), TEXT_ONLY_SHIFT_START, dtype=torch.int32), torch.zeros(m, dtype=torch.int32))
 
-    def example(self, tokens: int):
-        """(example inputs, dynamic shapes) for one function: `tokens` static (1 for main, PREFILL for prefill), the
-        running positions and the KV capacity dynamic (example dims all differ so export keeps them apart)."""
-        capacity = 3 * PREFILL + 7
-        total = 2 * PREFILL + 5
+    def example(self):
+        """(example inputs, dynamic shapes) for torch.export: the token axis (1..CALL_TOKENS), the running positions and
+        the KV capacity dynamic (example dims all differ so export keeps them apart)."""
+        tokens, total, capacity = 7, 3 * CALL_TOKENS + 5, 4 * CALL_TOKENS + 9
         ids = torch.arange(tokens, dtype=torch.int32)[None] + 100
-        if tokens > 4:
-            ids[0, 2:5] = self.vocab + torch.arange(3, dtype=torch.int32)
+        ids[0, 2:5] = self.vocab + torch.arange(3, dtype=torch.int32)
         example = (ids, torch.arange(total, dtype=torch.int32)[None], *self.statics(), *self.empty_state(capacity))
-        t_dim = torch.export.Dim("total", min=tokens + 1, max=CONTEXT_MAX)
-        c_dim = torch.export.Dim("capacity", min=tokens + 1, max=CONTEXT_MAX)
-        dynamic = (None, {1: t_dim}, None, None, None, None, {3: c_dim}, {3: c_dim}, None, None)
+        s_dim = torch.export.Dim("tokens", min=1, max=CALL_TOKENS)
+        t_dim = torch.export.Dim("total", min=2, max=CONTEXT_MAX)
+        c_dim = torch.export.Dim("capacity", min=2, max=CONTEXT_MAX)
+        dynamic = ({1: s_dim}, {1: t_dim}, None, None, None, None, {3: c_dim}, {3: c_dim}, None, None)
         return example, dynamic
 
 

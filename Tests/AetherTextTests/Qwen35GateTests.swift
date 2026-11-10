@@ -22,6 +22,7 @@ import Testing
 enum Qwen35Gate {
     static let env = ProcessInfo.processInfo.environment
     static let enabled = env["AETHER_GATES"] == "1" && env["AETHER_QWEN35_BUNDLE"] != nil && env["AETHER_QWEN35_REFERENCE"] != nil
+    static let retention = enabled && env["AETHER_QWEN35_RETENTION"] == "1"  // the slower diagnostics
 }
 
 @Suite("Qwen35GateTests", .serialized, .enabled(if: Qwen35Gate.enabled))
@@ -137,5 +138,66 @@ struct Qwen35GateTests {
         print("GATE qwen35 greedy text: \(text)")
         print("GATE qwen35 reference text: \(reference.text)")
         #expect(tokens.first == reference.tokens.first, "the first greedy token")
+    }
+
+    /// Metal across mixed requests (opt-in, AETHER_QWEN35_RETENTION=1): the two-picture describer prompt, the same
+    /// again, another picture alone, text only, and round again. Prints the device's Metal after each (Core AI retains
+    /// memory on reshaping calls: docs/VLM.md, G5).
+    @Test(.enabled(if: Qwen35Gate.retention)) func metalAcrossRequests() async throws {
+        let reference = try JSONDecoder().decode(
+            Reference.self, from: Data(contentsOf: URL(fileURLWithPath: Self.env["AETHER_QWEN35_REFERENCE"]!)))
+        let bundleURL = URL(fileURLWithPath: Self.env["AETHER_QWEN35_BUNDLE"]!)
+        let bundle = try Self.localBundle(bundleURL)
+        let manifest = try Manifest.load(fromBundle: bundleURL)
+        let engine = try await DecoderEngine(bundle: bundle, manifest: manifest, device: .current,
+                                             options: DecoderEngine.Options(capacity: 2048))
+        let generator = try await ChatSession.generator(engine: engine, bundle: bundle, manifest: manifest)
+        func mib() -> Int64 { DecoderEngine.metalAllocatedBytes() >> 20 }
+        print("GATE qwen35 retention: after load \(mib()) MiB, reload budget \(engine.reloadBudgetBytes.map(String.init) ?? "none")")
+        let both = reference.pictures.map { ChatImage(ImageInput(contentsOf: URL(fileURLWithPath: $0))) }
+        let one = [ChatImage(ImageInput(contentsOf: URL(fileURLWithPath: reference.pictures[0])))]
+        let requests: [(String, [ChatMessage])] = [
+            ("two pictures", [.system(reference.instructions), .user(reference.question, images: both)]),
+            ("two pictures again", [.system(reference.instructions), .user(reference.question, images: both)]),
+            ("one picture", [.system(reference.instructions), .user(reference.question, images: one)]),
+            ("text only", [.user("Describe a red bodysuit with gold trim in one sentence.")]),
+            ("two pictures", [.system(reference.instructions), .user(reference.question, images: both)]),
+            ("one picture", [.system(reference.instructions), .user(reference.question, images: one)]),
+            ("two pictures", [.system(reference.instructions), .user(reference.question, images: both)]),
+        ]
+        let clock = ContinuousClock()
+        var levels: [Int64] = []
+        for (i, (name, messages)) in requests.enumerated() {
+            let t = clock.now
+            var summary: GenerationSummary?
+            for try await event in generator.generate(messages, parameters: GenerationParameters(maxTokens: 24, thinking: false)) {
+                if case .finished(let s) = event { summary = s }
+            }
+            levels.append(mib())
+            print("GATE qwen35 retention: request \(i + 1) (\(name), \(summary?.promptTokens ?? 0) prompt tokens, reused "
+                  + "\(summary?.reusedTokens ?? 0)): \(String(format: "%.1f", (clock.now - t) / .seconds(1))) s, Metal "
+                  + "\(levels.last!) MiB, reloads \(await engine.reloads.count)")
+        }
+        print("GATE qwen35 retention: growth after the first request \(levels.last! - levels[0]) MiB")
+    }
+
+    /// Logits sanity by call size (opt-in, AETHER_QWEN35_RETENTION=1): no canary, the reference's prompt text fed in
+    /// calls of 1, 3, 32 and a shorter one, then single steps; NaN count and largest logit after each.
+    @Test(.enabled(if: Qwen35Gate.retention)) func logitsByCallSize() async throws {
+        let reference = try JSONDecoder().decode(
+            Reference.self, from: Data(contentsOf: URL(fileURLWithPath: Self.env["AETHER_QWEN35_REFERENCE"]!)))
+        let bundleURL = URL(fileURLWithPath: Self.env["AETHER_QWEN35_BUNDLE"]!)
+        let engine = try await DecoderEngine(bundle: try Self.localBundle(bundleURL), manifest: try Manifest.load(fromBundle: bundleURL),
+                                             device: .current, options: DecoderEngine.Options(capacity: 2048, canary: false))
+        let text = reference.renderedTokenIDs.prefix(60).map(Int32.init).filter { $0 < 248_000 }
+        var at = 0
+        for n in [1, 3, 32, 12, 1, 1, 1] {
+            let logits = try #require(try await engine.prefill(Array(text[at..<(at + n)]), logits: .last))
+            at += n
+            let row = logits.last
+            let nans = row.filter { $0.isNaN }.count, finite = row.filter { $0.isFinite }
+            print("GATE qwen35 logits: call of \(n) (position \(at)): NaN \(nans), max \(finite.max() ?? .nan), "
+                  + "argmax \(row.indices.max { row[$0] < row[$1] }.map { $0 - row.startIndex } ?? -1)")
+        }
     }
 }
