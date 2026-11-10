@@ -77,6 +77,18 @@ public final class ResidentAdmission {
     /// The lowest phase baseline of graphs released since the next residency began: their memory returns seconds
     /// late, so the next phase is measured from here (an overestimate, the direction admission prefers).
     private var releasedFloor: Int64?
+    /// The highest level above the process's level before any graph loaded that an all-resident generation reached,
+    /// per profile, specialization count and the graphs resident at its end (an export's graphs a request never uses,
+    /// Krea 2's image encoder for a text-only render, are never loaded). The phases' sum can count working memory twice
+    /// (held while it lingers after its phase, then transient when the next run takes it again); this is what was
+    /// actually reached.
+    private var measuredAllResident: [MeasuredKey: Int64] = [:]
+
+    private struct MeasuredKey: Hashable {
+        let profile: String
+        let specializations: Int
+        let roles: Set<String>
+    }
 
     /// `bundle` is the installed bundle the graphs load from, if any: its reader lease is taken here (see above).
     public init(
@@ -145,8 +157,7 @@ public final class ResidentAdmission {
         do {
             // Keeping the shapes resident must fit with every graph resident: per phase, graphs are released at each
             // phase's end, so no specialization outlives its generation and keeping them buys nothing.
-            let kept = count > 1
-                ? try? ResidencyPlan.choose(inputs(profile: profile, specializations: count), budget: budget()) : nil
+            let kept = count > 1 ? try? choose(profile: profile, specializations: count) : nil
             if let kept, kept.mode == .allResident {
                 plan = kept
             } else {
@@ -155,7 +166,7 @@ public final class ResidentAdmission {
                     release()
                     count = 1
                 }
-                plan = try ResidencyPlan.choose(inputs(profile: profile, specializations: 1), budget: budget())
+                plan = try choose(profile: profile, specializations: 1)
             }
             try reserve(plan.peakBytes)
         } catch {
@@ -167,6 +178,7 @@ public final class ResidentAdmission {
         if let residency, residency.mode == plan.mode, residency.profile == profile {
             residency.overlapAllowance = overlap
             residency.specializations = count
+            residency.markWindow()
             return residency
         }
         if let old = residency {
@@ -184,6 +196,41 @@ public final class ResidentAdmission {
         return fresh
     }
 
+    /// ``ResidencyPlan/choose(_:budget:)`` on the ledger's phases, except that when they don't fit all resident but a
+    /// generation with every graph resident at this profile and count was measured to fit, the graphs stay resident
+    /// (or, from a per-phase residency, return to it) at that measured peak.
+    private func choose(profile: String, specializations: Int) throws(AetherError) -> ResidencyPlan {
+        let budget = budget()
+        let inputs = inputs(profile: profile, specializations: specializations)
+        let phased: ResidencyPlan
+        do {
+            phased = try ResidencyPlan.choose(inputs, budget: budget)
+            if phased.mode == .allResident { return phased }
+        } catch {
+            if let measured = measuredPeak(profile: profile, specializations: specializations), measured <= budget {
+                return ResidencyPlan(mode: .allResident, peakBytes: measured, isMeasured: true)
+            }
+            throw error
+        }
+        if let measured = measuredPeak(profile: profile, specializations: specializations), measured <= budget {
+            return ResidencyPlan(mode: .allResident, peakBytes: measured, isMeasured: true)
+        }
+        return phased
+    }
+
+    /// The largest measured all-resident peak at `profile` and `specializations` whose generation held at least the
+    /// graphs resident now and a graph of every phase the plan counts (an encode alone measures only the prompt's);
+    /// nil when none was measured.
+    private func measuredPeak(profile: String, specializations: Int) -> Int64? {
+        let now = Set(residentRoles.map { GraphResidency.parse($0).role })
+        let phases = Set(inputs(profile: profile, specializations: specializations).phases.keys)
+        return measuredAllResident.filter { key, _ in
+            let covered = Set(key.roles.compactMap { manifest.graphs[$0]?.residency })
+            return key.profile == profile && key.specializations == specializations && now.isSubset(of: key.roles)
+                && phases.isSubset(of: covered)
+        }.values.max()
+    }
+
     /// After a generation that succeeded: the reservation is resized to what stays resident, as measured by the
     /// generation that just ran.
     ///
@@ -197,6 +244,14 @@ public final class ResidentAdmission {
         guard let residency else {
             release()
             return false
+        }
+        if residency.mode == .allResident, !residency.residentRoles.isEmpty, let peak = residency.windowPeak,
+           let before = residency.levelBeforeGraphs {
+            // Keyed by every role resident during the generation, not only at its end: a phase released mid-way (a
+            // reference encode's vision tower and text encoder) still counted towards the peak.
+            let key = MeasuredKey(profile: residency.profile, specializations: residency.specializations,
+                                  roles: Set((residency.windowRoles.union(residency.residentRoles)).map { GraphResidency.parse($0).role }))
+            measuredAllResident[key] = max(measuredAllResident[key] ?? 0, peak - before)
         }
         switch residency.mode {
         case .allResident:

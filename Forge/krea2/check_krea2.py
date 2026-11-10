@@ -22,6 +22,10 @@ Bars (FLUX.2's template):
   merged tokens and DeepStack, cosine >= 0.999; `encodeWithImages` fed the graph's own vision outputs against the
   oracle conditioning, mean row cosine >= 0.999 and worst row >= 0.99 (the 0.0.x bars). The closed loop then runs from
   the chosen case's graph conditioning, and the teacher-forced steps from its oracle conditioning.
+- masked denoisers (a `textMask` input): every denoiser call takes the conditioning padded with zero rows to the
+  fixed length (1116) and `text_mask` (1 real, 0 padding);
+  text carries are compared on the real rows. The closed-loop image is also saved as `<report>.npy` (float32 [3, H, W]
+  on [-1, 1]) so two bundles' images can be compared (`--compare-image`: PSNR and SSIM against another check's .npy).
 One gate: exits nonzero when any bar fails. Refuses to start while the M2 Swift gates run (xctest).
 """
 
@@ -77,6 +81,44 @@ def ssim(a: np.ndarray, b: np.ndarray) -> float:
         sxx, syy, sxy = blur(x[c] * x[c]) - mx * mx, blur(y[c] * y[c]) - my * my, blur(x[c] * y[c]) - mx * my
         values.append(((2 * mx * my + c1) * (2 * sxy + c2)) / ((mx * mx + my * my + c1) * (sxx + syy + c2)))
     return float(np.mean(values))
+
+
+class Segments:
+    """The four denoiser segments at one function: exact length (no mask), or a masked function's fixed text length,
+    with the conditioning and text carries padded with zero rows and `text_mask` added to every call."""
+
+    def __init__(self, manifest: dict, files: dict, rows: int) -> None:
+        g = manifest["graphs"]["denoiser0"]
+        phases = g.get("functions") or {"step": g["function"]}
+        self.rows, self.length = rows, None
+        if "textMask" not in g["inputs"]:
+            self.function = phases["step"]
+        else:
+            if rows > kg.MASK_TEXT_ROWS:
+                raise SystemExit(f"{rows} conditioning rows exceed the denoisers' {kg.MASK_TEXT_ROWS}")
+            self.length = kg.MASK_TEXT_ROWS
+            self.function = phases["step"]
+            self.mask = kg.text_mask(rows, self.length).numpy()
+        self.graphs = [Graph(files[f"denoiser{i}"], self.function) for i in range(4)]
+        self.load_seconds = round(sum(s.load_seconds for s in self.graphs), 1)
+
+    def pad(self, x: np.ndarray) -> np.ndarray:
+        if self.length is None:
+            return x
+        return np.concatenate([x, np.zeros((self.length - x.shape[0], *x.shape[1:]), dtype=x.dtype)])
+
+    def __call__(self, index: int, **feeds: np.ndarray) -> dict[str, np.ndarray]:
+        for name in list(feeds):
+            if name == "text_embeds" or name.startswith("text_"):
+                feeds[name] = self.pad(feeds[name])
+        if self.length is not None:
+            feeds["text_mask"] = self.mask
+        out = self.graphs[index](**feeds)
+        return {k: (v[:self.rows] if k.startswith("text_") else v) for k, v in out.items()}
+
+    def close(self) -> None:
+        for graph in self.graphs:
+            graph.close()
 
 
 class Graph:
@@ -192,6 +234,8 @@ def main() -> None:
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--wait", action="store_true", help="wait for running Swift tests instead of refusing")
+    parser.add_argument("--compare-image", type=Path,
+                        help="another check's closed-loop image (.npy): PSNR and SSIM against this run's, reported")
     args = parser.parse_args()
     if args.report.exists():
         raise SystemExit("report already exists; choose a new path")
@@ -256,8 +300,8 @@ def main() -> None:
                maxAbs=float(np.abs(ref_text).max()))
 
     # Denoiser segments: teacher-forced per step and segment, then the closed loop.
-    segments = [Graph(files[f"denoiser{i}"], "segment") for i in range(4)]
-    timings["loadDenoisers"] = round(sum(s.load_seconds for s in segments), 1)
+    segments = Segments(manifest, files, ref_text.shape[0])
+    timings["loadDenoisers"] = segments.load_seconds
     teacher = []
     step_seconds = []
     for s in range(ref["steps"]):
@@ -274,8 +318,8 @@ def main() -> None:
                     dict(image_2=r["image_2"], text_2=r["text_2"]), dict(image_3=r["image_3"], text_3=r["text_3"]),
                     dict(velocity=r["velocity"])]
         row = {"step": s}
-        for i, (segment, feed, want) in enumerate(zip(segments, feeds, expected)):
-            got = segment(**feed)
+        for i, (feed, want) in enumerate(zip(feeds, expected)):
+            got = segments(i, **feed)
             for name, value in want.items():
                 c = cosine(got[name], value)
                 row[f"denoiser{i}.{name}"] = round(c, 6)
@@ -289,10 +333,10 @@ def main() -> None:
     for s in range(ref["steps"]):
         t0 = time.monotonic()
         sigma = np.array([timesteps[s]], dtype=np.float32)
-        o0 = segments[0](latents=latents.astype(np.float16), text_embeds=text_embeds, sigma=sigma, rope_image=rope)
-        o1 = segments[1](image_1=o0["image_1"], text_1=o0["text_1"], cond=o0["cond"], rope_image=rope)
-        o2 = segments[2](image_2=o1["image_2"], text_2=o1["text_2"], cond=o0["cond"], rope_image=rope)
-        o3 = segments[3](image_3=o2["image_3"], text_3=o2["text_3"], cond=o0["cond"], rope_image=rope)
+        o0 = segments(0, latents=latents.astype(np.float16), text_embeds=text_embeds, sigma=sigma, rope_image=rope)
+        o1 = segments(1, image_1=o0["image_1"], text_1=o0["text_1"], cond=o0["cond"], rope_image=rope)
+        o2 = segments(2, image_2=o1["image_2"], text_2=o1["text_2"], cond=o0["cond"], rope_image=rope)
+        o3 = segments(3, image_3=o2["image_3"], text_3=o2["text_3"], cond=o0["cond"], rope_image=rope)
         delta = np.float32(sigmas[s + 1]) - np.float32(sigmas[s])
         latents = (latents + (delta * o3["velocity"].astype(np.float32)).astype(np.float32)).astype(np.float32)
         step_seconds.append(round(time.monotonic() - t0, 3))
@@ -322,17 +366,16 @@ def main() -> None:
         start_cosine = cosine(refine_latents, np.load(args.reference / "refine_start.npy"))
         for s in range(start, ref["steps"]):
             t = np.array([timesteps[s]], dtype=np.float32)
-            o0 = segments[0](latents=refine_latents.astype(np.float16), text_embeds=text_embeds, sigma=t, rope_image=rope)
-            o1 = segments[1](image_1=o0["image_1"], text_1=o0["text_1"], cond=o0["cond"], rope_image=rope)
-            o2 = segments[2](image_2=o1["image_2"], text_2=o1["text_2"], cond=o0["cond"], rope_image=rope)
-            o3 = segments[3](image_3=o2["image_3"], text_3=o2["text_3"], cond=o0["cond"], rope_image=rope)
+            o0 = segments(0, latents=refine_latents.astype(np.float16), text_embeds=text_embeds, sigma=t, rope_image=rope)
+            o1 = segments(1, image_1=o0["image_1"], text_1=o0["text_1"], cond=o0["cond"], rope_image=rope)
+            o2 = segments(2, image_2=o1["image_2"], text_2=o1["text_2"], cond=o0["cond"], rope_image=rope)
+            o3 = segments(3, image_3=o2["image_3"], text_3=o2["text_3"], cond=o0["cond"], rope_image=rope)
             delta = np.float32(sigmas[s + 1]) - np.float32(sigmas[s])
             refine_latents = (refine_latents + (delta * o3["velocity"].astype(np.float32))).astype(np.float32)
         refine["startLatentCosine"] = round(start_cosine, 6)
     else:
         print("[check] refine: skipped (no vaeEncoder graph or no refine reference)", file=sys.stderr, flush=True)
-    for segment in segments:
-        segment.close()
+    segments.close()
     ref_final = np.load(args.reference / f"step{ref['steps'] - 1}.npz")["latents_out"]
     closed_latent_cosine = round(cosine(latents, ref_final), 6)
 
@@ -359,6 +402,13 @@ def main() -> None:
     pixels = np.clip(np.round((image.transpose(1, 2, 0) / 2 + 0.5) * 255), 0, 255).astype(np.uint8)
     png = args.report.with_suffix(".png")
     Image.fromarray(pixels).save(png)
+    np.save(args.report.with_suffix(".npy"), image.astype(np.float32))
+    compared = None
+    if args.compare_image is not None:
+        other = np.load(args.compare_image)
+        compared = {"image": str(args.compare_image), "psnrDB": round(psnr(image, other), 3),
+                    "ssim": round(ssim(image, other), 6), "maxAbs": float(np.abs(image - other).max())}
+        print(f"[check] against {args.compare_image}: {compared}", file=sys.stderr, flush=True)
 
     teacher_checks = [c for c in checks if c["check"].startswith("teacher.")]
     velocity = [c["value"] for c in teacher_checks if c["check"].endswith(".velocity")]
@@ -383,6 +433,9 @@ def main() -> None:
                    **({"vaeEncoderLatentCosine": next(c["value"] for c in checks if c["check"] == "vaeEncoder.latentCosine"),
                        "refineSSIM": next(c["value"] for c in checks if c["check"] == "refine.ssim")}
                       if refined is not None else {"refine": "skipped"})},
+        "denoisers": {"textMask": segments.length is not None, "function": segments.function,
+                      "textLength": segments.length, "conditioningRows": segments.rows},
+        **({"comparedImage": compared} if compared else {}),
         "timingsSeconds": {**timings, "closedLoopSteps": step_seconds, "total": round(time.monotonic() - started, 1)},
         "hostPeakRSSGB": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9, 2),
         "image": str(png),

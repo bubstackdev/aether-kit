@@ -25,6 +25,14 @@ Hugging Face cache (or `--snapshot`), and every file read is verified against th
 
 The output is laid out as an installed revision root (the manifest under `.aether/`), so it uploads as-is.
 
+The denoisers take one fixed text length, 1,116 rows, with a key-padding mask (`--text-mask`, the default;
+krea2_graphs.py), for text-only and reference prompts alike. `--no-text-mask` exports the earlier exact-length
+denoisers (a dynamic text axis, no mask).
+
+    Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace \
+        --only denoiser0 denoiser1 denoiser2 denoiser3 --base-bundle <existing bundle> --output <new bundle dir>
+                                        # the masked denoisers beside an earlier export's other graphs
+
 `--base-bundle` adds the graphs named by `--only` to a complete earlier export without converting the others again:
 the new bundle hard-links (or, across volumes, copies) every graph, tokenizer and license file of the base, exports
 the named graphs, and writes a new manifest, NOTICE and SHA256SUMS over the union. The base's export report is kept
@@ -187,11 +195,13 @@ MANIFEST_PATH = ".aether/aether.json"
 # Xcode 27.2). The text encoder is exact with the hint (row cosine 0.999999), and its length changes per prompt.
 def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], report: dict) -> dict:
     v = VARIANTS[variant]
+    masked = report.get("textMask", False)
     graph_file = lambda role: f"main:{asset_names[role]}"  # noqa: E731
     from_ = lambda ref: {"name": ref.split(".")[1], "source": {"from": ref}}  # noqa: E731
     segment_inputs = lambda i: {  # noqa: E731
         "carryImage": from_(f"denoiser{i - 1}.image_{i}"), "carryText": from_(f"denoiser{i - 1}.text_{i}"),
-        "condition": from_("denoiser0.cond"), "imageRotary": "rope_image"}
+        "condition": from_("denoiser0.cond"), "imageRotary": "rope_image",
+        **({"textMask": "text_mask"} if masked else {})}
     graphs = {
         "textEncoder": {"file": graph_file("textEncoder"), "function": "encode",
                         "inputs": {"tokens": "input_ids", "positions": "position_ids"},
@@ -206,7 +216,8 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         "denoiser0": {"file": graph_file("denoiser0"), "function": "segment",
                       "inputs": {"latents": "latents", "conditioning": {"name": "text_embeds",
                                                                          "source": {"from": "textEncoder.text_embeds"}},
-                                 "sigma": "sigma", "imageRotary": "rope_image"},
+                                 "sigma": "sigma", "imageRotary": "rope_image",
+                                 **({"textMask": "text_mask"} if masked else {})},
                       "outputs": {"carryImage": "image_1", "carryText": "text_1", "condition": "cond"},
                       "compute": "gpu", "expectFrequentReshapes": False, "residency": "perStep"},
         "vaeDecoder": {"file": graph_file("vaeDecoder"), "function": "decode",
@@ -271,6 +282,9 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
                                      "vaeDecoder": "fp16 weights, fp32 compute",
+                                     **({"denoisers": f"text rows padded with zeros to {kg.MASK_TEXT_ROWS} under a "
+                                                      "key-padding mask (textMask)"}
+                                        if masked else {}),
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
                                         if "vaeEncoder" in asset_names else {}),
                                      **({"vision": "fp16 weights, fp32 compute",
@@ -311,14 +325,15 @@ def reference_block() -> dict:
     }
 
 
-def sample_manifest(variant: str) -> dict:
+def sample_manifest(variant: str, masked: bool = True) -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
-    fixtures with `--sample-manifest --variant <v> > Tests/AetherCoreTests/Fixtures/krea2/<v>.json`."""
+    fixtures with `--sample-manifest --variant <v> [--no-text-mask] > Tests/AetherCoreTests/Fixtures/krea2/<file>.json`
+    (`vanilla.json` and `realism.json` are the exact-length exports, `realism-masked.json` the masked one)."""
     v = VARIANTS[variant]
     asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
     report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
-              "adapter": {"multiplier": 1.0, "scale": 1.0}}
+              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked}
     return manifest(variant, files, asset_names, report)
 
 
@@ -375,10 +390,13 @@ def main() -> None:
                         help="the text encoder's references function's compute (weights stay fp16 and shared). float32: "
                              "fp16 conditioning drifted the 8-step closed loop to SSIM 0.917 against the oracle (bar 0.94) "
                              "while the oracle's conditioning reached 0.987 on the same GPU denoisers")
+    parser.add_argument("--text-mask", action=argparse.BooleanOptionalAction, default=True,
+                        help="denoisers at one fixed text length (1116) with a key-padding mask (default); "
+                             "--no-text-mask: the earlier exact-length denoisers")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.variant), indent=2, ensure_ascii=False))
+        print(json.dumps(sample_manifest(args.variant, args.text_mask), indent=2, ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")
@@ -395,6 +413,11 @@ def main() -> None:
         clash = set(roles) & set(base["graphs"])
         if clash and not args.replace:
             raise SystemExit(f"the base bundle already has {sorted(clash)}; pass --replace to re-export them")
+        base_masked = "textMask" in base["graphs"].get("denoiser0", {}).get("inputs", {})
+        denoisers = [role for role in roles if role.startswith("denoiser")]
+        if denoisers and len(denoisers) != len(kg.SEGMENTS) and base_masked != args.text_mask:
+            raise SystemExit("the denoisers must all take the text mask or none: re-export all four")
+    denoisers = [role for role in roles if role.startswith("denoiser")]
     started = time.monotonic()
     args.output.mkdir(parents=True)
     log = Log(args.output / "forge-log.jsonl")
@@ -420,6 +443,9 @@ def main() -> None:
         "precision": "fp16 weights; fp16 matmul/attention with fp32 residual, norms, modulation and edge projections; "
                      "denoiser block 0 computes in fp32; VAE fp16 storage with fp32 compute; no quantization",
         "conversion": {}, "stages": {},
+        # Whether the bundle's denoisers take the text mask: this export's when it converts them, else the base's.
+        "textMask": (args.text_mask if denoisers or base is None
+                     else "textMask" in base["graphs"].get("denoiser0", {}).get("inputs", {})),
     }
     report_path = args.output / "export-report.json"
 
@@ -473,12 +499,15 @@ def main() -> None:
         if role not in roles:
             continue
         log.start(f"build-{role}")
-        segment = kg.DenoiserSegment.load(checkpoint, index, adapter, strict=not args.allow_unpinned)
+        segment = kg.DenoiserSegment.load(checkpoint, index, adapter, strict=not args.allow_unpinned,
+                                          masked=args.text_mask)
         report["stages"][f"build-{role}"] = log.done(f"build-{role}")
         example, dynamic = segment.example()
         log.start(f"export-{role}")
         report["conversion"][role] = convert(segment, example, dynamic, segment.input_names, segment.output_names,
                                              "segment", args.output / asset_names[role])
+        if args.text_mask:
+            report["conversion"][role]["textRows"] = kg.MASK_TEXT_ROWS
         report["stages"][f"export-{role}"] = log.done(f"export-{role}")
         del segment
         gc.collect()

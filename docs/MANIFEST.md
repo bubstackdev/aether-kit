@@ -521,7 +521,7 @@ and products display "Powered by Stability AI". The manifest records this in `li
 
 | driver | graphs | required roles / blocks | optional | bundles |
 |---|---|---|---|---|
-| `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `vaeEncoder` (`encode`: `pixels` `[3, 16·rows, 16·columns]` on [-1, 1] → `latents` `[rows, columns, 64]`, normalized and packed as the decoder reads them; refine; an optional graph role, checked against its contract when present); `vision` (`encode`: `patches` `[576, 1536]` fp16, one image's block-major patch rows padded, and `grid` int32 `[2]` = (h, w) → `imageEmbeds` `[144, 2560]`, `deepstackEmbeds` `[3, 144, 2560]`; static; reference images) with the textEncoder's second function `references` (`encodeWithImages`; `inputsByFunction.references`: `tokens` `[1, L]` with each image pad as an extension id, `ropePositions` `[3, L]`, `imageEmbeds` `[576, 2560]`, `deepstackEmbeds` `[3, 576, 2560]`; out the same `conditioning`) and the `krea2.references` block, all three or none; `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports) |
+| `krea2@1` | `textEncoder`, `denoiser0`…`denoiser3` (all `function: segment`), `vaeDecoder` | textEncoder in `tokens`, `positions`; out `conditioning`. denoiser0 in `latents`, `conditioning` (`from: textEncoder.text_embeds`), `sigma`, `imageRotary`; out `carryImage`, `carryText`, `condition`. denoiser1–3 in `carryImage`, `carryText` (`from` the previous segment), `condition` (`from: denoiser0.cond`), `imageRotary`; denoiser1–2 out `carryImage`, `carryText`; denoiser3 out `velocity`. vaeDecoder in `latents`; out `image`. Blocks `schedule`, `latent`, `krea2`. | `vaeEncoder` (`encode`: `pixels` `[3, 16·rows, 16·columns]` on [-1, 1] → `latents` `[rows, columns, 64]`, normalized and packed as the decoder reads them; refine; an optional graph role, checked against its contract when present); `vision` (`encode`: `patches` `[576, 1536]` fp16, one image's block-major patch rows padded, and `grid` int32 `[2]` = (h, w) → `imageEmbeds` `[144, 2560]`, `deepstackEmbeds` `[3, 144, 2560]`; static; reference images) with the textEncoder's second function `references` (`encodeWithImages`; `inputsByFunction.references`: `tokens` `[1, L]` with each image pad as an extension id, `ropePositions` `[3, L]`, `imageEmbeds` `[576, 2560]`, `deepstackEmbeds` `[3, 576, 2560]`; out the same `conditioning`) and the `krea2.references` block, all three or none; `textMask` (in on all four denoisers or none: float `[T]`, 1 for a real conditioning row and 0 for padding; the text axis is then static); `residency` per graph | krea-2-turbo, krea-2-turbo-realism (Forge exports); krea-2-turbo-realism-masked (`textMask`) |
 
 Roles are bound once per step from host buffers or chained graph outputs (`source.from`), the §2.3 mechanism; the
 driver reads the bindings once at load and refuses a chain that runs forward or a host-fed carry. Segment carries stay
@@ -536,6 +536,23 @@ DeepStack level k is added at image rows after decoder layer k (k < 3), after th
 latents_std`, packed 2×2 channel-major (`c·4 + 2·dy + dx`); a refine starts at `(1 − σ)·x0 + σ·noise` at its start
 step's sigma and runs the remaining steps. The driver is macOS-only in 0.1.0 (refused on iOS before loading).
 
+**Fixed text length (`textMask`, since 0.2.0).** Diffusers always pads Krea 2's text to `max_sequence_length` 512 and
+passes `encoder_attention_mask`: a key-padding mask in the text-fusion refiner blocks and in all 28 joint blocks (image
+keys always valid). The layerwise fusion blocks attend over one token's tapped layers, so padding can't reach them, and
+text positions are all zero, so padding shifts no image rotary angle. A denoiser with `textMask` does the same at one
+static text length for every prompt (the descriptor shows it; the manifest doesn't restate it): the host writes the
+real conditioning rows first and zero rows after (finite padding), and `textMask` is 1 for the real rows and 0 after.
+Text carries keep the padded length; their padding lanes are finite and never read. Forge's exports use 1,116 rows,
+`krea2.references.rows`' upper bound, so text-only and reference prompts run at one shape and Core AI prepares each
+denoiser shape once per canvas instead of once per prompt length; rows past the static length are refused. One length,
+not one per kind of prompt: measured on macOS 27.2 (M5 Max), a second function in a segment file slowed the first's
+steps (6.0–7.7 s against 3.8–4.0 s at 1024²) and Core AI kept a separate copy of the weights per function it ran (a
+segment's 7.08 GB became 13.85 GB). The text encoder still runs unpadded, and `prompt.padding` stays `none` (it
+describes the encoder's input). Images match the exact-length export to fp16 tolerance, not bit for bit (the longer
+softmax sums in another order). Without `textMask` the denoisers run at each prompt's own row count, as before; both
+forms are `krea2@1`. A kit that predates the role refuses a masked export (unknown input role) rather than run it
+unmasked.
+
 ### 5.6 `krea2` (normative since G3)
 
 `krea2` is owned by `krea2@1`.
@@ -543,7 +560,7 @@ step's sigma and runs the remaining steps. The driver is macOS-only in 0.1.0 (re
 | field | req | meaning |
 |---|---|---|
 | `prompt` | R | `{systemPrefix, suffix, maxTokens: 546, keepTrailingTokens: 5, dropLeadingRows: 34, padding: none, positions: running}`: the rendered ids are never padded; Diffusers' padded block masks its padding as keys everywhere, so unpadded rows are exactly its real rows |
-| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major; `rows` is `"lower...upper"` with upper = `maxTokens − dropLeadingRows`, and a prompt outside the range is refused |
+| `conditioning` | R | `{taps: [2,5,…,35], width: 2560, rows: "1...512"}`; `conditioning` is `[rows, 12·2560]`, tap-major; `rows` is `"lower...upper"` with upper = `maxTokens − dropLeadingRows`, and a prompt outside the range is refused. With `textMask` (§5.5) the denoisers take these rows padded to their static text length; `rows` is still the real count |
 | `rotary` | R | `{axes: [32,48,48], theta: 1000, positions: "(0, row, column)", layout: splitHalves, textRotated: false}`; the host builds `imageRotary [N, 2, 128]` |
 | `segments` | R | the denoiser graph roles in call order |
 | `condRows` | R | 8: six shared block-modulation rows and the final layer's (scale, shift) |

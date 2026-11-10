@@ -4,6 +4,38 @@
 
 ### New
 
+- **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
+  key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;
+  `--no-text-mask` keeps the exact-length graphs). The text axis is static at 1,116 rows, the most a reference prompt
+  has, for text-only and reference prompts alike: one function per segment file and one shape for every prompt.
+  - **Why one length:** on macOS 27.2, a second, shorter function in the same file slowed the first's steps about
+    1.7×, and Core AI kept a separate copy of the weights for each function it ran.
+  - **Contract:** `krea2@1` gains the optional `textMask` input, on all four segments or none.
+  - **Driver:** `Krea2Pipeline` writes the real conditioning rows first and zero rows after, passes the mask, runs at
+    the segments' static length (refusing rows past it) and keys admission on it.
+  - **Rows reported:** `prepare(prompt:)`, the metrics and `Krea2Conditioning` still report the real rows.
+  - **Older exports:** exact-length exports load and run as before.
+- **Krea 2 reference conditioning beside resident denoisers.** A measured all-resident peak is now keyed by every
+  role resident during the generation (see the admission entry below).
+  - A Krea 2 reference encode releases the text-only text encoder, loads the vision tower and the text encoder's
+    references function for that encode alone, and releases both after, so the denoisers stay loaded.
+  - These are `package` APIs only (`GraphResidency.releasePhase`); there is no public API change.
+- **Measured** on the masked realism export (1024², 8 steps, M5 Max 64 GB), all in one fresh process: prompts of 27,
+  27, 8 and 258 rows, then a four-reference prompt of 621 rows.
+  - Nothing reloaded after the first render. Resident memory stayed at 47.0–48.3 GB under the 48 GiB budget.
+  - The first render took 118 s, with a 38.5 s first step that each process pays once. Every later render took
+    35.6–36.9 s, the reference one 36.5 s.
+  - Later steps took 4.1–4.3 s. Exact-length steps took 2.6–2.9 s at the prompts' own lengths; the 1,116 text rows
+    cost the difference.
+- **Gates against the Diffusers oracle** (SSIM ≥ 0.94; the comparison with the exact-length export is a report only):
+  - 258-row prompt at 1024²: masked 0.9777 / 33.6 dB, exact length 0.9821 / 34.5 dB. The two are identical per step
+    (teacher-forced cosine 0.999999); the gap builds up only over the closed loop.
+  - Text-only prompt at 512²: 0.9927 / 41.6 dB. Refine: 0.99994. References: 0.9791.
+  - Against the exact-length export: 43.7 dB / SSIM 0.995 at 512², and 39.3 dB / SSIM 0.991 on the 258-row prompt at
+    1024².
+- **Tools:** `check_krea2.py` pads and masks for masked bundles and saves its closed-loop image for
+  `--compare-image`. `bench_krea2_{steps,segment,file,attention}.py` measure step and attention time.
+
 - **Krea 2 progress and metrics** for hosts: `Krea2Pipeline.generate(_:observing:)` reports
   `ImageProgress` in order (conditioning ready with its row count, denoisers ready, each step with a copy of its packed
   latents, decoded) and returns an `ImageGeneration`: the image and its `ImageGenerationMetrics`. The metrics cover the
@@ -144,6 +176,22 @@
   (`FootprintLedger.Key.specializations`, `estimate(_:)` for counts not measured, a full extra copy each when only one
   is). A new shape that doesn't fit beside the others with every graph resident releases the graphs and reloads for it
   alone; only a shape that doesn't fit alone is refused.
+- **Working memory that outlives its phase no longer pushes resident graphs to per-phase release.** A run's working
+  memory can stay allocated after its phase ends and come back during a later phase (Krea 2's decoder at 1024²: about
+  11.5 GB of activations for 52 MB of weights, returned while the next prompt's text encoder loaded). The all-resident
+  accounting counted it as held, added it again on the next run although nothing had loaded, and measured nothing
+  for the encoder that loaded while it came back. On a 64 GB Mac the phases' sum then exceeded the budget by 54 MB, and
+  the plan fell to per phase and never returned: every render loaded every graph again. Now:
+  - A phase occurrence that loads nothing at the same specialization count keeps the phase's held bytes; its rise
+    above what the residency already holds is its transient.
+  - Memory that comes back during a phase is taken off the held bytes of the phases before it (the one that ran last
+    first), and a load is measured from the lowest level its phase reached.
+  - Admission records the peak an all-resident generation actually reached, per profile, specialization count and
+    the graphs resident (an export's graphs a request never uses aren't loaded). When the phases' sum doesn't fit but
+    such a measured peak does, the graphs stay resident, or a per-phase residency returns to all resident. A
+    measurement counts only if it held at least the graphs resident now and a graph of every phase the plan counts (an
+    encode alone doesn't).
+  No public API changes.
 - **Krea 2 metrics and the pressure gate see admission's release.** `loadedRoles` and the `PipelineOptions.pressure`
   check now read the resident graphs after admission plans. When it released them, the generation reports, and gates
   on, loading them all.

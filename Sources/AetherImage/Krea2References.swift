@@ -416,7 +416,7 @@ extension Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfileForEncode, shape: prompt.conditioningRows)
+            let residency = try admission.begin(profile: lastProfileForEncode, shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure,
                !Set([wiring.text.role, rules.vision]).isSubset(of: Set(admission.residentRoles)),
                await pressure.level == .critical {
@@ -424,6 +424,11 @@ extension Krea2Pipeline {
                 throw AetherError.memoryPressure
             }
             do {
+                // The reference conditioning graphs (the vision tower and the text encoder, whose references function
+                // takes its own copy of the weights when it runs) are loaded for this encode alone: the text-only
+                // encoder is released first and everything this phase loads after it, so the denoisers the last
+                // generation kept never share memory with them.
+                residency.releasePhase(.perPrompt)
                 try await residency.beginPhase(.perPrompt)
                 let arena = TensorArena()
                 let embedded = try await embed(patches, rules: rules, residency: residency, arena: arena)
@@ -434,6 +439,7 @@ extension Krea2Pipeline {
                     truncated: prompt.truncated, referenceDigests: references.map(\.digest), export: export,
                     scalarType: rows.scalarType, bytes: try rows.readBytes())
                 residency.endPhase(.perPrompt)
+                residency.releasePhase(.perPrompt)
                 try Task.checkCancellation()
                 admission.finish()
                 if retention == .releaseAfterEachGeneration { admission.release() }

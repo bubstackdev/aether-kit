@@ -359,8 +359,9 @@ extension DriverContract {
     /// `vaeDecoder` in `latents`, out `image`; an optional `vaeEncoder` (refine) in `pixels`, out `latents`; for
     /// reference images, an optional `vision` graph (in `patches`, `grid`; out `imageEmbeds`, `deepstackEmbeds`) and the
     /// text encoder's `references` function (in `tokens`, `ropePositions`, `imageEmbeds`, `deepstackEmbeds`; out
-    /// `conditioning`). The driver also requires a tokenizer and the `schedule`, `latent` and `krea2` blocks (checked
-    /// when it loads).
+    /// `conditioning`). Each denoiser may take a `textMask` (all four or none): its text axis is then a fixed length
+    /// the host pads the conditioning to. The driver also requires a tokenizer and the `schedule`, `latent` and `krea2`
+    /// blocks (checked when it loads).
     public static let krea2 = DriverContract(
         driver: .krea2,
         graphs: [
@@ -383,6 +384,7 @@ extension DriverContract {
                     "conditioning": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
                     "sigma": RoleSpec(required: true, rank: 1, scalar: .floatingPoint),
                     "imageRotary": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+                    "textMask": kreaTextMask,
                 ],
                 outputs: kreaCarries.merging(["condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint)]) { a, _ in a }),
             "denoiser1": stateless(inputs: kreaSegmentInputs, outputs: kreaCarries),
@@ -416,7 +418,10 @@ extension DriverContract {
     private static let kreaSegmentInputs: [String: RoleSpec] = kreaCarries.merging([
         "condition": RoleSpec(required: true, rank: 2, scalar: .floatingPoint),
         "imageRotary": RoleSpec(required: true, rank: 3, scalar: .floatingPoint),
+        "textMask": kreaTextMask,
     ]) { a, _ in a }
+    /// `[T]`: 1 for a real conditioning row, 0 for padding (a key-padding mask over the fixed text length).
+    private static let kreaTextMask = RoleSpec(required: false, rank: 1, scalar: .floatingPoint)
 
     /// `kokoro@1` (MANIFEST.md §5.9): Kokoro-82M. `durations` in `tokens` and `style`, out per-token `durations`,
     /// `prosody` and `text` features; `decoder` in the frame-aligned `prosody` and `text`, `style`, the harmonic-source

@@ -5,8 +5,9 @@
 
 Writes a small random snapshot (the real layer counts, 128-wide heads with GQA, narrow widths; random norm gains so
 the rotary permutation and every normalization are exercised), then compares in float32:
-- the four chained denoiser segments on *unpadded* text rows against `Krea2Transformer2DModel.forward` on the
-  pipeline's padded `[real | PAD]` rows with its key-padding mask (the equivalence the graphs rely on);
+- the four chained denoiser segments against `Krea2Transformer2DModel.forward` on the pipeline's padded `[real | PAD]`
+  rows with its key-padding mask: the exact-length graphs on the real rows alone, and the masked graphs at two fixed
+  lengths with zero padding and with large garbage padding (the mask must make the padding irrelevant);
 - the text encoder graph against `Qwen3VLModel` hidden states at Krea's taps (rows 34..);
 - the VAE decoder graph against the pipeline's decode tail (`_unpack_latents`, denormalize, `vae.decode`);
 - the VAE encoder graph (refine) against `vae.encode(...).latent_dist.mode()`, normalized and packed by the pipeline's
@@ -73,6 +74,9 @@ def write_checkpoint(root: Path) -> None:
 
 
 def check_denoiser(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
+    """Upstream's forward on `[real | PAD]` rows with its key-padding mask, against (a) the exact-length graphs on the
+    real rows alone, and (b) the masked graphs at two fixed lengths, padded with zeros and with large garbage rows
+    (the mask must make the padding irrelevant)."""
     from diffusers import Krea2Pipeline, Krea2Transformer2DModel
 
     g = torch.Generator().manual_seed(1)
@@ -91,19 +95,34 @@ def check_denoiser(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
                          position_ids=ids, encoder_attention_mask=mask[None], return_dict=False)[0][0]
     del model
     rope = kg.rotary_table(rows, columns)
-    carry = (latents, embeds[:real].flatten(1), sigma, rope)
-    cond = None
-    with torch.no_grad():
-        for index in range(len(kg.SEGMENTS)):
-            seg = kg.DenoiserSegment.load(checkpoint, index, compute=torch.float32, strict=False)
-            out = seg(*carry)
-            if convert_dir is not None:
-                convert_and_run(seg, carry, seg.input_names, seg.output_names, convert_dir / f"denoiser{index}.aimodel",
-                                out)
-            if index == 0:
-                cond = out[2]
-            carry = out if index == len(kg.SEGMENTS) - 1 else (out[0], out[1], cond, rope)
-    return metrics(upstream, carry)
+    real_rows = embeds[:real].flatten(1)
+    garbage = 100 * torch.randn(32, real_rows.shape[1], generator=g)
+
+    def chain(masked: bool, text: torch.Tensor, text_mask: torch.Tensor | None, convert: bool = False) -> torch.Tensor:
+        carry = (latents, text, *([text_mask] if masked else []), sigma, rope)
+        cond = None
+        with torch.no_grad():
+            for index in range(len(kg.SEGMENTS)):
+                seg = kg.DenoiserSegment.load(checkpoint, index, compute=torch.float32, strict=False, masked=masked)
+                out = seg(*carry)
+                if convert and convert_dir is not None:
+                    convert_and_run(seg, carry, seg.input_names, seg.output_names,
+                                    convert_dir / f"denoiser{index}{'-masked' if masked else ''}.aimodel", out)
+                if index == 0:
+                    cond = out[2]
+                extra = [text_mask] if masked else []
+                carry = out if index == len(kg.SEGMENTS) - 1 else (out[0], out[1], *extra, cond, rope)
+        return carry
+
+    result = {}
+    result["exactLength"] = metrics(upstream, chain(False, real_rows, None, convert=True))
+    for length in (16, 24):
+        tm = kg.text_mask(real, length)
+        result[f"masked{length}Zeros"] = metrics(upstream, chain(True, kg.pad_rows(real_rows, length), tm,
+                                                                 convert=length == 16))
+        noisy = torch.cat([real_rows, garbage[:length - real]])
+        result[f"masked{length}Garbage"] = metrics(upstream, chain(True, noisy, tm))
+    return result
 
 
 def check_text(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
@@ -320,7 +339,7 @@ def main() -> None:
         convert_dir.mkdir()
     report = {"denoiser": check_denoiser(checkpoint, convert_dir), "text": check_text(checkpoint, convert_dir),
               "vae": check_vae(checkpoint, convert_dir), "references": check_references(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
-    gated = [report["denoiser"], report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"],
+    gated = [*report["denoiser"].values(), report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"],
              report["references"]["vision"], report["references"]["deepstack"], report["references"]["text"]]
     report["passed"] = all(v["cosine"] >= BAR for v in gated) and report["references"]["ropeExact"]
     print(json.dumps(report, indent=1))
