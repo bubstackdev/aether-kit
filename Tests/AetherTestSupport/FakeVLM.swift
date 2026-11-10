@@ -121,15 +121,24 @@ public enum FakeVLM {
     /// A VLM engine over the fakes: `patchRows` tower rows (`patchRows / 4` tokens an image), `slots` and `images`.
     public static func engine(
         patchRows: Int = 16, slots: Int = 24, images: Int = 4, prefillChunk: Int = 512, capacity: Int = 1024,
-        towerLog: CallLog? = nil, rope: RopeLog? = nil, towerGate: TowerGate? = nil
+        towerLog: CallLog? = nil, rope: RopeLog? = nil, towerGate: TowerGate? = nil, options: DecoderEngine.Options? = nil,
+        probe: GPUMemoryProbe? = nil, modelBytes: Int64 = 0
     ) async throws -> DecoderEngine {
         let decoder = FakeVLMDecoder(slots: slots, images: images, rope: rope)
         let tower = FakeVisionTower(rows: patchRows, log: towerLog, gate: towerGate)
+        let device = Device(platform: .macOS, architecture: "fake9", physicalMemory: 64 << 30)
+        let options = options ?? DecoderEngine.Options(capacity: capacity, memoryBudget: .bytes(1 << 30))
+        guard let probe else {
+            return try await DecoderEngine(
+                step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk), vision: tower,
+                visionGraph: visionGraph(), image: try imageBlock(slots: slots, images: images),
+                preprocess: preprocess(patchRows: patchRows), device: device, options: options)
+        }
         return try await DecoderEngine(
             step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk), vision: tower,
             visionGraph: visionGraph(), image: try imageBlock(slots: slots, images: images),
-            preprocess: preprocess(patchRows: patchRows), device: Device(platform: .macOS, architecture: "fake9", physicalMemory: 64 << 30),
-            options: DecoderEngine.Options(capacity: capacity, memoryBudget: .bytes(1 << 30)))
+            preprocess: preprocess(patchRows: patchRows), device: device, options: options, probe: probe,
+            modelBytes: modelBytes)
     }
 
     /// A deterministic `width` × `height` RGB image, different for each `seed`.

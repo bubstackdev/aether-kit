@@ -1,7 +1,8 @@
 import CoreGraphics
 import Foundation
+import Synchronization
 import Testing
-@testable import AetherRuntime
+@_spi(Diagnostics) @testable import AetherRuntime
 import AetherCore
 import AetherTestSupport
 
@@ -55,9 +56,9 @@ struct VisionLanguageTests {
         while index < tokens.count {
             if k < images.count, images[k].start == index {
                 let image = images[k]
-                for hi in 0..<image.gridH { for wi in 0..<image.gridW { rows.append([Int32(p), Int32(p + hi), Int32(p + wi)]) } }
+                for hi in 0..<image.gridHeight { for wi in 0..<image.gridWidth { rows.append([Int32(p), Int32(p + hi), Int32(p + wi)]) } }
                 index += image.count
-                p += max(image.gridH, image.gridW)
+                p += max(image.gridHeight, image.gridWidth)
                 k += 1
             } else {
                 rows.append([Int32(p), Int32(p), Int32(p)])
@@ -83,7 +84,7 @@ struct VisionLanguageTests {
     }
 
     static func spec(slots: Int = 64, images: Int = 4, rows: Int = 64) throws -> ImageInputSpec {
-        ImageInputSpec(padId: FakeVLM.pad, openId: FakeVLM.open, closeId: FakeVLM.close, idBase: Int32(FakeVLM.vocab),
+        ImageInputSpec(padID: FakeVLM.pad, openID: FakeVLM.open, closeID: FakeVLM.close, idBase: Int32(FakeVLM.vocab),
                        slots: slots, maxImages: images, patchRows: rows, merge: 2,
                        preprocessor: try ImagePreprocessor(FakeVLM.preprocess(patchRows: rows)))
     }
@@ -120,7 +121,7 @@ struct VisionLanguageTests {
         }
         // The grids: 8 × 16 pixels is a 4 × 8 patch grid, 2 × 4 tokens.
         let wide = try Self.prepared(width: 16, height: 8, seed: 0, spec: spec)
-        #expect((wide.gridH, wide.gridW, wide.tokens) == (4, 8, 8))
+        #expect((wide.gridHeight, wide.gridWidth, wide.tokens) == (4, 8, 8))
     }
 
     @Test func planRefusesWhatTheDecoderCannotHold() throws {
@@ -169,7 +170,7 @@ struct VisionLanguageTests {
         #expect(a.values.count == 16 * FakeVLM.rowLength)
         // Larger than the tower: smart resize brings it within (64 rows of 2 × 2 pixels: 256 pixels).
         let big = try Self.prepared(width: 64, height: 32, seed: 0, spec: spec)
-        #expect(big.gridH * big.gridW <= 64)
+        #expect(big.gridHeight * big.gridWidth <= 64)
     }
 
     // MARK: the manifest
@@ -421,5 +422,170 @@ enum Generatorless {
         var n = 0
         while n < a.count, n < b.count, a[n] == b[n] { n += 1 }
         return n
+    }
+}
+
+/// docs/VLM.md V5 (G5's accounting, hermetic): what load charges for the model, and the engine's live memory readings,
+/// on the fake tower and decoder with a hand-moved level.
+@Suite("Vision-language memory (fake)")
+struct VisionLanguageMemoryTests {
+    /// A level the test moves by hand.
+    final class Level: Sendable {
+        let bytes = Mutex<Int64>(10_000)
+        var probe: GPUMemoryProbe { GPUMemoryProbe { [self] in bytes.withLock { $0 } } }
+        func set(_ value: Int64) { bytes.withLock { $0 = value } }
+    }
+
+    /// Load charges the larger of what it measured (the files' size, standing in here) and the declared figure; a
+    /// declared figure the budget can't hold beside the KV refuses the load, as a measured one would.
+    @Test func loadChargesTheDeclaredModelBytesWhenLarger() async throws {
+        func options(declared: Int64?) -> DecoderEngine.Options {
+            var options = DecoderEngine.Options(capacity: 1024, memoryBudget: .bytes(1 << 30))
+            options.modelCharge = declared.map { .declared(bytes: $0) } ?? .qualified
+            return options
+        }
+        let level = Level()
+        let undeclared = try await FakeVLM.engine(options: options(declared: nil), probe: level.probe, modelBytes: 500)
+        #expect(undeclared.sizing.modelBytes == 500)
+        #expect(await undeclared.memory.chargedModelBytes == 500)
+        let smaller = try await FakeVLM.engine(options: options(declared: 100), probe: level.probe, modelBytes: 500)
+        #expect(smaller.sizing.modelBytes == 500)
+        let larger = try await FakeVLM.engine(options: options(declared: 9_000_000), probe: level.probe, modelBytes: 500)
+        #expect(larger.sizing.modelBytes == 9_000_000)
+        #expect(await larger.memory.chargedModelBytes == 9_000_000)
+        // The KV at 1,024 tokens no longer fits a budget the declared model fills.
+        await #expect(throws: AetherError.self) {
+            _ = try await FakeVLM.engine(options: options(declared: 1 << 30), probe: level.probe)
+        }
+        await #expect(throws: AetherError.self) {
+            _ = try await FakeVLM.engine(options: options(declared: -1), probe: level.probe)
+        }
+        // A text model on the same engine is charged the same way.
+        let text = options(declared: 1 << 30)
+        await #expect(throws: AetherError.self) {
+            let fake = FakeLM(FakeLM.Config())
+            _ = try await DecoderEngine(step: fake, graph: fake.manifestGraph(), device: DecoderEngineTests.mac, options: text)
+        }
+    }
+
+    /// The readings follow the probe at the call: the model's memory arriving with its first run (after load) is
+    /// measured above the engine's own buffers, the peak and the measured model bytes keep their highest, and what the
+    /// engine holds now falls when the level does.
+    @Test func memoryReadingsFollowTheLevelAboveTheEnginesBuffers() async throws {
+        let level = Level()
+        let engine = try await FakeVLM.engine(probe: level.probe, modelBytes: 777)
+        let loaded = await engine.memory
+        #expect(loaded.baselineBytes == 10_000 && loaded.currentBytes == 10_000 && loaded.peakBytes == 10_000)
+        #expect(loaded.liveResidentBytes == 0 && loaded.measuredModelBytes == 0 && loaded.chargedModelBytes == 777)
+        #expect(loaded.ownedBytes > 0, "KV, logits, statics and the tower's buffers")
+        let owned = loaded.ownedBytes
+        // The engine's buffers and 5,000 bytes of the model's own arrive with the first image and prefill.
+        level.set(10_000 + owned + 5_000)
+        let (plan, prepared) = try VisionLanguageTests.plan(engine, [(8, 8, 1)])
+        try await engine.bindImages(plan, prepared: prepared)
+        _ = try await engine.prefill(plan.tokens)
+        let warm = await engine.memory
+        #expect(warm.ownedBytes == owned)
+        #expect(warm.measuredModelBytes == 5_000 && warm.peakBytes == 10_000 + owned + 5_000)
+        #expect(warm.liveResidentBytes == owned + 5_000)
+        // Working memory given back: what it holds now falls, the peak and the measurement keep their highest.
+        level.set(10_000 + owned + 2_000)
+        let after = await engine.memory
+        #expect(after.liveResidentBytes == owned + 2_000 && after.currentBytes == 10_000 + owned + 2_000)
+        #expect(after.peakBytes == warm.peakBytes && after.measuredModelBytes == 5_000)
+        // A greedy decode is read when it ends.
+        level.set(10_000 + owned + 7_500)
+        try await engine.beginGreedy(first: 1, limit: 2)
+        while try await engine.nextGreedy() != nil {}
+        try await engine.endGreedy()
+        level.set(10_000 + owned)
+        #expect(await engine.memory.measuredModelBytes == 7_500)
+        // Below the baseline, nothing is held.
+        level.set(1_000)
+        #expect(await engine.memory.liveResidentBytes == 0)
+    }
+}
+
+/// The kit's qualified model bytes (``DecoderEngine/qualifiedModelBytesTable``), hermetic: keyed by the export's digest and
+/// the chip, declared for a bundle load only when the caller declared nothing, and charged like a declaration.
+@Suite("Qualified model bytes")
+struct QualifiedModelBytesTests {
+    static func vlmManifest() throws -> Manifest {
+        let url = try #require(Bundle.module.url(forResource: "Fixtures/qwen3vl-4b-sample-aether", withExtension: "json"))
+        return try Manifest.decode(Data(contentsOf: url))
+    }
+
+    @Test func anEntryMatchesOnlyItsExportAndChip() throws {
+        let vlm = try Self.vlmManifest()
+        let text = try Fixtures.manifest("qwen3-0.6b")
+        #expect(text.driver == .decoderLM)
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let other = Device(platform: .macOS, architecture: "h16g")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [
+            .init(exportDigest: vlm.contentDigest, architecture: "h17c"): 12 << 30,
+            .init(exportDigest: text.contentDigest, architecture: "h17c"): 2 << 30,
+        ]
+        #expect(DecoderEngine.qualifiedModelBytes(for: vlm, device: chip, table: table) == 12 << 30)
+        #expect(DecoderEngine.qualifiedModelBytes(for: text, device: chip, table: table) == 2 << 30)
+        #expect(DecoderEngine.qualifiedModelBytes(for: vlm, device: other, table: table) == nil, "another chip")
+        // Another export: any change to the manifest changes its digest.
+        var edited = vlm
+        edited.id += "-requantized"
+        #expect(edited.contentDigest != vlm.contentDigest)
+        #expect(DecoderEngine.qualifiedModelBytes(for: edited, device: chip, table: table) == nil, "another export")
+        // Only the decoder engine's drivers.
+        let krea = try Manifest.decode(Data(contentsOf: Fixtures.zoo.deletingLastPathComponent().appending(path: "krea2/vanilla.json")))
+        #expect(DecoderEngine.qualifiedModelBytes(
+            for: krea, device: chip, table: [.init(exportDigest: krea.contentDigest, architecture: "h17c"): 1]) == nil)
+    }
+
+    /// `.qualified` takes the entry (or what load measures without one); `.measured` and a declaration are kept.
+    @Test func aBundleLoadDeclaresTheEntryOnlyWithoutADeclaration() throws {
+        let vlm = try Self.vlmManifest()
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [.init(exportDigest: vlm.contentDigest, architecture: "h17c"): 9_000_000]
+        let undeclared = DecoderEngine.Options()
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: table).modelCharge == .declared(bytes: 9_000_000))
+        #expect(DecoderEngine.declaringQualified(undeclared, manifest: vlm, device: chip, table: [:]).modelCharge == .measured)
+        for explicit: DecoderEngine.Options.ModelCharge in [.measured, .declared(bytes: 0), .declared(bytes: 100), .declared(bytes: 20_000_000)] {
+            var options = DecoderEngine.Options()
+            options.modelCharge = explicit
+            #expect(DecoderEngine.declaringQualified(options, manifest: vlm, device: chip, table: table).modelCharge == explicit)
+        }
+    }
+
+    /// The declared entry is charged like any declaration, and the engine reports it.
+    @Test func theQualifiedFigureIsChargedAndReported() async throws {
+        let vlm = try Self.vlmManifest()
+        let chip = Device(platform: .macOS, architecture: "h17c")
+        let table: [DecoderEngine.QualifiedExport: Int64] = [.init(exportDigest: vlm.contentDigest, architecture: "h17c"): 9_000_000]
+        let options = DecoderEngine.declaringQualified(
+            DecoderEngine.Options(capacity: 1024, memoryBudget: .bytes(1 << 30)), manifest: vlm, device: chip, table: table)
+        let level = VisionLanguageMemoryTests.Level()
+        let engine = try await FakeVLM.engine(options: options, probe: level.probe, modelBytes: 500)
+        #expect(engine.declaredModelBytes == 9_000_000)
+        let charged = await engine.memory.chargedModelBytes
+        #expect(engine.sizing.modelBytes == 9_000_000 && charged == 9_000_000)
+        let plain = try await FakeVLM.engine(probe: level.probe, modelBytes: 500)
+        #expect(plain.declaredModelBytes == nil && plain.sizing.modelBytes == 500)
+    }
+
+    /// What the gates print is the table's literal for the export and chip, rounded up to a whole MiB.
+    @Test func theGateEntryIsTheTablesLiteral() throws {
+        let vlm = try Self.vlmManifest()
+        let entry = DecoderEngine.qualifiedEntry(
+            measured: (3 << 30) + 1, manifest: vlm, device: Device(platform: .macOS, architecture: "h17c"), note: "a gate")
+        #expect(entry == "QualifiedExport(exportDigest: \"\(vlm.contentDigest)\", architecture: \"h17c\"): 3073 << 20, // \(vlm.id), a gate")
+        #expect(DecoderEngine.qualifiedEntry(measured: 0, manifest: vlm, device: .init(platform: .macOS, architecture: "x"), note: "n")
+            .contains(": 0 << 20,"))
+    }
+
+    /// The table the kit ships holds only decoder-engine exports with positive figures.
+    @Test func theShippedTableIsWellFormed() {
+        for (key, bytes) in DecoderEngine.qualifiedModelBytesTable {
+            #expect(bytes > 0)
+            #expect(key.exportDigest.count == 64 && key.exportDigest.allSatisfy(\.isHexDigit))
+            #expect(!key.architecture.isEmpty)
+        }
     }
 }
