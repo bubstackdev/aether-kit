@@ -129,6 +129,12 @@ public protocol ImageConditionedEngine: LanguageEngine {
 `ImagePromptPlan` (pure, AetherRuntime) expands the pads, checks each pad sits between open and close and that pads
 match images, and computes the statics. `LanguageEngineInvariants` runs unchanged on text-only prompts.
 
+As built (0.2.0 API freeze, #180 finding 7): the protocol, `ImageInputSpec`, `ImagePromptPlan` (its tokens, images
+and ids) and `PreparedPromptImage` (its grid, digest and tokens) are public, so a host can stand in its own engine. The
+planning arithmetic (`ImagePromptPlan.init(rendered:images:spec:)`, `imagePositions`, `ropeShifts`,
+`reusableLimit`), image preparation, the prepared rows, `PhasedGraphBackend` / `GraphFunctionSet` and the
+fake-backend `DecoderEngine.init` are `package`; `DecoderEngine.imageEncodes` is `@_spi(Diagnostics)`.
+
 ### 3.3 `DecoderCore` and `DecoderEngine`
 
 - **Static inputs.** Roles with `binding: static` and no `source` get one arena buffer at the descriptor's shape
