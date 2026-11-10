@@ -683,6 +683,13 @@ files `tables/<recipe>/<task>/step-<i>/block-NN.raw`), `adapter`, `video` (tile,
 `audio` and `platforms`. `license` is `LicenseRef-MiniMax-H3-Community-License`; the bundle ships `LICENSE` and the
 required `NOTICE`.
 
+The driver holds a request to `limits` before anything loads: the conditioner's rows (the prompt's tokens, after the
+keyframes' presentation) within `textTokens`, and a step's packed rows (those plus the keyframe conditions, the audio
+and the video rows) within `rows`. A prompt past what the clip leaves it is refused as too long, and a clip whose
+keyframes and rows leave no room for a prompt as too large at its size, each an `AetherError.capacity` that
+`VideoRefusal` reads back; `MiniMaxH3Pipeline.clipLimits(profile:keyframeCount:)` and `preflight(_:)` compute the same
+on the CPU.
+
 Decoding refuses (naming the field): a profile whose key isn't `<W>x<H>x<frames>`, sides that aren't multiples of 32
 over 256 px, frames off the 17n + 5 grid, `latentFrames` or `videoRows` that don't follow from them, an `audioDecoder`
 or `keyframeEncoder` naming no graph; bad `limits`; a `tap` other than the last layer; rotary tables shorter than the
