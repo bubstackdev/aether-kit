@@ -4,6 +4,30 @@
 
 ### New
 
+- **MiniMax H3: every video profile, with measured admission (H2, the no-GPU part).** The exporter's profile table
+  (`Forge/h3/profiles_h3.py`, standard library only) adds 10 s clips (243 frames) at 960×544 and 544×960, a 704×704
+  square and 1280×704 / 704×1280 to the 5 s profiles. Each manifest profile now carries its `recipes`, its `memory`
+  class (an 18 GiB bar; or 24 GiB plus a 64 GiB physical-memory minimum for 10 s and the large canvas) and `shapes`,
+  its `ShapeProfile` entries. See MANIFEST.md §5.10.
+  - **Measured admission:** `h3.envelopes` records the memory gate's measurements per admission key (`<profile>`,
+    `<profile>/fl2va1`, `<profile>/fl2va2`) and Core AI architecture: each phase's peak and held bytes, the recipes
+    measured, the margin, and the export they were measured on (`Manifest.measurementDigest`).
+    `MiniMaxH3Pipeline` admits only under an envelope for this export and chip, on a device with the profile's
+    minimum physical memory, and seeds its ledger from them. `envelopes` and `envelope(for:)` expose them
+    (`VideoMemoryEnvelope`).
+  - **The memory gate's policy:** `VideoAdmissionPolicy.measuring` (`MiniMaxH3Model.admissionPolicy`, or the new
+    `MiniMaxH3Pipeline.init(…, admissionPolicy:)`) admits every profile, planned from its files, and seeds nothing.
+  - **Tools:** `Forge/h3/extend_h3.py` extends an export into a new folder that hard-links what it reuses. With
+    `--manifest-only` it names only the profiles the graphs allow. Otherwise the exporter's new `--only-missing`
+    stages convert the missing audio decoder (405 latents) and the new canvases' keyframe tails and vision towers.
+    `Forge/h3/record_envelopes_h3.py` writes a gate run's records into the manifest. `scripts/h3-memory-gate` runs
+    the gate matrix: one render per process under `scripts/gpu-lease`, per-render JSON records, a stop below
+    100 GiB free, and a prune of its compile-cache bucket at the end. The suite is `MiniMaxH3ProfileGateTests`.
+  - **Behaviour change:** an H3 request without a measured envelope is refused (`unsupportedOperation`). On the G4
+    export only 960×544×124 turbo8 text-to-video is covered (its seeded footprints). Keyframed clips, turbo4 and
+    544×960 there need the H2 gate's envelopes, or `.measuring`.
+  - **Not yet measured:** the envelopes come from the H2 gate on the GPU.
+
 - **Krea 2 at a fixed text length (`textMask`).** `Forge/krea2` exports the denoisers with upstream Diffusers' text
   key-padding mask, applied in the text-fusion refiner and all 28 joint blocks (`--text-mask`, the default;
   `--no-text-mask` keeps the exact-length graphs). The text axis is static at 1,116 rows, the most a reference prompt

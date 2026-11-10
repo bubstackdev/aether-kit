@@ -1,7 +1,7 @@
 """Export MiniMax H3 (FL2VA + the Turbo 8-step adapter) as an Aether-Kit bundle (MANIFEST.md §5.8, §5.10 proposed).
 
     Forge/.venv/bin/python -I Forge/h3/export_h3.py --output <dir> --stage <stage> [...]
-    Forge/.venv/bin/python -I Forge/h3/export_h3.py --sample-manifest > Tests/AetherCoreTests/Fixtures/h3/minimax-h3.json
+    python3 -I Forge/h3/profiles_h3.py --sample-manifest > Tests/AetherCoreTests/Fixtures/h3/minimax-h3.json
 
 Stages write into OUTPUT/bundle (the installed-revision layout: `.aether/aether.json`, models/, weights/, tables/,
 tokenizer/, the license files) and record what they made in OUTPUT/work/build.json; OUTPUT/work also holds the
@@ -28,6 +28,10 @@ converted VAEs. Each stage checks its graph on the CPU against the original modu
   vision           The Qwen3-VL vision tower per canvas (fl2va keyframe presentation), weights lifted.
   package          Tokenizer, license files, NOTICE, `.aether/aether.json`, SHA256SUMS and export-report.json.
 
+The profiles (canvas, frames, recipes, memory bar) and the manifest are in profiles_h3.py (standard library only).
+--only-missing (audio-decoder, video-encoder, vision) adds what a profile list grew by to an existing export;
+extend_h3.py drives it on a hard-linked copy.
+
 --random (body, body-weights only): seeded random weights in the real shapes, for the device-chain gate; nothing is
 read from the checkpoint and the result is not a model.
 """
@@ -46,11 +50,10 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import h3_graphs as hg  # noqa: E402
+from profiles_h3 import AUDIO_LATENTS, CANVASES, PROFILES, manifest, sample_manifest  # noqa: E402,F401
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_SNAPSHOT = Path.home() / ".cache/huggingface/hub/models--MiniMaxAI--MiniMax-H3/snapshots" / hg.REVISION
-PROFILES = [hg.Geometry(960, 544, 120), hg.Geometry(544, 960, 120)]
-CANVASES = sorted({f"{p.width}x{p.height}" for p in PROFILES})
 NOTICE_LINE = "MiniMax H3 is licensed under the MiniMax H3 Community License Agreement, Copyright © 2026 MiniMax. All Rights Reserved."
 TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt", "chat_template.jinja")
 
@@ -382,8 +385,11 @@ def stage_convert_vae(args, build: Build) -> None:
 
 def stage_audio_decoder(args, build: Build) -> None:
     vae = converted_vae(build, audio=True)
-    module, fixed = hg.AudioDecoder(vae).eval(), {}
-    for na in sorted({p.audio_latents for p in PROFILES}):
+    module = hg.AudioDecoder(vae).eval()
+    fixed = dict(build.meta.get("audio-decoder", {}).get("fixed", {})) if args.only_missing else {}
+    for na in AUDIO_LATENTS:
+        if str(na) in fixed:
+            continue
         torch.manual_seed(1043)
         rows = torch.randn(2, na, 32)
         with torch.inference_mode():
@@ -424,8 +430,12 @@ def stage_video_encoder(args, build: Build) -> None:
     from diffusers.utils.torch_utils import randn_tensor
     vae = converted_vae(build)
     assert vae.use_tiling and vae.tile_sample_min_height == vae.tile_sample_min_width == hg.VIDEO_TILE
-    tile_module, side, tails, checks = hg.TileEncoder(vae).eval(), hg.VIDEO_TILE, {}, {}
+    tile_module, side = hg.TileEncoder(vae).eval(), hg.VIDEO_TILE
+    previous = build.meta.get("video-encoder", {}) if args.only_missing else {}
+    tails, checks = dict(previous.get("tails", {})), dict(previous.get("checks", {}))
     for key in CANVASES:
+        if key in tails:
+            continue
         width, height = (int(v) for v in key.split("x"))
         ys, _, yo = vae._split_tiles(height, side, 64)
         xs, _, xo = vae._split_tiles(width, side, 64)
@@ -444,8 +454,8 @@ def stage_video_encoder(args, build: Build) -> None:
         assert check["byteIdentical"], check
         tails[key] = hg.convert(tail, (moments,), None, ["tiles"], ["condition"], build.bundle / f"models/video-encoder-tail-{key}.aimodel")
         checks[key] = check
-    tile = hg.convert(tile_module, (torch.zeros(1, 3, 1, side, side),), None, ["pixels"], ["moments"],
-                      build.bundle / "models/video-encoder-tile256.aimodel")
+    tile = previous.get("tile") or hg.convert(tile_module, (torch.zeros(1, 3, 1, side, side),), None, ["pixels"], ["moments"],
+                                              build.bundle / "models/video-encoder-tile256.aimodel")
     build.record("video-encoder", tile=tile, tails=tails, checks=checks, tileSize=side, seed=hg.ENCODE_SEED,
                  momentsChannels=2 * vae.config.latent_channels)
 
@@ -495,10 +505,16 @@ def stage_vision(args, build: Build) -> None:
             return v.merger(x), torch.stack(levels)
 
     graph, params = hg.lift(VisionTower().eval())
-    extents, specs = hg.WeightFile(build.bundle / "weights/vision.bin", "main:weights/vision.bin").write(params, torch.bfloat16)
-    (build.bundle / "weights/vision.json").write_text(json.dumps({"inputs": list(extents), "blocks": [extents]}, indent=1))
-    functions, checks = {}, {}
+    previous = build.meta.get("vision", {}) if args.only_missing else {}
+    # Extending an export: the tower's weights are the ones already in the bundle (checked byte for byte, not written).
+    reuse = bool(previous) and (build.bundle / "weights/vision.bin").exists()
+    extents, specs = hg.WeightFile(build.bundle / "weights/vision.bin", "main:weights/vision.bin").write(params, torch.bfloat16, verify=reuse)
+    if not reuse:
+        (build.bundle / "weights/vision.json").write_text(json.dumps({"inputs": list(extents), "blocks": [extents]}, indent=1))
+    functions, checks = dict(previous.get("functions", {})), dict(previous.get("checks", {}))
     for key in CANVASES:
+        if key in functions:
+            continue
         width, height = (int(v) for v in key.split("x"))
         assert width % (patch * merge) == 0 and height % (patch * merge) == 0, key
         grid_h, grid_w = height // patch, width // patch
@@ -525,147 +541,6 @@ def stage_vision(args, build: Build) -> None:
                                "imagePad": config.image_token_id, "visionEnd": config.vision_end_token_id})
 
 
-# MARK: the manifest (MANIFEST.md §5.8 normative; driver `minimax-h3@1` and its `h3` block proposed until G4 step 2b)
-
-def manifest(meta: dict, files: dict[str, dict]) -> dict:
-    # No graph takes Core AI's `expectFrequentReshapes` hint: with it the GPU's bf16 numerics drift from the path
-    # check_h3.py qualifies against the original modules (the Swift driver's step-0 head velocities moved 5.4% from it,
-    # 10.8% at step 1); without it the driver is bit-identical to that path (G4 step 2b). A profile pins the body's
-    # shapes, so each specializes once; the conditioner specializes per prompt length, within its phase.
-    gpu = {"compute": "gpu", "expectFrequentReshapes": False}
-    fixed = {"compute": "gpu", "expectFrequentReshapes": False}
-    # `name` is this graph's input tensor; `from` is `<role>.<the producing graph's output tensor>`.
-    from_ = lambda name, ref: {"name": name, "source": {"from": ref}}  # noqa: E731
-
-    def weights(table: str, prefix: str, count: int, blocks: int) -> dict:
-        return {"table": f"main:weights/{table}.json", "inputs": [f"w{i}" for i in range(count)], "blocks": blocks}
-
-    body_inputs = len(meta["body"]["check"]["bindings"])
-    text_inputs = len(meta["prepare"]["textInputs"])
-    layer_inputs = len(meta["conditioner"]["inputs"])
-    graphs = {
-        "conditionerLayer": {"file": "main:models/conditioner-layer.aimodel", "function": "main",
-                             "inputs": {"hidden": "hidden", "cos": "cos", "sin": "sin"}, "outputs": {"hidden": "hidden_out"},
-                             "weights": weights("conditioner", "w", layer_inputs, hg.CONDITIONER_LAYERS), "residency": "perPrompt", **gpu},
-        "prepareText": {"file": "main:models/prepare-text.aimodel", "function": "main", "inputs": {"text": "text"},
-                        "outputs": {"refined": "refined"}, "weights": weights("prepare-text", "w", text_inputs, 1),
-                        "residency": "perPrompt", **gpu},
-        "preparePack": {"file": "main:models/prepare-pack.aimodel", "function": "main",
-                        "inputs": {"video": "video", "audio": "audio", "text": from_("text", "prepareText.refined"), "gather": "gather"},
-                        "outputs": {"hidden": "hidden"}, "residency": "perStep", **gpu},
-        "body": {"file": "main:models/body.aimodel", "function": "main",
-                 "inputs": {"hidden": from_("hidden", "preparePack.hidden"), "table": "table", "tags": "tags", "cos": "cos", "sin": "sin"},
-                 "outputs": {"hidden": "hidden_out"}, "weights": weights("body", "w", body_inputs, hg.BLOCKS),
-                 "residency": "perStep", **gpu},
-        "heads": {"file": "main:models/heads.aimodel", "function": "main",
-                  "inputs": {"hidden": from_("hidden", "body.hidden_out"), "temb": "temb", "indices": "indices",
-                             "videoIndices": "video_indices", "audioIndices": "audio_indices"},
-                  "outputs": {"video": "video", "audio": "audio"}, "residency": "perStep", **gpu},
-        "videoDecoder": {"file": "main:models/video-decoder-tile256-bf16.aimodel", "function": "main", "inputs": {"rows": "rows"},
-                         "outputs": {"pixels": "pixels"}, "residency": "perImage", **fixed},
-        "videoEncoderTile": {"file": "main:models/video-encoder-tile256.aimodel", "function": "main", "inputs": {"pixels": "pixels"},
-                             "outputs": {"moments": "moments"}, "residency": "perPrompt", **fixed},
-    }
-    for key in CANVASES:
-        graphs[f"videoEncoderTail{key}"] = {"file": f"main:models/video-encoder-tail-{key}.aimodel", "function": "main",
-                                            "inputs": {"tiles": "tiles"}, "outputs": {"condition": "condition"},
-                                            "residency": "perPrompt", **fixed}
-        if "vision" in meta:
-            graphs[f"conditionerVision{key}"] = {
-                "file": f"main:models/conditioner-vision-{key}.aimodel", "function": "main",
-                "inputs": {"pixels": "pixels", "posIndex": "pos_index", "posWeight": "pos_weight", "patchRC": "patch_rc"},
-                "outputs": {"imageEmbeds": "image_embeds", "deepstack": "deepstack"},
-                "weights": weights("vision", "w", len(meta["vision"]["inputs"]), 1), "residency": "perPrompt", **fixed}
-    for na in sorted(meta["audio-decoder"]["fixed"], key=int):
-        graphs[f"audioDecoder{na}"] = {"file": f"main:models/audio-decoder-na{na}.aimodel", "function": "main",
-                                       "inputs": {"rows": "rows"}, "outputs": {"pcm": "pcm"}, "residency": "perImage", **fixed}
-    c, v, a = meta["conditioner"], meta["video-decoder"], meta["audio-decoder"]
-    h3 = {
-        "tasks": ["t2va", "fl2va"],
-        "profiles": [{"key": p.key, **p.dict(), "audioDecoder": f"audioDecoder{p.audio_latents}",
-                      "keyframeEncoder": f"videoEncoderTail{p.width}x{p.height}"} for p in PROFILES],
-        "limits": {"rows": list(hg.ROWS), "cardinality": list(hg.CARDINALITY), "textTokens": list(hg.TEXT_TOKENS)},
-        "conditioner": {"layers": hg.CONDITIONER_LAYERS, "tap": hg.TAP, "embedding": c["embedding"],
-                        "rope": {k: c["rope"][k] for k in ("theta", "mropeSection", "headDim", "dtype")},
-                        "ropeTables": {"cos": "main:tables/conditioner/rope-cos.raw", "sin": "main:tables/conditioner/rope-sin.raw",
-                                       "rows": hg.TEXT_TOKENS[1]}},
-        "recipes": {k: {"video": r["video"], "audio": r["audio"], "steps": [{"timesteps": s["timesteps"], "temb": s["temb"]["file"],
-                                                                            "blocks": s["blocks"]} for s in r["steps"]]}
-                    for k, r in meta["tables"]["recipes"].items()},
-        "defaultRecipe": "turbo8",
-        "adapter": meta["body-weights"]["adapter"],
-        "video": {"tile": v["tile"], "windowLatents": v["windowLatents"], "windowFrames": v["windowFrames"],
-                  "windowStride": v["windowStride"], "precision": v["precision"], "packing": "patch2x2ChannelMajor",
-                  "rowChannels": 96, "noise": {"kind": "splitmix64BoxMuller", "order": "sourceVideoThenAudio", "dtype": "float32"}},
-        "keyframe": {"tileSize": meta["video-encoder"]["tileSize"], "seed": meta["video-encoder"]["seed"],
-                     "pixelMean": list(hg.PIXEL_MEAN), "pixelStd": list(hg.PIXEL_STD), "conditionTimestep": hg.FL2VA_CONDITION_TIMESTEP},
-        "audio": {"sampleRate": a["sampleRate"], "hop": a["hop"], "channels": a["channels"], "rowChannels": 32},
-        "platforms": ["macos"],
-    }
-    if "vision" in meta:
-        vm = meta["vision"]
-        h3["vision"] = {k: vm[k] for k in ("patchSize", "mergeSize", "temporalPatchSize", "tableSide", "deepstackLevels", "presentation")}
-    return {
-        "schema": 1,
-        "id": "minimax-h3",
-        "task": "text-to-video-audio",
-        "driver": "minimax-h3@1",
-        "variant": {"platform": "macos"},
-        "assets": {"main": {"subtree": "", "files": [{"path": p, **m} for p, m in sorted(files.items())]}},
-        "graphs": graphs,
-        "tokenizer": {"source": {"dir": "main:tokenizer"}, "chatTemplate": "main:tokenizer/chat_template.jinja",
-                      "renderer": "minimax-h3-prompt", "addSpecialTokens": False},
-        "h3": h3,
-        "precision": {"weights": "bf16 (transformer, conditioner, refiner, Turbo LoRA unmerged)", "activations": "bf16",
-                      "components": {"heads": "float32", "videoDecoder": "bf16 weights and compute, float32 in/out",
-                                     "audioDecoder": "float32", "videoEncoder": "float32"}},
-        "license": "LicenseRef-MiniMax-H3-Community-License",
-        "x-license": {"files": ["LICENSE", "NOTICE"], "modified": True, "territory": "excludes the EU, UK, Republic of Korea and USA",
-                      "commercialRevenueCapUSD": 20_000_000, "uiAttribution": "MiniMax H3",
-                      "encoder": "Qwen3-VL-32B (Apache-2.0)"},
-        "provenance": {
-            "source": hg.REPO, "sourceRevision": hg.REVISION,
-            "adapter": f"{hg.ADAPTER_REPO}@{hg.ADAPTER_REVISION}:{hg.ADAPTER_FILE}",
-            "producer": "aether-kit Forge/h3/export_h3.py",
-            "refs": {"diffusersCommit": hg.DIFFUSERS_COMMIT, "forgeLockSHA256": meta.get("forgeLockSHA256", "0" * 64),
-                     "exportReport": "export-report.json"},
-        },
-    }
-
-
-def sample_meta() -> dict:
-    """`build.json` with placeholder values: the manifest's shape without an export (the Swift decoding fixture)."""
-    plans = {("turbo8", "t2va"): 9, ("turbo8", "fl2va"): 9, ("turbo4", "t2va"): 5, ("turbo4", "fl2va"): 5}
-    recipes = {}
-    for (name, task), points in plans.items():
-        # A well-formed grid (σ falling from 1 to 0, timesteps 1 − σ in float32), not the recipe's values.
-        import numpy as np
-        sigmas = [float(np.float32(1 - i / (points - 1))) for i in range(points)]
-        arm = {"shift": 1.0, "timesteps": [float(np.float32(1) - np.float32(s)) for s in sigmas[:-1]], "sigmas": sigmas}
-        recipes[f"{name}/{task}"] = {"video": arm, "audio": arm, "steps": [
-            {"timesteps": [0.5], "temb": {"file": f"main:tables/{name}/{task}/step-{i}/temb.raw"},
-             "blocks": f"main:tables/{name}/{task}/step-{i}/block-{{block:02d}}.raw"} for i in range(points - 1)]}
-    return {
-        "body": {"check": {"bindings": [f"b{i}" for i in range(22)]}},
-        "body-weights": {"adapter": {"repo": hg.ADAPTER_REPO, "revision": hg.ADAPTER_REVISION, "sha256": hg.ADAPTER_SHA256,
-                                     "execution": "dynamicLora", "rank": hg.LORA_RANK, "alpha": hg.LORA_ALPHA}},
-        "prepare": {"textInputs": [{"name": f"w{i}"} for i in range(20)]},
-        "conditioner": {"inputs": [{"name": f"w{i}"} for i in range(11)],
-                        "embedding": {"file": "main:weights/conditioner/embedding.bin", "rows": 151936, "width": 5120, "dtype": "bfloat16"},
-                        "rope": {"theta": 5000000, "mropeSection": [24, 20, 20], "headDim": 128, "dtype": "bfloat16"}},
-        "tables": {"recipes": recipes},
-        "video-decoder": {"tile": hg.VIDEO_TILE, "windowLatents": hg.WINDOW_LATENTS, "windowFrames": hg.WINDOW_FRAMES,
-                          "windowStride": hg.WINDOW_STRIDE, "precision": "bfloat16"},
-        "video-encoder": {"tileSize": hg.VIDEO_TILE, "seed": hg.ENCODE_SEED},
-        "audio-decoder": {"fixed": {str(p.audio_latents): {} for p in PROFILES}, "sampleRate": hg.SAMPLE_RATE,
-                          "hop": hg.AUDIO_HOP, "channels": hg.AUDIO_CHANNELS},
-    }
-
-
-def sample_manifest() -> dict:
-    return manifest(sample_meta(), {".aether/placeholder": {"bytes": 1, "sha256": "0" * 64}})
-
-
 def notice() -> str:
     return "\n".join([
         "MiniMax H3 (Aether-Kit Core AI export)",
@@ -690,6 +565,10 @@ def notice() -> str:
 
 def stage_package(args, build: Build) -> None:
     bundle, meta = build.bundle, build.meta
+    # It rewrites the license files, NOTICE and the tokenizer: an extended export (hard-linked files) is packaged by
+    # extend_h3.py instead, which writes only fresh files.
+    for path in (bundle / "LICENSE", bundle / "NOTICE", bundle / "tokenizer"):
+        hg.refuse_linked(path)
     for name in ("body", "body-weights", "tables", "heads", "prepare", "conditioner", "audio-decoder", "video-decoder", "video-encoder"):
         assert name in meta and not meta[name].get("random"), f"stage {name} is missing (or random); the bundle is incomplete"
     tokenizer = bundle / "tokenizer"
@@ -735,6 +614,9 @@ def main() -> None:
     parser.add_argument("--random-blocks", type=int, default=4)
     parser.add_argument("--minimum-free-gb", type=float, default=150.0)
     parser.add_argument("--sample-manifest", action="store_true", help="print the manifest's shape and exit (the Swift fixture)")
+    parser.add_argument("--only-missing", action="store_true",
+                        help="audio-decoder, video-encoder, vision: convert only the latent counts and canvases build.json "
+                             "doesn't list yet, keeping the rest (extending an export; see extend_h3.py)")
     args = parser.parse_args()
     if args.sample_manifest:
         print(json.dumps(sample_manifest(), indent=2, ensure_ascii=False))

@@ -556,8 +556,11 @@ runtime pieces:
   conditioner chain runs over the presentation (labels, vision blocks, prompt) with M-RoPE tables gathered from the
   text ones and runs in segments so DeepStack's bf16 adds happen on the host after layers 0–2. The steps lay out
   `[text | conditions | audio | video]` (MANIFEST.md §5.10), the conditions noised first from Kit's stream and left
-  alone by the scheduler. A keyframed generation is admitted under its own ledger key (`<profile>/fl2va<n>`), so it
-  plans from files until its phases are measured.
+  alone by the scheduler. A keyframed generation is admitted under its own ledger key (`<profile>/fl2va<n>`).
+- **Measured admission (H2):** a generation runs only under a measured envelope for its key and recipe on this export
+  and Core AI architecture (`h3.envelopes`, MANIFEST.md §5.10), on a device with the profile's minimum physical memory;
+  an unmeasured one is refused before anything loads. The ledger is seeded from the envelopes. The memory gate runs
+  with `VideoAdmissionPolicy.measuring` (every profile, planned from its files, nothing seeded).
 - macOS only (`unsupportedDevice` on iOS before loading).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph
   reference; a whole clip and its repeat bit-identical, 425 s each (the debug build's host decode and stitching

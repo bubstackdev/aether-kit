@@ -675,8 +675,8 @@ itself when `tasks` lists `fl2va` (a malformed block refuses the pipeline, namin
 | `audioDecoder<Na>` | rows [2, Na, 32] → pcm [2, 800·Na] (fixed latent count) | — | perImage |
 | `conditionerVision<W>x<H>` (optional) | pixels, posIndex, posWeight, patchRC → imageEmbeds, deepstack | `vision.json`, 1 block | perPrompt |
 
-The `h3` block carries `profiles` (each a canvas and frame count with its rows, keyframe rows, audio latents and the
-graphs it uses; the qualified one is 960×544×124), `limits` (rows 64…40960, cardinality 1…3, text tokens 2…4096),
+The `h3` block carries `profiles` (each a canvas and frame count with its rows, keyframe rows, audio latents, the
+graphs it uses, its recipes, memory class and shapes; see below), `limits` (rows 64…40960, cardinality 1…3, text tokens 2…4096),
 `conditioner` (layers, tap 50, the embedding row source `weights/conditioner/embedding.bin` [151936, 5120] bf16, the
 rotary tables), `recipes` (turbo8, turbo4: per task and step the timesteps, the temb file and the per-block AdaLN table
 files `tables/<recipe>/<task>/step-<i>/block-NN.raw`), `adapter`, `video` (tile, window, packing and noise), `keyframe`,
@@ -690,6 +690,51 @@ text-token limit; a `defaultRecipe` with no `t2va` recipe; an arm without one ti
 falling from 1 to 0, or timesteps other than `1 − σ` in float32; a step cardinality outside `limits.cardinality`,
 non-ascending step timesteps, a `blocks` template without `{block:02d}`; video windows other than 256 px tiles of 7
 latent frames at stride 5; audio other than stereo rows of 32.
+
+**Profiles and measured admission.** `Forge/h3/profiles_h3.py` holds the profile table the exporter emits, first the
+default:
+
+| profiles | frames | recipes | `memory.barBytes` | `memory.minimumPhysicalMemoryBytes` |
+|---|---|---|---|---|
+| 960×544, 544×960 | 124 (5 s) | turbo8, turbo4 | 18 GiB | 0 |
+| 960×544, 544×960 | 243 (10 s) | turbo8, turbo4 | 24 GiB | 64 GiB |
+| 704×704 | 124 | turbo8 | 18 GiB | 0 |
+| 1280×704, 704×1280 | 124 | turbo8 | 24 GiB | 64 GiB |
+
+A profile inside 960×544's pixels and 124 frames is held to 18 GiB; a larger canvas or a longer clip to 24 GiB, on a
+Mac with at least 64 GiB (0.0.x's bars). Each profile entry adds, all optional for older exports: `recipes` (the
+recipes it offers; another is refused), `memory` (the bar and the physical memory it needs) and `shapes`, its
+`ShapeProfile` entries: role → input → the shapes allowed. The roles are the graphs a render at the profile runs (its
+audio decoder and, with keyframes, the tile encoder, its canvas's tail and tower); the listed inputs are the ones that
+vary between its renders (`body.table` `[6, 3k, 5376]` and `heads.temb` `[k, 2688]`, one per recipe cardinality k). The
+driver builds the body chain's `ShapeProfile` from them and refuses a recipe whose modulation is outside them. A
+profile whose canvas lacks the keyframe graphs is text-to-video only (no `keyframeEncoder`).
+
+`h3.envelopes` (written by `Forge/h3/record_envelopes_h3.py` from the memory gate's records, `scripts/h3-memory-gate`)
+holds one measured envelope per admission key and Core AI architecture: `key` (`<profile>` for text to video,
+`<profile>/fl2va1` for one keyframe, first or last, `<profile>/fl2va2` for first + last), `recipes` (those
+measured), `architecture`, `export` (the manifest's `measurementDigest`: its `contentDigest` without the envelopes,
+so recording them doesn't change what they were measured on), `marginBytes` (0.0.x's 256 MiB sampling margin),
+`perPrompt`, `perStep`, `perImage` (`{peakBytes, heldBytes}`: the largest over the key's renders), and `renders` and
+`record` for provenance. **Admission:** by default `MiniMaxH3Pipeline` admits a request only under an envelope for
+its key and recipe whose `export` and `architecture` match the bundle and the device, and only when the device has its
+profile's minimum physical memory; anything else is refused before anything loads (unmeasured). The ledger is seeded
+from the envelopes. The memory gate runs with `VideoAdmissionPolicy.measuring`, which admits every profile, planned
+from its files, and seeds nothing. For the export the 960×544×124 footprints were measured on (G4), those stand as
+its turbo8 text-to-video envelope.
+
+Decoding refuses (naming the field): a profile `recipes` entry with no `t2va` recipe, a non-positive bar, `shapes`
+naming a role that isn't a graph, an input the graph doesn't have, or a non-positive shape, `shapes` missing the
+profile's audio decoder or keyframe encoder, repeated profile keys; an envelope whose key names no profile (or a
+`fl2va` key of a profile without keyframes, or a count other than 1 or 2), a recipe its profile doesn't offer for the
+task, a repeated key and architecture, an `export` that isn't 64 lowercase hex digits, held above peak, a profile with
+no `memory`, or a peak plus the margin over the bar.
+
+**Extending an export** (`Forge/h3/extend_h3.py`): a new folder whose bundle files and converted VAEs are hard links
+to the source export (no extra disk; the source is never written), with fresh copies of `.aether/aether.json`,
+`SHA256SUMS`, `export-report.json` and `work/build.json`. `--manifest-only` names only the profiles whose graphs exist;
+otherwise the exporter's `audio-decoder`, `video-encoder` and `vision` stages convert, with `--only-missing`, the
+latent counts and canvases the source lacks (CPU only), and the exporter refuses to write any hard-linked file.
 
 `video.noise` is `{kind: splitmix64BoxMuller, order: sourceVideoThenAudio}`: one draw of Kit's stream, the source
 `[24, T, H, W]` video tensor first (then packed `patch2x2ChannelMajor`), then the channel-major audio rows, as 0.0.x

@@ -119,7 +119,8 @@ struct MiniMaxH3Tests {
     @Test func manifestBlockDecodesAndRefuses() throws {
         let manifest = try Self.manifest()
         let h3 = try #require(manifest.h3)
-        #expect(h3.profiles.map(\.key) == ["960x544x124", "544x960x124"])
+        #expect(h3.profiles.map(\.key) == ["960x544x124", "544x960x124", "960x544x243", "544x960x243", "704x704x124",
+                                           "1280x704x124", "704x1280x124"])
         #expect(h3.video.noise.order == .sourceVideoThenAudio)
         #expect(try h3.recipes["turbo8/t2va"]!.steps[3].table(7) == AssetPath(asset: "main", path: "tables/turbo8/t2va/step-3/block-07.raw"))
         try DriverContract.minimaxH3.validate(manifest)
@@ -156,7 +157,7 @@ struct MiniMaxH3Tests {
         let latch = Latch()
         let pipeline = try MiniMaxH3Pipeline(
             manifest: try Self.manifest(), device: Device(platform: .macOS, architecture: "h17c"), bundle: nil,
-            options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }), tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
+            options: .init(gpu: .unadmitted, probe: GPUMemoryProbe { 0 }), admissionPolicy: .measuring, tokenize: { $0.unicodeScalars.map { Int32($0.value) } },
             load: { role throws(AetherError) in
                 await latch.enter()
                 throw .manifestInvalid(field: role, reason: "no graphs in this test")
