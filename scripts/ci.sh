@@ -53,6 +53,9 @@ AETHER_CI_SCRATCH="$SCRATCH" scripts/check-api.sh
 step "hermetic tests"
 env -u AETHER_GATES swift test --scratch-path "$SCRATCH" --skip-build
 python3 -I scripts/test_coreai_cache.py
+python3 -I scripts/test_h3_memory_gate.py
+# The H3 profile table and manifest tools (standard library only: no torch, checkpoint or export).
+python3 -I Forge/h3/test_profiles_h3.py
 
 if [[ "${AETHER_GATES:-0}" == "1" ]]; then
   step "real-graph gates (GPU)"

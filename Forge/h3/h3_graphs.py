@@ -27,32 +27,19 @@ import hashlib
 import importlib.util
 import json
 import struct
+import sys
 from pathlib import Path
 
 import torch
 from torch import nn
 
-REPO = "MiniMaxAI/MiniMax-H3"
-REVISION = "42ed227ee7df40d41602854ae760620d6eb651fe"
-DIFFUSERS_COMMIT = "2a1433913c7044f34fa4767dd84b28bba0bb0ecf"   # tag v0.42.1; see Forge/pyproject.toml
-ADAPTER_REPO = "lightx2v/Minimax-h3-Turbo"
-ADAPTER_REVISION = "3ec17a324ced54151364f24f8b5fb6bf7e26414f"
-ADAPTER_FILE = "minimax_h3_fl2v_turbo_8step_v1.0_bf16.safetensors"
-ADAPTER_SHA256 = "e16ac20824d6e6649b193806f8fb095639bd9946c97b1bb84b4248eab1cc807f"
-LORA_RANK, LORA_ALPHA = 128, 8.0
-LORA_TARGETS = ("attn.to_q", "attn.to_k", "attn.to_v", "attn.to_out.0", "ff.net.0.proj", "ff.net.2")
-
-BLOCKS, CONDITIONER_LAYERS, TAP = 50, 50, 50     # the conditioner taps hidden_states[50], unnormalised
-HIDDEN, TEXT_DIM, TEMB_DIM, HEADS, HEAD_DIM = 5376, 5120, 2688, 56, 128
-ROWS = (64, 40960)                               # the body's dynamic row range
-TEXT_TOKENS = (2, 4096)
-CARDINALITY = (1, 3)                             # distinct timesteps per step (table rows 3k)
-VIDEO_TILE, WINDOW_LATENTS, WINDOW_FRAMES, WINDOW_STRIDE = 256, 7, 22, 5
-PIXEL_MEAN, PIXEL_STD, ENCODE_SEED = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), 42
-SAMPLE_RATE, AUDIO_HOP, AUDIO_CHANNELS = 32000, 800, 2
-# Schedules: grid points and the video/audio shifts of the 544p Turbo adapter. FL2VA's keyframe rows sit at 0.999.
-RECIPES = {"turbo8": (9, 12.0, 3.0), "turbo4": (5, 12.0, 3.0)}
-FL2VA_CONDITION_TIMESTEP = 0.999
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+# The constants and the frame grid live in the standard-library module the manifest tools share.
+from profiles_h3 import (ADAPTER_FILE, ADAPTER_REPO, ADAPTER_REVISION, ADAPTER_SHA256, AUDIO_CHANNELS,  # noqa: E402,F401
+                         AUDIO_HOP, BLOCKS, CARDINALITY, CONDITIONER_LAYERS, DIFFUSERS_COMMIT, ENCODE_SEED,
+                         FL2VA_CONDITION_TIMESTEP, HEAD_DIM, HEADS, HIDDEN, LORA_ALPHA, LORA_RANK, LORA_TARGETS,
+                         PIXEL_MEAN, PIXEL_STD, RECIPES, REPO, REVISION, ROWS, SAMPLE_RATE, TAP, TEMB_DIM, TEXT_DIM,
+                         TEXT_TOKENS, VIDEO_TILE, WINDOW_FRAMES, WINDOW_LATENTS, WINDOW_STRIDE, Geometry)
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -69,30 +56,6 @@ def sha256_file(path: Path) -> str:
 
 def tensor_bytes(tensor: torch.Tensor) -> bytes:
     return tensor.detach().contiguous().cpu().view(torch.uint8).numpy().tobytes()
-
-
-# MARK: the profile (the qualified canvas)
-
-class Geometry:
-    """H3's frame grid (the prototype's `H3Geometry`): requested frames snap up to 17n+5 at 24 fps; 16× spatial and
-    the (1, 2, 2) patch give the packed video rows; 40 audio latents a second."""
-
-    def __init__(self, width: int = 960, height: int = 544, requested_frames: int = 120):
-        assert width % 32 == 0 and height % 32 == 0 and width * height <= 1_032_192, (width, height)
-        n = (max(0, requested_frames - 5) + 16) // 17
-        self.width, self.height, self.frames = width, height, 17 * n + 5
-        self.latent_frames, self.latent_height, self.latent_width = 5 * n + 2, height // 16, width // 16
-        self.video_rows = self.latent_frames * (height // 32) * (width // 32)
-        self.keyframe_rows = (height // 32) * (width // 32)
-        self.audio_latents = round(self.frames / 24 * 40)   # Python rounds half to even, as Swift's .toNearestOrEven
-
-    @property
-    def key(self) -> str:
-        return f"{self.width}x{self.height}x{self.frames}"
-
-    def dict(self) -> dict:
-        return {"width": self.width, "height": self.height, "frames": self.frames, "latentFrames": self.latent_frames,
-                "videoRows": self.video_rows, "keyframeRows": self.keyframe_rows, "audioLatents": self.audio_latents}
 
 
 # MARK: checkpoint access
@@ -342,11 +305,22 @@ class TileTail(nn.Module):
 
 # MARK: conversion
 
+def refuse_linked(path: Path) -> None:
+    """Refuses to write `path` when it, or a file under it, is hard-linked: an extended export (`extend_h3.py`) links
+    the files it reuses to the source export, and writing one would change the source in place."""
+    path = Path(path)
+    candidates = [path] if path.is_file() else (list(path.rglob("*")) if path.is_dir() else [])
+    linked = [p for p in candidates if p.is_file() and p.stat().st_nlink > 1]
+    if linked:
+        raise SystemExit(f"refusing to write {path}: {linked[0]} is hard-linked to another export (it would change in place)")
+
+
 def convert(module: nn.Module, example: tuple, dynamic, inputs: list[str], outputs: list[str], path: Path,
             entry: str = "main") -> dict:
     """torch.export → Core AI asset on the CPU (never loaded or specialised here)."""
     import coreai_torch as ct
     import time
+    refuse_linked(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.monotonic()
     with torch.inference_mode():
@@ -374,14 +348,21 @@ class WeightFile:
     def __init__(self, path: Path, asset_path: str):
         self.path, self.asset_path = path, asset_path
 
-    def write(self, params: dict, dtype: torch.dtype | None = None) -> tuple[dict, list[dict]]:
+    def write(self, params: dict, dtype: torch.dtype | None = None, verify: bool = False) -> tuple[dict, list[dict]]:
+        """Writes the file, or with `verify` checks that the existing file holds exactly these bytes (an extended
+        export reuses it, linked) and writes nothing."""
+        if not verify:
+            refuse_linked(self.path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         extents, specs, offset = {}, [], 0
-        with open(self.path, "wb") as f:
+        with open(self.path, "rb" if verify else "wb") as f:
             for i, (name, tensor) in enumerate(params.items()):
                 assert dtype is None or tensor.dtype == dtype, (name, tensor.dtype)
                 data = tensor_bytes(tensor)
-                f.write(data)
+                if verify:
+                    assert f.read(len(data)) == data, f"{self.path}: {name} differs from the existing file"
+                else:
+                    f.write(data)
                 extents[f"w{i}"] = {"file": self.asset_path, "offset": offset, "bytes": len(data)}
                 specs.append({"name": f"w{i}", "source": name, "dtype": str(tensor.dtype).removeprefix("torch."),
                               "shape": list(tensor.shape)})
@@ -404,6 +385,7 @@ def raw_tensor(path: Path, tensor: torch.Tensor) -> dict:
     """A host table file (raw little-endian bytes) and its spec."""
     tensor = tensor.detach().contiguous().cpu()
     data = tensor_bytes(tensor)
+    refuse_linked(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
     return {"dtype": str(tensor.dtype).removeprefix("torch."), "shape": list(tensor.shape), "sha256": sha256_bytes(data)}

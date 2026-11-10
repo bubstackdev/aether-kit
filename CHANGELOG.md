@@ -22,6 +22,71 @@
 
 ### New
 
+- **MiniMax H3 clip limits, preflight, streamed frames and the seed.** Additive; the `AetherVideo` API baseline records it.
+  - **Clip limits:** `MiniMaxH3Pipeline.clipLimits(profile:keyframeCount:)` returns a `VideoClipLimits`: the export's
+    presentation-token and packed-row bounds, the keyframes' presentation tokens, the clip's own packed rows, and the
+    longest and shortest prompt the clip takes (`maximumPromptTokens`, `minimumPromptTokens`, `fitsSomePrompt`,
+    `refusal(promptTokens:)`). It needs no prompt and no keyframe pixels.
+  - **Preflight:** `preflight(_:)` resolves a `VideoRequest` as `generate` does, on the CPU with nothing loaded, and
+    returns a `VideoPreflight`: profile, recipe, seed, the prompt's tokens, the presentation tokens, the packed rows,
+    the limits, the admission key, its envelope and the `frameCount`. It throws what `generate` throws before waiting.
+  - **Typed length refusals:** a prompt longer than the clip leaves is `VideoRefusal.promptTooLong`, and a clip
+    whose keyframes and rows leave no room for any prompt is `.tooLargeAtSize` (the same type as the admission
+    refusals). Both `generate` and `preflight` throw them as `AetherError.capacity(what:needed:available:)`, with
+    the counts in prompt tokens. `VideoRefusal(_:)` reads one back from an error; `what`'s text is not API.
+  - **Behaviour change:** these refusals were `generation(.invalidParameters)` with a message. A prompt below the
+    shortest the clip takes is still `invalidParameters`.
+  - **Streamed frames:** `generate(_:onProgress:frames:)` delivers each decoded `VideoFrame` (index, size, RGB8,
+    time) to an async sink in order and keeps none. The pipeline holds one decoder window's frames instead of the
+    whole clip. The returned `GeneratedVideo` has empty `frames`, and its new `frameCount` counts the frames
+    delivered. A sink that throws stops the generation and releases its graphs. `generate(_:onProgress:)` is
+    unchanged.
+  - **Seed echo:** `GeneratedVideo.seed` is the seed the clip was generated from.
+
+- **MiniMax H3: every video profile, with measured admission (H2, the no-GPU part).** The exporter's profile table
+  (`Forge/h3/profiles_h3.py`, standard library only) adds 10 s clips (243 frames) at 960×544 and 544×960, a 704×704
+  square and 1280×704 / 704×1280 to the 5 s profiles. Each manifest profile now carries its `recipes`, its `memory`
+  class (an 18 GiB bar; or 24 GiB plus a 64 GiB physical-memory minimum for 10 s and the large canvas) and `shapes`,
+  its `ShapeProfile` entries. See MANIFEST.md §5.10.
+  - **Measured admission:** `h3.envelopes` records the memory gate's measurements per admission key (`<profile>`,
+    `<profile>/fl2va1`, `<profile>/fl2va2`) and Core AI architecture: each phase's peak and held bytes, the recipes
+    measured, the margin, and the export they were measured on (its `Manifest.contentDigest`).
+    `MiniMaxH3Pipeline` admits only under an envelope for this export and chip, on a device with the profile's
+    minimum physical memory, and seeds its ledger from them. `envelopes` and `envelope(for:)` expose them
+    (`VideoMemoryEnvelope`, keyed by `VideoAdmissionKey`: a profile and its keyframe count).
+  - **Typed refusals:** `VideoRefusal` says why a request was refused before anything loaded: `.unmeasured` (no
+    envelope for the key and recipe on this export and chip; the memory gate measures it), `.recipeNotOffered` (the
+    profile's recipes or shapes don't take it), `.insufficientPhysicalMemory`. They are thrown as the usual
+    `AetherError` (`unsupportedOperation`, `capacity`); `VideoRefusal(_:)` reads one back, so hosts never match text.
+  - **Identity (D292):** the envelopes are measurements, not content. `Manifest.contentDigest`, and with it the
+    bundle's `contentIdentity()`, leaves `h3.envelopes` out, so recording or re-measuring envelopes keeps the
+    export's identity. A manifest without envelopes has the digest it always had.
+  - **The memory gate's policy:** `VideoAdmissionPolicy.measuring` (`MiniMaxH3Model.admissionPolicy`, or the new
+    `MiniMaxH3Pipeline.init(…, admissionPolicy:)`) admits every profile, planned from its files, and seeds nothing.
+    It is SPI (`@_spi(Testing)`), for the kit's gates only; hosts get `.measuredOnly`.
+  - **Tools:** `Forge/h3/extend_h3.py` extends an export into a new folder that hard-links what it reuses. With
+    `--manifest-only` it names only the profiles the graphs allow. Otherwise the exporter's new `--only-missing`
+    stages convert the missing audio decoder (405 latents) and the new canvases' keyframe tails and vision towers.
+    `Forge/h3/record_envelopes_h3.py` writes a gate run's records into the manifest. `scripts/h3-memory-gate` runs
+    the gate matrix: one render per process under `scripts/gpu-lease`, per-render JSON records, a stop below
+    100 GiB free, and a prune of its compile-cache bucket at the end. The suite is `MiniMaxH3ProfileGateTests`.
+  - **Behaviour change:** an H3 request without a measured envelope is refused (`VideoRefusal.unmeasured`, thrown as
+    `unsupportedOperation`). On the G4
+    export only 960×544×124 turbo8 text-to-video is covered (its seeded footprints). Keyframed clips, turbo4 and
+    544×960 there need the H2 gate's envelopes.
+  - **Not yet measured:** the envelopes come from the H2 gate on the GPU.
+- **Qwen3.5 / Qwen3.6 vision-language export (`Forge/qwen3_5/`, docs/QWEN3_5.md).** Any Qwen3_5ForConditionalGeneration
+  checkpoint as a `vlm-static-inject@1` bundle: Qwen3-VL's grid-static tower without DeepStack, and the hybrid decoder
+  (Gated DeltaNet and gated full attention, interleaved M-RoPE, untied head) as one function of up to 32 tokens a call
+  over `keyCache`/`valueCache` and the recurrent `convState`/`recState`. Built a layer at a time from the shards, decoder
+  Linears int4 and the head int8: the Qwen3.6-27B abliterated export is 18.5 GB, made in 3.6 minutes on a 64 GB Mac,
+  and runs at about 20 GB of Metal (flat over mixed requests), a two-picture describer prompt in 2.6 s and 56 ms a
+  token. `Qwen35GateTests` (opt-in) checks a bundle against a reference from the same checkpoint: the 27B against
+  mlx-vlm at 8 bits, teacher-forced, agrees on 40 of 48 tokens with the reference's in our top five at every step.
+- **Images on a decoder with recurrent state.** The `Generator` refused images on a hybrid model. It now reuses the
+  live state when the prompt extends it with every bound image still in place, and otherwise starts from an empty
+  state; no snapshots are kept while images are bound.
+
 - **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
   `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
   process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows

@@ -65679,6 +65679,846 @@
           "usr": "s:10AetherCore8ManifestV2H3V7ProfileV15keyframeEncoderSSSgvp"
          },
          {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "String",
+                  "printedName": "Swift.String",
+                  "usr": "s:SS"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.String]",
+                "usr": "s:Sa"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "[Swift.String]?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "String",
+                  "printedName": "Swift.String",
+                  "usr": "s:SS"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.String]",
+                "usr": "s:Sa"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "[Swift.String]?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Array",
+              "printedName": "[Swift.String]",
+              "usr": "s:Sa"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "[Swift.String]?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvp",
+          "moduleName": "AetherCore",
+          "name": "recipes",
+          "printedName": "recipes",
+          "usr": "s:10AetherCore8ManifestV2H3V7ProfileV7recipesSaySSGSgvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Memory",
+                "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+                "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Memory",
+                "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+                "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Memory",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "AetherCore.Manifest.H3.Profile.Memory?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvp",
+          "moduleName": "AetherCore",
+          "name": "memory",
+          "printedName": "memory",
+          "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6memoryAG6MemoryVSgvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "String",
+                  "printedName": "Swift.String",
+                  "usr": "s:SS"
+                 },
+                 {
+                  "children": [
+                   {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                   },
+                   {
+                    "children": [
+                     {
+                      "children": [
+                       {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                       }
+                      ],
+                      "kind": "TypeNominal",
+                      "name": "Array",
+                      "printedName": "[Swift.Int]",
+                      "usr": "s:Sa"
+                     }
+                    ],
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[[Swift.Int]]",
+                    "usr": "s:Sa"
+                   }
+                  ],
+                  "kind": "TypeNominal",
+                  "name": "Dictionary",
+                  "printedName": "[Swift.String : [[Swift.Int]]]",
+                  "usr": "s:SD"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]",
+                "usr": "s:SD"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "String",
+                  "printedName": "Swift.String",
+                  "usr": "s:SS"
+                 },
+                 {
+                  "children": [
+                   {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                   },
+                   {
+                    "children": [
+                     {
+                      "children": [
+                       {
+                        "kind": "TypeNominal",
+                        "name": "Int",
+                        "printedName": "Swift.Int",
+                        "usr": "s:Si"
+                       }
+                      ],
+                      "kind": "TypeNominal",
+                      "name": "Array",
+                      "printedName": "[Swift.Int]",
+                      "usr": "s:Sa"
+                     }
+                    ],
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[[Swift.Int]]",
+                    "usr": "s:Sa"
+                   }
+                  ],
+                  "kind": "TypeNominal",
+                  "name": "Dictionary",
+                  "printedName": "[Swift.String : [[Swift.Int]]]",
+                  "usr": "s:SD"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]",
+                "usr": "s:SD"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               },
+               {
+                "children": [
+                 {
+                  "kind": "TypeNominal",
+                  "name": "String",
+                  "printedName": "Swift.String",
+                  "usr": "s:SS"
+                 },
+                 {
+                  "children": [
+                   {
+                    "children": [
+                     {
+                      "kind": "TypeNominal",
+                      "name": "Int",
+                      "printedName": "Swift.Int",
+                      "usr": "s:Si"
+                     }
+                    ],
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[Swift.Int]",
+                    "usr": "s:Sa"
+                   }
+                  ],
+                  "kind": "TypeNominal",
+                  "name": "Array",
+                  "printedName": "[[Swift.Int]]",
+                  "usr": "s:Sa"
+                 }
+                ],
+                "kind": "TypeNominal",
+                "name": "Dictionary",
+                "printedName": "[Swift.String : [[Swift.Int]]]",
+                "usr": "s:SD"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Dictionary",
+              "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]",
+              "usr": "s:SD"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "[Swift.String : [Swift.String : [[Swift.Int]]]]?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvp",
+          "moduleName": "AetherCore",
+          "name": "shapes",
+          "printedName": "shapes",
+          "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6shapesSDySSSDySSSaySaySiGGGGSgvp"
+         },
+         {
+          "children": [
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvg"
+             },
+             {
+              "accessorKind": "set",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+               },
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvs",
+              "moduleName": "AetherCore",
+              "name": "Set",
+              "printedName": "Set()",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvs"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "HasStorage"
+            ],
+            "declKind": "Var",
+            "hasStorage": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvp",
+            "moduleName": "AetherCore",
+            "name": "barBytes",
+            "printedName": "barBytes",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytess5Int64Vvp"
+           },
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvg"
+             },
+             {
+              "accessorKind": "set",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+               },
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvs",
+              "moduleName": "AetherCore",
+              "name": "Set",
+              "printedName": "Set()",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvs"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "HasStorage"
+            ],
+            "declKind": "Var",
+            "hasStorage": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvp",
+            "moduleName": "AetherCore",
+            "name": "minimumPhysicalMemoryBytes",
+            "printedName": "minimumPhysicalMemoryBytes",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV015minimumPhysicalF5Bytess5Int64Vvp"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Memory",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declKind": "Constructor",
+            "init_kind": "Designated",
+            "kind": "Constructor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytes015minimumPhysicalfH0AIs5Int64V_AMtcfc",
+            "moduleName": "AetherCore",
+            "name": "init",
+            "printedName": "init(barBytes:minimumPhysicalMemoryBytes:)",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV8barBytes015minimumPhysicalfH0AIs5Int64V_AMtcfc"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Bool",
+              "printedName": "Swift.Bool",
+              "usr": "s:Sb"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Memory",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Memory",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+             }
+            ],
+            "declAttributes": [
+             "Implements"
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV23__derived_struct_equalsySbAI_AItFZ",
+            "moduleName": "AetherCore",
+            "name": "__derived_struct_equals",
+            "printedName": "__derived_struct_equals(_:_:)",
+            "static": true,
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV23__derived_struct_equalsySbAI_AItFZ"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Encoder",
+              "printedName": "any Swift.Encoder",
+              "usr": "s:s7EncoderP"
+             }
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV6encode2toys7Encoder_p_tKF",
+            "moduleName": "AetherCore",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "throwing": true,
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV6encode2toys7Encoder_p_tKF"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Hasher",
+              "paramValueOwnership": "InOut",
+              "printedName": "Swift.Hasher",
+              "usr": "s:s6HasherV"
+             }
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV4hash4intoys6HasherVz_tF",
+            "moduleName": "AetherCore",
+            "name": "hash",
+            "printedName": "hash(into:)",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV4hash4intoys6HasherVz_tF"
+           },
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+               }
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV9hashValueSivg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV9hashValueSivg"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "declKind": "Var",
+            "implicit": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV9hashValueSivp",
+            "moduleName": "AetherCore",
+            "name": "hashValue",
+            "printedName": "hashValue",
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV9hashValueSivp"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Memory",
+              "printedName": "AetherCore.Manifest.H3.Profile.Memory",
+              "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Decoder",
+              "printedName": "any Swift.Decoder",
+              "usr": "s:s7DecoderP"
+             }
+            ],
+            "declKind": "Constructor",
+            "implicit": true,
+            "init_kind": "Designated",
+            "kind": "Constructor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV4fromAIs7Decoder_p_tKcfc",
+            "moduleName": "AetherCore",
+            "name": "init",
+            "printedName": "init(from:)",
+            "throwing": true,
+            "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV4fromAIs7Decoder_p_tKcfc"
+           }
+          ],
+          "conformances": [
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8CopyableP",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSe",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSE",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSQ",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss9EscapableP",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSH",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8SendableP",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss16SendableMetatypeP",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP"
+           }
+          ],
+          "declKind": "Struct",
+          "kind": "TypeDecl",
+          "mangledName": "$s10AetherCore8ManifestV2H3V7ProfileV6MemoryV",
+          "moduleName": "AetherCore",
+          "name": "Memory",
+          "printedName": "Memory",
+          "usr": "s:10AetherCore8ManifestV2H3V7ProfileV6MemoryV"
+         },
+         {
           "children": [
            {
             "kind": "TypeNominal",
@@ -65894,6 +66734,1493 @@
         "name": "Profile",
         "printedName": "Profile",
         "usr": "s:10AetherCore8ManifestV2H3V7ProfileV"
+       },
+       {
+        "children": [
+         {
+          "children": [
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvg"
+             },
+             {
+              "accessorKind": "set",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+               },
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvs",
+              "moduleName": "AetherCore",
+              "name": "Set",
+              "printedName": "Set()",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvs"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "HasStorage"
+            ],
+            "declKind": "Var",
+            "hasStorage": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvp",
+            "moduleName": "AetherCore",
+            "name": "peakBytes",
+            "printedName": "peakBytes",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9peakBytess5Int64Vvp"
+           },
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvg"
+             },
+             {
+              "accessorKind": "set",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+               },
+               {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+               }
+              ],
+              "declAttributes": [
+               "Transparent"
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvs",
+              "moduleName": "AetherCore",
+              "name": "Set",
+              "printedName": "Set()",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvs"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "HasStorage"
+            ],
+            "declKind": "Var",
+            "hasStorage": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvp",
+            "moduleName": "AetherCore",
+            "name": "heldBytes",
+            "printedName": "heldBytes",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9heldBytess5Int64Vvp"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Bool",
+              "printedName": "Swift.Bool",
+              "usr": "s:Sb"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Implements"
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV23__derived_struct_equalsySbAI_AItFZ",
+            "moduleName": "AetherCore",
+            "name": "__derived_struct_equals",
+            "printedName": "__derived_struct_equals(_:_:)",
+            "static": true,
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV23__derived_struct_equalsySbAI_AItFZ"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Encoder",
+              "printedName": "any Swift.Encoder",
+              "usr": "s:s7EncoderP"
+             }
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV6encode2toys7Encoder_p_tKF",
+            "moduleName": "AetherCore",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "throwing": true,
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV6encode2toys7Encoder_p_tKF"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Hasher",
+              "paramValueOwnership": "InOut",
+              "printedName": "Swift.Hasher",
+              "usr": "s:s6HasherV"
+             }
+            ],
+            "declKind": "Func",
+            "funcSelfKind": "NonMutating",
+            "implicit": true,
+            "kind": "Function",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV4hash4intoys6HasherVz_tF",
+            "moduleName": "AetherCore",
+            "name": "hash",
+            "printedName": "hash(into:)",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV4hash4intoys6HasherVz_tF"
+           },
+           {
+            "accessors": [
+             {
+              "accessorKind": "get",
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+               }
+              ],
+              "declKind": "Accessor",
+              "implicit": true,
+              "kind": "Accessor",
+              "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9hashValueSivg",
+              "moduleName": "AetherCore",
+              "name": "Get",
+              "printedName": "Get()",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9hashValueSivg"
+             }
+            ],
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "declKind": "Var",
+            "implicit": true,
+            "kind": "Var",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9hashValueSivp",
+            "moduleName": "AetherCore",
+            "name": "hashValue",
+            "printedName": "hashValue",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV9hashValueSivp"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Decoder",
+              "printedName": "any Swift.Decoder",
+              "usr": "s:s7DecoderP"
+             }
+            ],
+            "declKind": "Constructor",
+            "implicit": true,
+            "init_kind": "Designated",
+            "kind": "Constructor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV4fromAIs7Decoder_p_tKcfc",
+            "moduleName": "AetherCore",
+            "name": "init",
+            "printedName": "init(from:)",
+            "throwing": true,
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV4fromAIs7Decoder_p_tKcfc"
+           }
+          ],
+          "conformances": [
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8CopyableP",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSe",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSE",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSQ",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss9EscapableP",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$sSH",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss8SendableP",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP"
+           },
+           {
+            "kind": "Conformance",
+            "mangledName": "$ss16SendableMetatypeP",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP"
+           }
+          ],
+          "declKind": "Struct",
+          "kind": "TypeDecl",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV",
+          "moduleName": "AetherCore",
+          "name": "Phase",
+          "printedName": "Phase",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV3keySSvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV3keySSvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV3keySSvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV3keySSvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV3keySSvp",
+          "moduleName": "AetherCore",
+          "name": "key",
+          "printedName": "key",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV3keySSvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Array",
+              "printedName": "[Swift.String]",
+              "usr": "s:Sa"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Array",
+              "printedName": "[Swift.String]",
+              "usr": "s:Sa"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Array",
+            "printedName": "[Swift.String]",
+            "usr": "s:Sa"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvp",
+          "moduleName": "AetherCore",
+          "name": "recipes",
+          "printedName": "recipes",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7recipesSaySSGvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvp",
+          "moduleName": "AetherCore",
+          "name": "architecture",
+          "printedName": "architecture",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV12architectureSSvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvp",
+          "moduleName": "AetherCore",
+          "name": "export",
+          "printedName": "export",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6exportSSvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int64",
+            "printedName": "Swift.Int64",
+            "usr": "s:s5Int64V"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvp",
+          "moduleName": "AetherCore",
+          "name": "marginBytes",
+          "printedName": "marginBytes",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV11marginBytess5Int64Vvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Phase",
+            "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvp",
+          "moduleName": "AetherCore",
+          "name": "perPrompt",
+          "printedName": "perPrompt",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9perPromptAG5PhaseVvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Phase",
+            "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvp",
+          "moduleName": "AetherCore",
+          "name": "perStep",
+          "printedName": "perStep",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7perStepAG5PhaseVvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "kind": "TypeNominal",
+              "name": "Phase",
+              "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvs"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Phase",
+            "printedName": "AetherCore.Manifest.H3.Envelope.Phase",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV5PhaseV"
+           }
+          ],
+          "declAttributes": [
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvp",
+          "moduleName": "AetherCore",
+          "name": "perImage",
+          "printedName": "perImage",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV8perImageAG5PhaseVvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "Swift.Int?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "Swift.Int?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvp",
+          "moduleName": "AetherCore",
+          "name": "renders",
+          "printedName": "renders",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7rendersSiSgvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "Swift.String?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvg"
+           },
+           {
+            "accessorKind": "set",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Void",
+              "printedName": "()"
+             },
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Optional",
+              "printedName": "Swift.String?",
+              "usr": "s:Sq"
+             }
+            ],
+            "declAttributes": [
+             "Transparent"
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvs",
+            "moduleName": "AetherCore",
+            "name": "Set",
+            "printedName": "Set()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvs"
+           }
+          ],
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.String?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "HasInitialValue",
+           "HasStorage"
+          ],
+          "declKind": "Var",
+          "hasStorage": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvp",
+          "moduleName": "AetherCore",
+          "name": "record",
+          "printedName": "record",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6recordSSSgvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "String",
+              "printedName": "Swift.String",
+              "usr": "s:SS"
+             }
+            ],
+            "declKind": "Accessor",
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7profileSSvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7profileSSvg"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "String",
+            "printedName": "Swift.String",
+            "usr": "s:SS"
+           }
+          ],
+          "declKind": "Var",
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV7profileSSvp",
+          "moduleName": "AetherCore",
+          "name": "profile",
+          "printedName": "profile",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV7profileSSvp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "declKind": "Accessor",
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivg"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Var",
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivp",
+          "moduleName": "AetherCore",
+          "name": "keyframeCount",
+          "printedName": "keyframeCount",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV13keyframeCountSivp"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int64",
+              "printedName": "Swift.Int64",
+              "usr": "s:s5Int64V"
+             }
+            ],
+            "declKind": "Accessor",
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV14stagePeakBytess5Int64Vvg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV14stagePeakBytess5Int64Vvg"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int64",
+            "printedName": "Swift.Int64",
+            "usr": "s:s5Int64V"
+           }
+          ],
+          "declKind": "Var",
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV14stagePeakBytess5Int64Vvp",
+          "moduleName": "AetherCore",
+          "name": "stagePeakBytes",
+          "printedName": "stagePeakBytes",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV14stagePeakBytess5Int64Vvp"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Envelope",
+            "printedName": "AetherCore.Manifest.H3.Envelope",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Envelope",
+            "printedName": "AetherCore.Manifest.H3.Envelope",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+           }
+          ],
+          "declAttributes": [
+           "Implements"
+          ],
+          "declKind": "Func",
+          "funcSelfKind": "NonMutating",
+          "implicit": true,
+          "kind": "Function",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV23__derived_struct_equalsySbAG_AGtFZ",
+          "moduleName": "AetherCore",
+          "name": "__derived_struct_equals",
+          "printedName": "__derived_struct_equals(_:_:)",
+          "static": true,
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV23__derived_struct_equalsySbAG_AGtFZ"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Encoder",
+            "printedName": "any Swift.Encoder",
+            "usr": "s:s7EncoderP"
+           }
+          ],
+          "declKind": "Func",
+          "funcSelfKind": "NonMutating",
+          "implicit": true,
+          "kind": "Function",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV6encode2toys7Encoder_p_tKF",
+          "moduleName": "AetherCore",
+          "name": "encode",
+          "printedName": "encode(to:)",
+          "throwing": true,
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV6encode2toys7Encoder_p_tKF"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Hasher",
+            "paramValueOwnership": "InOut",
+            "printedName": "Swift.Hasher",
+            "usr": "s:s6HasherV"
+           }
+          ],
+          "declKind": "Func",
+          "funcSelfKind": "NonMutating",
+          "implicit": true,
+          "kind": "Function",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV4hash4intoys6HasherVz_tF",
+          "moduleName": "AetherCore",
+          "name": "hash",
+          "printedName": "hash(into:)",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV4hash4intoys6HasherVz_tF"
+         },
+         {
+          "accessors": [
+           {
+            "accessorKind": "get",
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "declKind": "Accessor",
+            "implicit": true,
+            "kind": "Accessor",
+            "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9hashValueSivg",
+            "moduleName": "AetherCore",
+            "name": "Get",
+            "printedName": "Get()",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9hashValueSivg"
+           }
+          ],
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "declKind": "Var",
+          "implicit": true,
+          "kind": "Var",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV9hashValueSivp",
+          "moduleName": "AetherCore",
+          "name": "hashValue",
+          "printedName": "hashValue",
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV9hashValueSivp"
+         },
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Envelope",
+            "printedName": "AetherCore.Manifest.H3.Envelope",
+            "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Decoder",
+            "printedName": "any Swift.Decoder",
+            "usr": "s:s7DecoderP"
+           }
+          ],
+          "declKind": "Constructor",
+          "implicit": true,
+          "init_kind": "Designated",
+          "kind": "Constructor",
+          "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV4fromAGs7Decoder_p_tKcfc",
+          "moduleName": "AetherCore",
+          "name": "init",
+          "printedName": "init(from:)",
+          "throwing": true,
+          "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV4fromAGs7Decoder_p_tKcfc"
+         }
+        ],
+        "conformances": [
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss8CopyableP",
+          "name": "Copyable",
+          "printedName": "Copyable",
+          "usr": "s:s8CopyableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSe",
+          "name": "Decodable",
+          "printedName": "Decodable",
+          "usr": "s:Se"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSE",
+          "name": "Encodable",
+          "printedName": "Encodable",
+          "usr": "s:SE"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSQ",
+          "name": "Equatable",
+          "printedName": "Equatable",
+          "usr": "s:SQ"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss9EscapableP",
+          "name": "Escapable",
+          "printedName": "Escapable",
+          "usr": "s:s9EscapableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$sSH",
+          "name": "Hashable",
+          "printedName": "Hashable",
+          "usr": "s:SH"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss8SendableP",
+          "name": "Sendable",
+          "printedName": "Sendable",
+          "usr": "s:s8SendableP"
+         },
+         {
+          "kind": "Conformance",
+          "mangledName": "$ss16SendableMetatypeP",
+          "name": "SendableMetatype",
+          "printedName": "SendableMetatype",
+          "usr": "s:s16SendableMetatypeP"
+         }
+        ],
+        "declKind": "Struct",
+        "kind": "TypeDecl",
+        "mangledName": "$s10AetherCore8ManifestV2H3V8EnvelopeV",
+        "moduleName": "AetherCore",
+        "name": "Envelope",
+        "printedName": "Envelope",
+        "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
        },
        {
         "children": [
@@ -72923,6 +75250,127 @@
         "name": "vision",
         "printedName": "vision",
         "usr": "s:10AetherCore8ManifestV2H3V6visionAA9JSONValueOSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Envelope",
+                "printedName": "AetherCore.Manifest.H3.Envelope",
+                "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Array",
+              "printedName": "[AetherCore.Manifest.H3.Envelope]",
+              "usr": "s:Sa"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "[AetherCore.Manifest.H3.Envelope]?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvg",
+          "moduleName": "AetherCore",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Envelope",
+                "printedName": "AetherCore.Manifest.H3.Envelope",
+                "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Array",
+              "printedName": "[AetherCore.Manifest.H3.Envelope]",
+              "usr": "s:Sa"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "[AetherCore.Manifest.H3.Envelope]?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvs",
+          "moduleName": "AetherCore",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Envelope",
+              "printedName": "AetherCore.Manifest.H3.Envelope",
+              "usr": "s:10AetherCore8ManifestV2H3V8EnvelopeV"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Array",
+            "printedName": "[AetherCore.Manifest.H3.Envelope]",
+            "usr": "s:Sa"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "[AetherCore.Manifest.H3.Envelope]?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvp",
+        "moduleName": "AetherCore",
+        "name": "envelopes",
+        "printedName": "envelopes",
+        "usr": "s:10AetherCore8ManifestV2H3V9envelopesSayAE8EnvelopeVGSgvp"
        },
        {
         "children": [
