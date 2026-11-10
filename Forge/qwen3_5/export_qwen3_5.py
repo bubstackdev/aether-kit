@@ -73,7 +73,9 @@ VISION_COMPUTE = "float32"     # as Forge/qwen3vl: the tower is small, float32 c
 DECODER_COMPUTE = "float16"
 DECODER_ATTENTION = "float32"
 WEIGHT_BITS = 4                # decoder Linears: int4 block 32 (13.7 GB at 27B; the 2026-11-10 spike's recipe)
-HEAD_BITS = 4
+# The head int8 per channel: on the 27B against mlx-vlm 8-bit (Qwen35GateTests, 48 teacher-forced steps) argmax 40/48
+# and KL 0.081 against 38/48 and 0.103 with an int4 head, for 0.56 GB more (Metal 20.0 GB in use against 19.8).
+HEAD_BITS = 8
 CREATION_DATE = "2026-11-10T00:00:00+00:00"
 
 

@@ -18,7 +18,7 @@ each gated full-attention layer, untied head, interleaved 3-axis M-RoPE over a q
 | `vision` (`vision-tower@1`) | Forge/qwen3vl's: `patches` f32 [2048, 1536] + `grid` i32 [2] → `image_embeds` f16 [512, H]; fp16 weights, fp32 compute |
 | `decoder` | `decoder-lm@1`'s running contract, one function: `input_ids` [1, S] (S 1..32), `position_ids` [1, T]; static `image_embeds` [N, H], `image_positions` [N, 3], `rope_shift_start`/`amount` [M] (`qwen3vl-mrope`); states `keyCache`/`valueCache` (sequence) and `convState`/`recState` (recurrent, fp32 delta-rule state); logits f32, last row; `prefillChunk` 32 |
 
-Linears int4 (blocks of 32, symmetric, coreai-opt), the head included; embedding fp16. 27B: 17.9 GB.
+Decoder Linears int4 (blocks of 32, symmetric, coreai-opt), the head int8 per channel; embedding fp16. 27B: 18.5 GB.
 
 Why one function of up to 32 tokens rather than a one-token function and a wider prefill function sharing the states:
 Core AI keeps a copy of the weights for every function that runs (27B: 16.6 GB of Metal after the first one-token
@@ -50,8 +50,8 @@ otherwise it starts from an empty state, and keeps no snapshots while images are
 | Export | 3.6 minutes, 55 GB peak RSS (swap to 20 GB): layers are read from the shards, quantized and released one at a time |
 | Load | 18 s; Metal 17.1 GB |
 | Two-picture describer prompt (1,071 tokens) | bind 1.1 s, prompt 2.6 s, 55 ms a generated token |
-| Metal over 7 mixed requests | 19.8 GB, 2 MiB of growth after the first, no reloads |
-| Against mlx-vlm 8-bit, teacher-forced 48 steps | argmax 38/48, the reference's token in our top five 48/48, KL 0.10 (MLX's own 4-bit: 42/48, KL 0.077) |
+| Metal over 7 mixed requests | 19.8 GB (int4 head; 20.0 GB with the int8 head), 2 MiB of growth after the first, no reloads |
+| Against mlx-vlm 8-bit, teacher-forced 48 steps | int8 head: argmax 40/48, the reference's token in our top five 48/48, KL 0.081; int4 head: 38/48, KL 0.103 (MLX's own 4-bit: 42/48, KL 0.077) |
 
 ## Checks
 
@@ -63,7 +63,8 @@ otherwise it starts from an empty state, and keeps no snapshots while images are
 
 ## Open
 
-- The int4 recipe: symmetric without zero points is a little behind MLX's affine 4-bit; an int8 head or affine int4.
+- The int4 recipe: symmetric without zero points; the int8 head closed most of the gap to MLX's affine 4-bit, affine
+  int4 for the decoder Linears is the next knob.
 - The embedding (2.5 GB fp16) could be int8.
 - A float reference gate on a size transformers runs on the CPU (Qwen3.5-9B).
 - Image-aware snapshots for a recurrent model (prefix reuse across different picture sets).
