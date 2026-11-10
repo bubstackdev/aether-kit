@@ -67,7 +67,7 @@ struct Krea2ResidencyTests {
         for _ in 0..<2 {
             _ = try await pipeline.generate(Self.request)
             #expect(await pipeline.residentRoles.isEmpty)
-            #expect(await pipeline.residentBytes == 0)
+            #expect(await pipeline.plannedResidentBytes == 0)
         }
         // Cold every time: the last generation loaded all six.
         #expect(try await pipeline.generate(Self.request, observing: nil).metrics.loadedRoles == Self.roles)
@@ -94,7 +94,7 @@ struct Krea2ResidencyTests {
         _ = try await running.value
         #expect(await pipeline.releaseIfIdle() == true)
         #expect(await pipeline.residentRoles.isEmpty)
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
         // Released, not unloaded: the pipeline generates again.
         filter.release.continuation.yield()
         _ = try await pipeline.generate(Self.request)
@@ -107,15 +107,15 @@ struct Krea2ResidencyTests {
         var options = Self.options
         options.probe = GPUMemoryProbe { reads.withLock { $0 += 1_000; return $0 } }
         let pipeline = try Self.pipeline(options: options)
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
         _ = try await pipeline.generate(Self.request)
-        #expect(await pipeline.residentBytes > 0)
+        #expect(await pipeline.plannedResidentBytes > 0)
         #expect(await pipeline.releaseIfIdle())
-        #expect(await pipeline.residentBytes == 0)
+        #expect(await pipeline.plannedResidentBytes == 0)
     }
 
     /// The live reading follows the probe at the call: what the kept graphs retain after the plan (memory Core AI
-    /// keeps after a generation, here a hand-moved level) shows up at once, while the planned ``residentBytes`` stays.
+    /// keeps after a generation, here a hand-moved level) shows up at once, while the planned ``plannedResidentBytes`` stays.
     @Test func liveResidentBytesReadTheProbeAtTheCall() async throws {
         let level = Mutex<Int64>(1_000)
         var options = Self.options
@@ -125,10 +125,10 @@ struct Krea2ResidencyTests {
         #expect(await pipeline.liveResidentBytes == 0)
         _ = try await pipeline.generate(Self.request)
         #expect(await pipeline.liveResidentBytes == 600)
-        let planned = await pipeline.residentBytes
+        let planned = await pipeline.plannedResidentBytes
         level.withLock { $0 += 250 }
         #expect(await pipeline.liveResidentBytes == 850, "retained after the generation: counted at once")
-        #expect(await pipeline.residentBytes == planned, "the plan doesn't move between generations")
+        #expect(await pipeline.plannedResidentBytes == planned, "the plan doesn't move between generations")
         level.withLock { $0 -= 50 }
         #expect(await pipeline.liveResidentBytes == 800, "and memory given back comes off")
         // A warm generation loads nothing and keeps measuring from the level before the graphs loaded.
