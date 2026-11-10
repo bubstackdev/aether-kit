@@ -1,0 +1,35 @@
+{
+ "ref1.jpeg": {
+  "grid": [
+   48,
+   24
+  ],
+  "tokens": 288,
+  "seconds": 0.69,
+  "cosine": 0.999988,
+  "worstRowCosine": 0.999627,
+  "relL2": 0.00497
+ },
+ "ref2.jpeg": {
+  "grid": [
+   38,
+   28
+  ],
+  "tokens": 266,
+  "seconds": 0.08,
+  "cosine": 0.999974,
+  "worstRowCosine": 0.996751,
+  "relL2": 0.00718
+ },
+ "ref4.jpg": {
+  "grid": [
+   48,
+   40
+  ],
+  "tokens": 480,
+  "seconds": 0.08,
+  "cosine": 0.999992,
+  "worstRowCosine": 0.999737,
+  "relL2": 0.00408
+ }
+}

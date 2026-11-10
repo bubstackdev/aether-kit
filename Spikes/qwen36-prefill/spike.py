@@ -180,6 +180,11 @@ class StaticCore(torch.nn.Module):
 
     def forward(self, inputs_embeds, positions, write, mask, k_cache, v_cache, conv_state, rec_state):
         cos, sin = self.m.rope_cos_sin(positions)
+        h = self.trunk(inputs_embeds, cos, sin, write, mask, k_cache, v_cache, conv_state, rec_state)
+        return self.m.norm(h)[:, -1:, :]
+
+    def trunk(self, inputs_embeds, cos, sin, write, mask, k_cache, v_cache, conv_state, rec_state):
+        """The decoder layers over [1,S,H] embeddings with the given rotary tables; the residual stream after the last."""
         h, fi, li = inputs_embeds, 0, 0
         for layer in self.m.layers:
             normed = layer.input_layernorm(h)
@@ -207,7 +212,7 @@ class StaticCore(torch.nn.Module):
                 li += 1
             h = h + r
             h = h + layer.mlp(layer.post_attention_layernorm(h))
-        return self.m.norm(h)[:, -1:, :]
+        return h
 
 
 def host_inputs(start: int, s: int, capacity: int):

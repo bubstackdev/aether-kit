@@ -98,3 +98,36 @@ vision tower.
 
 The vision tower (27 blocks, hidden 1152) and M-RoPE, the head, and a token-level check against HF on real pictures,
 staged on Qwen3.5-9B (same tower) per the plan.
+
+# Stage 3: pictures in, words out, on the 27B (2026-11-10)
+
+The vision tower, M-RoPE and the head, end to end on the abliterated 27B, checked against an independent
+implementation. transformers' float32 27B doesn't fit (108 GB), so the reference is mlx-vlm's own Qwen3.5 code on an
+8-bit MLX conversion of the same checkpoint (`ref_mlx.py`), from identical inputs: `ref_vlm.py --prep-only` runs
+transformers' processor and `get_rope_index` (a meta-device model, no weights) on a describer prompt with two Samara
+reference pictures: 1,071 tokens, 768 of them image tokens (grids 48x24 and 48x40), M-RoPE positions up to 350, the
+text after the images shifted by -720. MLX's own positions are identical to transformers'.
+
+- **Vision tower** (`vlm.py export-vision`): Forge's Qwen3-VL `VisionTower` without DeepStack (Qwen3.5's tower has the
+  same blocks, merger, bilinear position table and axial 2-D rotary). fp16, 2,048 patch rows, one static function.
+  Against transformers' float32 tower on three real pictures: cosine 0.99997-0.99999, worst row 0.9968-0.9997;
+  0.08 s a picture on the GPU once warm. (Against MLX's bf16 tower: 0.9987.)
+- **Decoder** (`vlm.py export-decoder`): the spike's static hybrid trunk with Qwen3.5's interleaved M-RoPE (positions
+  [3, S] in, the [11, 11, 10] interleave over the 32 rotary frequencies), the final norm and the untied head, every
+  Linear int4 block 32 including the head: 14.4 GB, exported in 6.5 minutes (swap peaked at 42 GB). Host side for now:
+  the embedding lookup with the image rows spliced in at `<|image_pad|>`, positions from `get_rope_index`.
+- **Against MLX 8-bit, teacher-forced on its 48 greedy tokens**: argmax agreement 39/48, mean KL 0.109 (max 0.65), top-5
+  overlap 0.85. Control, MLX's own 4-bit (affine, group 32) on the same tokens: 42/48, KL 0.077, 0.88. So the Core AI
+  pipeline sits at 4-bit quantization noise, a little behind MLX's affine 4-bit; a wiring fault (positions, splice,
+  head) would show as near-zero agreement. Symmetric int4 without a zero point is the likely gap; affine int4 or an
+  int8 head are the knobs.
+- **Free greedy** reads right: "Red textured bodysuit, knee-length, form-fitting, with black side panels and gold trim,
+  deep V-neckline, long black sleeves, gold collar, black gloves, black boots with red accents, segmented armor on thighs
+  and calves" (MLX 8-bit: "Red and black armored bodysuit, knee-length, textured fabric with gold trim, featuring
+  segmented panels and rivets; deep V-neckline with gold accents, long sleeves with black gloves, ...").
+- **Speed on the GPU**: prompt of 1,071 tokens in 7.0 s (150 ms per 64-token chunk; the remainder one token at a time),
+  81 ms a generated token; decoder load 58 s (compile), vision load under 1 s.
+
+Open: an exact (float) decoder check against transformers on Qwen3.5-9B (same tower and M-RoPE; downloading), the
+int4 recipe (affine or an int8 head), and the bundle contract (embedding and splice in the graph, `vlm-static-inject@1`
+with the hybrid's two functions).

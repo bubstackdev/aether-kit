@@ -24,6 +24,9 @@ def main():
     ap.add_argument("--layers", type=int, default=8)
     ap.add_argument("--tokens", type=int, default=320)
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--full", action="store_true",
+                    help="also the final norm and head (head.safetensors), the embedding table (embed.npy, fp16, for the host) "
+                         "and the vision tower (vision.safetensors)")
     args = ap.parse_args()
     cfg = json.load(open(args.snapshot / "config.json"))
     index = json.load(open(args.snapshot / "model.safetensors.index.json"))["weight_map"]
@@ -62,8 +65,20 @@ def main():
         table = h.get_slice("model.language_model.embed_tokens.weight")
         emb = np.stack([table[i:i + 1].float().numpy()[0] for i in ids])
     np.save(args.output / "embeds.npy", emb.astype(np.float16))
+    if args.full:
+        def take(keys):
+            out = {}
+            for k in keys:
+                with safe_open(str(args.snapshot / index[k]), framework="pt") as h:
+                    out[k] = h.get_tensor(k).float().to(torch.float16).numpy()
+            return out
+        save_file(take(["model.language_model.norm.weight", "lm_head.weight"]), str(args.output / "head.safetensors"))
+        save_file(take(sorted(k for k in index if k.startswith("model.visual."))), str(args.output / "vision.safetensors"))
+        with safe_open(str(args.snapshot / index["model.language_model.embed_tokens.weight"]), framework="pt") as h:
+            np.save(args.output / "embed.npy", h.get_tensor("model.language_model.embed_tokens.weight").float().to(torch.float16).numpy())
     json.dump({"snapshot": str(args.snapshot), "layers": args.layers, "tokens": len(ids), "tensors": count,
-               "textConfig": cfg["text_config"], "normMeans": means, "normsShiftedByMLX": False},
+               "textConfig": cfg["text_config"], "visionConfig": cfg["vision_config"], "full": args.full,
+               "tokens_ids": {k: cfg.get(k) for k in ("image_token_id", "vision_start_token_id", "vision_end_token_id")}, "normMeans": means, "normsShiftedByMLX": False},
               open(args.output / "extract.json", "w"), indent=1)
     print(f"{count} tensors, {len(ids)} tokens, |embeds| max {np.abs(emb).max():.3g}")
 
