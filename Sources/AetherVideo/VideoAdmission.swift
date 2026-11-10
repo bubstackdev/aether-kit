@@ -66,10 +66,17 @@ public struct VideoMemoryEnvelope: Sendable, Hashable {
     public var stagePeakBytes: Int64 { phases.values.map(\.peakBytes).max() ?? 0 }
 }
 
-/// Why ``MiniMaxH3Pipeline`` refuses a request before anything waits or loads. Generation throws ``error``, an
-/// ``AetherError`` of the usual kind (`unsupportedOperation` or `capacity`); ``init(_:)`` reads one back. Act on
-/// this type, never on an error's text: the text is for people and may change.
+/// Why ``MiniMaxH3Pipeline`` refuses a request before anything waits or loads. Generation and
+/// ``MiniMaxH3Pipeline/preflight(_:)`` throw ``error``, an ``AetherError`` of the usual kind (`capacity` or
+/// `unsupportedOperation`); ``init(_:)`` reads one back. Act on this type, never on an error's text: the text is for
+/// people and may change.
 public enum VideoRefusal: Sendable, Hashable {
+    /// A shorter prompt would fit: the prompt's tokens against the most this clip takes
+    /// (``VideoClipLimits/refusal(promptTokens:)``).
+    case promptTooLong(promptTokens: Int, maximumPromptTokens: Int)
+    /// No prompt fits this clip: its keyframes' presentation and its rows leave fewer than `minimumPromptTokens`
+    /// (`maximumPromptTokens`, at least 0). A smaller profile, a shorter clip or fewer keyframes might.
+    case tooLargeAtSize(minimumPromptTokens: Int, maximumPromptTokens: Int)
     /// No measured memory envelope covers the admission key with this recipe on this export and chip, so the default
     /// measured-only admission refuses it. The memory gate (`scripts/h3-memory-gate`) measures it; until then the clip
     /// isn't available on this Mac.
@@ -84,13 +91,22 @@ public enum VideoRefusal: Sendable, Hashable {
     /// The `what` of an ``insufficientPhysicalMemory(admissionKey:neededBytes:availableBytes:)`` capacity error, before
     /// the key.
     static let physicalMemoryResource = "physical memory for "
+    /// The `what` of a ``promptTooLong(promptTokens:maximumPromptTokens:)`` capacity error.
+    static let promptTooLongResource = "video prompt tokens"
+    /// The `what` of a ``tooLargeAtSize(minimumPromptTokens:maximumPromptTokens:)`` capacity error.
+    static let tooLargeAtSizeResource = "video prompt tokens at this clip size"
     static let unmeasuredSuffix = " has no measured memory envelope for this export on this chip, so it is refused (unmeasured); the memory gate measures it"
 
-    /// The error generation throws: `unsupportedOperation` for ``unmeasured(admissionKey:recipe:)`` and
-    /// ``recipeNotOffered(profile:recipe:offered:)``, `capacity` (needed and available bytes) for
-    /// ``insufficientPhysicalMemory(admissionKey:neededBytes:availableBytes:)``.
+    /// The error generation and preflight throw: `capacity` for the prompt refusals (the prompt's tokens, or the fewest
+    /// a prompt needs, as `needed`; the most the clip takes as `available`) and for
+    /// ``insufficientPhysicalMemory(admissionKey:neededBytes:availableBytes:)`` (bytes); `unsupportedOperation` for
+    /// ``unmeasured(admissionKey:recipe:)`` and ``recipeNotOffered(profile:recipe:offered:)``.
     public var error: AetherError {
         switch self {
+        case .promptTooLong(let tokens, let maximum):
+            .capacity(what: Self.promptTooLongResource, needed: Int64(tokens), available: Int64(maximum))
+        case .tooLargeAtSize(let minimum, let maximum):
+            .capacity(what: Self.tooLargeAtSizeResource, needed: Int64(minimum), available: Int64(maximum))
         case .unmeasured(let key, let recipe):
             .unsupportedOperation("\(key) with '\(recipe)'" + Self.unmeasuredSuffix)
         case .recipeNotOffered(let profile, let recipe, let offered):
@@ -103,6 +119,10 @@ public enum VideoRefusal: Sendable, Hashable {
     /// The refusal `error` carries, or nil when it isn't one.
     public init?(_ error: AetherError) {
         switch error {
+        case .capacity(Self.promptTooLongResource, let needed, let available):
+            self = .promptTooLong(promptTokens: Int(needed), maximumPromptTokens: Int(available))
+        case .capacity(Self.tooLargeAtSizeResource, let needed, let available):
+            self = .tooLargeAtSize(minimumPromptTokens: Int(needed), maximumPromptTokens: Int(available))
         case .capacity(let what, let needed, let available):
             guard what.hasPrefix(Self.physicalMemoryResource),
                   let key = VideoAdmissionKey(String(what.dropFirst(Self.physicalMemoryResource.count))) else { return nil }

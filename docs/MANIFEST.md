@@ -687,7 +687,7 @@ The driver holds a request to `limits` before anything loads: the conditioner's 
 keyframes' presentation) within `textTokens`, and a step's packed rows (those plus the keyframe conditions, the audio
 and the video rows) within `rows`. A prompt past what the clip leaves it is refused as too long, and a clip whose
 keyframes and rows leave no room for a prompt as too large at its size, each an `AetherError.capacity` that
-`VideoClipRefusal` reads back; `MiniMaxH3Pipeline.clipLimits(profile:keyframes:)` and `preflight(_:)` compute the same
+`VideoRefusal` reads back; `MiniMaxH3Pipeline.clipLimits(profile:keyframeCount:)` and `preflight(_:)` compute the same
 on the CPU.
 
 Decoding refuses (naming the field): a profile whose key isn't `<W>x<H>x<frames>`, sides that aren't multiples of 32

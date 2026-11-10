@@ -125,13 +125,13 @@ public struct VideoFrame: Sendable, Hashable {
     public var time: Duration { .seconds(Double(index) / Double(GeneratedVideo.framesPerSecond)) }
 }
 
-/// The conditioning a clip leaves for its prompt (``MiniMaxH3Pipeline/clipLimits(profile:keyframes:)``): the export's
+/// The conditioning a clip leaves for its prompt (``MiniMaxH3Pipeline/clipLimits(profile:keyframeCount:)``): the export's
 /// bounds (`h3.limits`) and what the profile and keyframes take of them, in tokens of the bundle's tokenizer.
 public struct VideoClipLimits: Sendable, Hashable {
     /// The profile's key (`960x544x124`).
     public let profile: String
     /// The keyframes the clip is anchored to (0, 1 or 2).
-    public let keyframes: Int
+    public let keyframeCount: Int
     /// The conditioner's rows the export takes (`h3.limits.textTokens`): the prompt's tokens and, with keyframes, their
     /// presentation.
     public let presentationTokenRange: ClosedRange<Int>
@@ -164,8 +164,10 @@ public struct VideoClipLimits: Sendable, Hashable {
 
     /// Why a prompt of `promptTokens` tokens is refused for its length, if it is: a clip no prompt fits is too large at
     /// this size whatever the prompt; otherwise a prompt past ``maximumPromptTokens`` is too long. (A prompt below
-    /// ``minimumPromptTokens`` is refused as invalid, `GenerationFailure.invalidParameters`.)
-    public func refusal(promptTokens: Int) -> VideoClipRefusal? {
+    /// ``minimumPromptTokens`` is refused as invalid, `GenerationFailure.invalidParameters`.) Only
+    /// ``VideoRefusal/tooLargeAtSize(minimumPromptTokens:maximumPromptTokens:)`` and
+    /// ``VideoRefusal/promptTooLong(promptTokens:maximumPromptTokens:)``.
+    public func refusal(promptTokens: Int) -> VideoRefusal? {
         if !fitsSomePrompt {
             return .tooLargeAtSize(minimumPromptTokens: max(1, minimumPromptTokens), maximumPromptTokens: max(0, maximumPromptTokens))
         }
@@ -173,43 +175,6 @@ public struct VideoClipLimits: Sendable, Hashable {
             return .promptTooLong(promptTokens: promptTokens, maximumPromptTokens: maximumPromptTokens)
         }
         return nil
-    }
-}
-
-/// Why a clip's prompt doesn't fit (``VideoClipLimits/refusal(promptTokens:)``). ``MiniMaxH3Pipeline`` refuses with
-/// ``error``, an ``AetherError/capacity(what:needed:available:)`` whose `what` is ``promptTooLongResource`` or
-/// ``tooLargeAtSizeResource``; ``init(_:)`` reads one back.
-public enum VideoClipRefusal: Sendable, Hashable {
-    /// A shorter prompt would fit: the prompt's tokens against the most this clip takes.
-    case promptTooLong(promptTokens: Int, maximumPromptTokens: Int)
-    /// No prompt fits this clip: its keyframes' presentation and its rows leave fewer than `minimumPromptTokens`
-    /// (`maximumPromptTokens`, at least 0). A smaller profile, a shorter clip or fewer keyframes might.
-    case tooLargeAtSize(minimumPromptTokens: Int, maximumPromptTokens: Int)
-
-    /// The `what` of a ``promptTooLong(promptTokens:maximumPromptTokens:)`` refusal's capacity error.
-    public static let promptTooLongResource = "video prompt tokens"
-    /// The `what` of a ``tooLargeAtSize(minimumPromptTokens:maximumPromptTokens:)`` refusal's capacity error.
-    public static let tooLargeAtSizeResource = "video prompt tokens at this clip size"
-
-    /// The error generation and preflight throw: `.capacity` with the prompt's tokens (or the fewest a prompt needs)
-    /// as `needed` and the most the clip takes as `available`.
-    public var error: AetherError {
-        switch self {
-        case .promptTooLong(let tokens, let maximum):
-            .capacity(what: Self.promptTooLongResource, needed: Int64(tokens), available: Int64(maximum))
-        case .tooLargeAtSize(let minimum, let maximum):
-            .capacity(what: Self.tooLargeAtSizeResource, needed: Int64(minimum), available: Int64(maximum))
-        }
-    }
-
-    /// The refusal `error` carries, or nil when it isn't one.
-    public init?(_ error: AetherError) {
-        guard case .capacity(let what, let needed, let available) = error else { return nil }
-        switch what {
-        case Self.promptTooLongResource: self = .promptTooLong(promptTokens: Int(needed), maximumPromptTokens: Int(available))
-        case Self.tooLargeAtSizeResource: self = .tooLargeAtSize(minimumPromptTokens: Int(needed), maximumPromptTokens: Int(available))
-        default: return nil
-        }
     }
 }
 
@@ -232,8 +197,8 @@ public struct VideoPreflight: Sendable, Hashable {
     public let admissionKey: VideoAdmissionKey
     /// The measured envelope it is admitted under; nil under ``VideoAdmissionPolicy/measuring`` without one.
     public let envelope: VideoMemoryEnvelope?
-    /// The frames the clip decodes.
-    public let frames: Int
+    /// The frames the clip decodes (``GeneratedVideo/frameCount`` once it has).
+    public let frameCount: Int
 }
 
 /// Progress through a generation.
@@ -355,7 +320,7 @@ public actor MiniMaxH3Pipeline {
     /// Generates one clip. `onProgress` is called as layers, steps and windows finish.
     ///
     /// A prompt too long for the clip, or a clip no prompt fits, is refused before anything waits or loads with a
-    /// ``VideoClipRefusal``'s error (``preflight(_:)`` refuses the same).
+    /// ``VideoRefusal``'s error (``preflight(_:)`` refuses the same).
     public func generate(
         _ request: VideoRequest, onProgress: (@Sendable (VideoProgress) -> Void)? = nil
     ) async throws -> GeneratedVideo {
@@ -448,8 +413,8 @@ public actor MiniMaxH3Pipeline {
     /// Resolves `request` as ``generate(_:onProgress:)`` does, on the CPU with no graph loaded and nothing waited for:
     /// its profile, recipe, keyframes, the prompt's tokens and the clip's limits, then admission (the profile's recipes
     /// and shapes and, under ``VideoAdmissionPolicy/measuredOnly``, a measured envelope). It throws what generation
-    /// would throw before waiting: a prompt too long for the clip, or a clip no prompt fits, as a
-    /// ``VideoClipRefusal``'s error.
+    /// would throw before waiting: a prompt too long for the clip, a clip no prompt fits, an unmeasured key, a recipe
+    /// the profile doesn't offer or too little physical memory, each as a ``VideoRefusal``'s error.
     public nonisolated func preflight(_ request: VideoRequest) throws(AetherError) -> VideoPreflight {
         let plan = try plan(request)
         try admit(plan)
@@ -457,13 +422,13 @@ public actor MiniMaxH3Pipeline {
         return VideoPreflight(
             profile: plan.profile.key, recipe: plan.recipeName, seed: plan.seed, promptTokens: plan.ids.count,
             presentationTokens: plan.conditioningIDs.count, packedRows: limits.packedRows(promptTokens: plan.ids.count),
-            limits: limits, admissionKey: plan.admissionKey, envelope: envelopes[plan.admissionKey], frames: plan.profile.frames)
+            limits: limits, admissionKey: plan.admissionKey, envelope: envelopes[plan.admissionKey], frameCount: plan.profile.frames)
     }
 
-    /// The limits a clip at `profile` (absent, the manifest's first) anchored to `keyframes` keyframes (0, 1 or 2)
+    /// The limits a clip at `profile` (absent, the manifest's first) anchored to `keyframeCount` keyframes (0, 1 or 2)
     /// leaves its prompt, before there is a prompt or keyframe pixels: the keyframes are counted at the profile's
     /// canvas, as they must be. On the CPU, nothing loaded.
-    public nonisolated func clipLimits(profile key: String? = nil, keyframes: Int = 0) throws(AetherError) -> VideoClipLimits {
+    public nonisolated func clipLimits(profile key: String? = nil, keyframeCount keyframes: Int = 0) throws(AetherError) -> VideoClipLimits {
         let profile = try resolveProfile(key)
         guard (0...2).contains(keyframes) else {
             throw .generation(.invalidParameters("\(keyframes) keyframes; a clip is anchored to 0, 1 or 2"))
@@ -499,7 +464,7 @@ public actor MiniMaxH3Pipeline {
     nonisolated func limits(_ profile: Manifest.H3.Profile, keyframes: Int, presentation: Int) -> VideoClipLimits {
         let g = H3Geometry(profile)
         return VideoClipLimits(
-            profile: profile.key, keyframes: keyframes,
+            profile: profile.key, keyframeCount: keyframes,
             presentationTokenRange: h3.limits.textTokens[0]...h3.limits.textTokens[1],
             packedRowRange: h3.limits.rows[0]...h3.limits.rows[1], keyframePresentationTokens: presentation,
             clipRows: keyframes * g.rowsPerLatentFrame + g.audioRows + g.videoRows)

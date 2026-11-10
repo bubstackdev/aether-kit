@@ -52,31 +52,31 @@ struct MiniMaxH3PreflightTests {
         let pipeline = try Self.pipeline(try Self.manifest())
         let t2va = try pipeline.clipLimits()
         // 960×544×124: 18,870 video rows and 414 audio rows; the text bound (2…4096) is the tighter one.
-        #expect(t2va.profile == "960x544x124" && t2va.keyframes == 0 && t2va.keyframePresentationTokens == 0)
+        #expect(t2va.profile == "960x544x124" && t2va.keyframeCount == 0 && t2va.keyframePresentationTokens == 0)
         #expect(t2va.clipRows == 18870 + 414 && t2va.presentationTokenRange == 2...4096 && t2va.packedRowRange == 64...40960)
         #expect(t2va.maximumPromptTokens == 4096 && t2va.minimumPromptTokens == 2 && t2va.fitsSomePrompt)
         #expect(t2va.packedRows(promptTokens: 13) == 19297)
 
         // Each keyframe: its label ("<Picture i>: ", 13 scalars here), vision start and end, 30 × 17 image pads; and
         // one latent frame of condition rows.
-        let fl2va = try pipeline.clipLimits(profile: "960x544x124", keyframes: 2)
+        let fl2va = try pipeline.clipLimits(profile: "960x544x124", keyframeCount: 2)
         #expect(fl2va.keyframePresentationTokens == 2 * (13 + 2 + 510) && fl2va.clipRows == 2 * 510 + 414 + 18870)
         #expect(fl2va.maximumPromptTokens == 4096 - 1050)
         #expect(fl2va.presentationTokens(promptTokens: 10) == 1060)
 
-        #expect(throws: AetherError.self) { _ = try pipeline.clipLimits(keyframes: 3) }
+        #expect(throws: AetherError.self) { _ = try pipeline.clipLimits(keyframeCount: 3) }
         #expect(throws: AetherError.self) { _ = try pipeline.clipLimits(profile: "640x480x124") }
         // Without the export's vision tower for the canvas, keyframes are unsupported.
-        let error = #expect(throws: AetherError.self) { _ = try pipeline.clipLimits(profile: "704x704x124", keyframes: 1) }
+        let error = #expect(throws: AetherError.self) { _ = try pipeline.clipLimits(profile: "704x704x124", keyframeCount: 1) }
         guard case .unsupportedOperation? = error else { Issue.record("\(String(describing: error))"); return }
     }
 
     @Test func preflightResolvesAsGenerationDoes() throws {
         let pipeline = try Self.pipeline(try Self.manifest())
         let plain = try pipeline.preflight(VideoRequest(prompt: "a fox in snow", seed: 42))
-        #expect(plain.profile == "960x544x124" && plain.recipe == "turbo8" && plain.seed == 42 && plain.frames == 124)
+        #expect(plain.profile == "960x544x124" && plain.recipe == "turbo8" && plain.seed == 42 && plain.frameCount == 124)
         #expect(plain.promptTokens == 13 && plain.presentationTokens == 13 && plain.packedRows == 19297)
-        let t2va = try pipeline.clipLimits(), fl2va = try pipeline.clipLimits(keyframes: 2)
+        let t2va = try pipeline.clipLimits(), fl2va = try pipeline.clipLimits(keyframeCount: 2)
         #expect(plain.admissionKey == VideoAdmissionKey(profile: "960x544x124") && plain.envelope == nil && plain.limits == t2va)
 
         let anchored = try pipeline.preflight(VideoRequest(prompt: "a fox in snow", keyframes: try Self.keyframes(2)))
@@ -98,17 +98,17 @@ struct MiniMaxH3PreflightTests {
         let pipeline = try Self.pipeline(try Self.manifest(), loads: loads)
         let request = VideoRequest(prompt: String(repeating: "a", count: 4097))
         let preflighted = #expect(throws: AetherError.self) { _ = try pipeline.preflight(request) }
-        #expect(preflighted.flatMap(VideoClipRefusal.init) == .promptTooLong(promptTokens: 4097, maximumPromptTokens: 4096))
+        #expect(preflighted.flatMap(VideoRefusal.init) == .promptTooLong(promptTokens: 4097, maximumPromptTokens: 4096))
         let generated = await MiniMaxH3AdmissionTests.failure(pipeline, request)
-        #expect(generated.flatMap(VideoClipRefusal.init) == .promptTooLong(promptTokens: 4097, maximumPromptTokens: 4096))
+        #expect(generated.flatMap(VideoRefusal.init) == .promptTooLong(promptTokens: 4097, maximumPromptTokens: 4096))
         guard case .capacity(let what, let needed, let available)? = generated else { Issue.record("\(String(describing: generated))"); return }
-        #expect(what == VideoClipRefusal.promptTooLongResource && needed == 4097 && available == 4096)
+        #expect(what == VideoRefusal.promptTooLongResource && needed == 4097 && available == 4096)
         #expect(loads.count.withLock { $0 } == 0)
 
         // With keyframes the presentation takes its share: 4,096 − 525 tokens are left for the prompt.
         let anchored = VideoRequest(prompt: String(repeating: "a", count: 3572), keyframes: try Self.keyframes(1))
         let error = #expect(throws: AetherError.self) { _ = try pipeline.preflight(anchored) }
-        #expect(error.flatMap(VideoClipRefusal.init) == .promptTooLong(promptTokens: 3572, maximumPromptTokens: 3571))
+        #expect(error.flatMap(VideoRefusal.init) == .promptTooLong(promptTokens: 3572, maximumPromptTokens: 3571))
         var fits = anchored
         fits.prompt = String(repeating: "a", count: 3571)
         let fitting = try pipeline.preflight(fits)
@@ -123,26 +123,26 @@ struct MiniMaxH3PreflightTests {
         let loads = MiniMaxH3AdmissionTests.Loads()
         // A 1,000-token presentation bound: one keyframe (525) leaves 475; two (1,050) leave none.
         let pipeline = try Self.pipeline(try Self.manifest(textTokens: [2, 1000]), loads: loads)
-        let two = try pipeline.clipLimits(keyframes: 2)
+        let two = try pipeline.clipLimits(keyframeCount: 2)
         #expect(!two.fitsSomePrompt && two.maximumPromptTokens == -50)
         #expect(two.refusal(promptTokens: 1) == .tooLargeAtSize(minimumPromptTokens: 1, maximumPromptTokens: 0))
-        let one = try pipeline.clipLimits(keyframes: 1)
+        let one = try pipeline.clipLimits(keyframeCount: 1)
         #expect(one.refusal(promptTokens: 476) == .promptTooLong(promptTokens: 476, maximumPromptTokens: 475))
 
         let request = VideoRequest(prompt: "a fox", keyframes: try Self.keyframes(2))
         let preflighted = #expect(throws: AetherError.self) { _ = try pipeline.preflight(request) }
-        #expect(preflighted.flatMap(VideoClipRefusal.init) == .tooLargeAtSize(minimumPromptTokens: 1, maximumPromptTokens: 0))
+        #expect(preflighted.flatMap(VideoRefusal.init) == .tooLargeAtSize(minimumPromptTokens: 1, maximumPromptTokens: 0))
         let generated = await MiniMaxH3AdmissionTests.failure(pipeline, request)
         guard case .capacity(let what, 1, 0)? = generated else { Issue.record("\(String(describing: generated))"); return }
-        #expect(what == VideoClipRefusal.tooLargeAtSizeResource && loads.count.withLock { $0 } == 0)
+        #expect(what == VideoRefusal.tooLargeAtSizeResource && loads.count.withLock { $0 } == 0)
 
         // The refusal round-trips through its error; other errors aren't refusals.
-        for refusal in [VideoClipRefusal.promptTooLong(promptTokens: 9, maximumPromptTokens: 8),
+        for refusal in [VideoRefusal.promptTooLong(promptTokens: 9, maximumPromptTokens: 8),
                         .tooLargeAtSize(minimumPromptTokens: 2, maximumPromptTokens: 0)] {
-            #expect(VideoClipRefusal(refusal.error) == refusal)
+            #expect(VideoRefusal(refusal.error) == refusal)
         }
-        #expect(VideoClipRefusal(.capacity(what: "memory", needed: 2, available: 1)) == nil)
-        #expect(VideoClipRefusal(.memoryPressure) == nil)
+        #expect(VideoRefusal(.capacity(what: "memory", needed: 2, available: 1)) == nil)
+        #expect(VideoRefusal(.memoryPressure) == nil)
     }
 
     // MARK: Streaming

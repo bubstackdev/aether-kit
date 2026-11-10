@@ -562,13 +562,13 @@ runtime pieces:
   an unmeasured one is refused before anything loads. The ledger is seeded from the envelopes. The memory gate runs
   with `VideoAdmissionPolicy.measuring` (SPI; every profile, planned from its files, nothing seeded). A refusal is a
   typed `VideoRefusal`; the envelopes are not part of the export's identity (`contentDigest`).
-- **Preflight and clip limits:** `clipLimits(profile:keyframes:)` gives what a clip leaves its prompt
+- **Preflight and clip limits:** `clipLimits(profile:keyframeCount:)` gives what a clip leaves its prompt
   (`VideoClipLimits`: the export's bounds, the keyframes' presentation tokens, the clip's packed rows, the longest
   and shortest prompt), before there is a prompt or keyframe pixels; `preflight(_:)` resolves a whole request as
   generation does (profile, recipe, the prompt's and presentation's tokens, packed rows, admission key and envelope)
   and throws what generation throws before waiting. A prompt too long and a clip too large at its size are
-  `AetherError.capacity` with a published `what`, read back by `VideoClipRefusal(_:)`, so a host refuses early
-  without redoing the arithmetic. Both run on the CPU with nothing loaded.
+  `VideoRefusal.promptTooLong` and `.tooLargeAtSize`, thrown as `AetherError.capacity` and read back by
+  `VideoRefusal(_:)`, so a host refuses early without redoing the arithmetic or matching text. Both run on the CPU with nothing loaded.
 - **Streaming frames:** `generate(_:onProgress:frames:)` hands each decoded frame (`VideoFrame`) to an async sink in
   order as its window is stitched and keeps none, so the pipeline holds one window's frames, not the clip's (5 s at
   960×544 is about 190 MB of RGB8); the returned clip has empty `frames` and its `frameCount`. A sink that throws
