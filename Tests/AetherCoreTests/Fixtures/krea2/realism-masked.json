@@ -330,6 +330,7 @@
       "denoiser3"
     ],
     "condRows": 8,
+    "textLength": 1116,
     "contentFilter": {
       "required": true,
       "reason": "Krea 2 Community License §4.2; the app supplies the filter"

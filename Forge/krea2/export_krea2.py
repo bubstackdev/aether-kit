@@ -27,7 +27,12 @@ The output is laid out as an installed revision root (the manifest under `.aethe
 
 The denoisers take one fixed text length, 1,116 rows, with a key-padding mask (`--text-mask`, the default;
 krea2_graphs.py), for text-only and reference prompts alike. `--no-text-mask` exports the earlier exact-length
-denoisers (a dynamic text axis, no mask).
+denoisers (a dynamic text axis, no mask). `--mask-text-rows N` exports a shorter fixed length (for example 256: faster
+steps for the text-only prompts that fit); the manifest declares it as `krea2.textLength`, and the host refuses a prompt
+with more conditioning rows (`AetherError.capacity(what: "krea2.textLength", ...)`) so it can go to a 1,116-row export:
+
+    Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace --mask-text-rows 256 \
+        --only denoiser0 denoiser1 denoiser2 denoiser3 --base-bundle <existing bundle> --output <new bundle dir>
 
     Forge/.venv/bin/python -I Forge/krea2/export_krea2.py --variant realism --replace \
         --only denoiser0 denoiser1 denoiser2 denoiser3 --base-bundle <existing bundle> --output <new bundle dir>
@@ -196,6 +201,7 @@ MANIFEST_PATH = ".aether/aether.json"
 def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], report: dict) -> dict:
     v = VARIANTS[variant]
     masked = report.get("textMask", False)
+    text_rows = report.get("textRows", kg.MASK_TEXT_ROWS)
     graph_file = lambda role: f"main:{asset_names[role]}"  # noqa: E731
     from_ = lambda ref: {"name": ref.split(".")[1], "source": {"from": ref}}  # noqa: E731
     segment_inputs = lambda i: {  # noqa: E731
@@ -276,13 +282,14 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
                        "layout": "splitHalves", "textRotated": False, "dtype": "float32"},
             "segments": [f"denoiser{i}" for i in range(4)],
             "condRows": kg.CONDITION_ROWS,
+            **({"textLength": text_rows} if masked else {}),
             "contentFilter": {"required": True, "reason": "Krea 2 Community License §4.2; the app supplies the filter"},
             **({"references": reference_block()} if references else {}),
         },
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
                                      "vaeDecoder": "fp16 weights, fp32 compute",
-                                     **({"denoisers": f"text rows padded with zeros to {kg.MASK_TEXT_ROWS} under a "
+                                     **({"denoisers": f"text rows padded with zeros to {text_rows} under a "
                                                       "key-padding mask (textMask)"}
                                         if masked else {}),
                                      **({"vaeEncoder": "fp16 weights, fp32 compute"}
@@ -325,15 +332,17 @@ def reference_block() -> dict:
     }
 
 
-def sample_manifest(variant: str, masked: bool = True) -> dict:
+def sample_manifest(variant: str, masked: bool = True, text_rows: int = kg.MASK_TEXT_ROWS) -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
-    fixtures with `--sample-manifest --variant <v> [--no-text-mask] > Tests/AetherCoreTests/Fixtures/krea2/<file>.json`
-    (`vanilla.json` and `realism.json` are the exact-length exports, `realism-masked.json` the masked one)."""
+    fixtures with `--sample-manifest --variant <v> [--no-text-mask | --mask-text-rows N] >
+    Tests/AetherCoreTests/Fixtures/krea2/<file>.json` (`vanilla.json` and `realism.json` are the exact-length exports,
+    `realism-masked.json` the masked one, `realism-masked-256.json` the 256-row one)."""
     v = VARIANTS[variant]
     asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
     report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
-              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked}
+              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked,
+              **({"textRows": text_rows} if masked else {})}
     return manifest(variant, files, asset_names, report)
 
 
@@ -393,10 +402,18 @@ def main() -> None:
     parser.add_argument("--text-mask", action=argparse.BooleanOptionalAction, default=True,
                         help="denoisers at one fixed text length (1116) with a key-padding mask (default); "
                              "--no-text-mask: the earlier exact-length denoisers")
+    parser.add_argument("--mask-text-rows", type=int, default=kg.MASK_TEXT_ROWS, metavar="N",
+                        help=f"the masked denoisers' fixed text length (default {kg.MASK_TEXT_ROWS}, the most a reference "
+                             "prompt has); the manifest declares it (krea2.textLength) and the host refuses a prompt "
+                             "with more conditioning rows")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
+    if not args.text_mask and args.mask_text_rows != kg.MASK_TEXT_ROWS:
+        parser.error("--mask-text-rows needs the masked denoisers (--text-mask)")
+    if not 1 <= args.mask_text_rows <= kg.DENOISER_TEXT_ROWS:
+        parser.error(f"--mask-text-rows must be in 1...{kg.DENOISER_TEXT_ROWS}")
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.variant, args.text_mask), indent=2, ensure_ascii=False))
+        print(json.dumps(sample_manifest(args.variant, args.text_mask, args.mask_text_rows), indent=2, ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")
@@ -417,6 +434,9 @@ def main() -> None:
         denoisers = [role for role in roles if role.startswith("denoiser")]
         if denoisers and len(denoisers) != len(kg.SEGMENTS) and base_masked != args.text_mask:
             raise SystemExit("the denoisers must all take the text mask or none: re-export all four")
+        if (denoisers and len(denoisers) != len(kg.SEGMENTS) and base_masked
+                and kg.text_length(base) != args.mask_text_rows):
+            raise SystemExit(f"the base's denoisers take {kg.text_length(base)} text rows: re-export all four")
     denoisers = [role for role in roles if role.startswith("denoiser")]
     started = time.monotonic()
     args.output.mkdir(parents=True)
@@ -447,6 +467,9 @@ def main() -> None:
         "textMask": (args.text_mask if denoisers or base is None
                      else "textMask" in base["graphs"].get("denoiser0", {}).get("inputs", {})),
     }
+    # The masked denoisers' fixed text length (the manifest's krea2.textLength): this export's, else the base's.
+    if report["textMask"]:
+        report["textRows"] = args.mask_text_rows if denoisers or base is None else kg.text_length(base)
     report_path = args.output / "export-report.json"
 
     def save() -> None:
@@ -500,14 +523,14 @@ def main() -> None:
             continue
         log.start(f"build-{role}")
         segment = kg.DenoiserSegment.load(checkpoint, index, adapter, strict=not args.allow_unpinned,
-                                          masked=args.text_mask)
+                                          masked=args.text_mask, text_rows=args.mask_text_rows)
         report["stages"][f"build-{role}"] = log.done(f"build-{role}")
         example, dynamic = segment.example()
         log.start(f"export-{role}")
         report["conversion"][role] = convert(segment, example, dynamic, segment.input_names, segment.output_names,
                                              "segment", args.output / asset_names[role])
         if args.text_mask:
-            report["conversion"][role]["textRows"] = kg.MASK_TEXT_ROWS
+            report["conversion"][role]["textRows"] = args.mask_text_rows
         report["stages"][f"export-{role}"] = log.done(f"export-{role}")
         del segment
         gc.collect()

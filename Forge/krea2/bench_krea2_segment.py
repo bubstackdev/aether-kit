@@ -38,6 +38,7 @@ def main() -> None:
     parser.add_argument("--index", type=int, default=1)
     parser.add_argument("--rows", type=int, default=27)
     parser.add_argument("--runs", type=int, default=5)
+    parser.add_argument("--text-length", type=int, default=kg.MASK_TEXT_ROWS, help="the masked variant's text length")
     parser.add_argument("--variants", nargs="*", default=["bool", "exact"], choices=["bool", "exact"])
     args = parser.parse_args()
     if args.workdir.exists() or args.report.exists():
@@ -47,7 +48,7 @@ def main() -> None:
     torch.set_grad_enabled(False)
     checkpoint = kg.Checkpoint(DEFAULT_SNAPSHOT)
     rng = np.random.default_rng(0)
-    n, length = 4096, kg.MASK_TEXT_ROWS
+    n, length = 4096, args.text_length
     hidden = kg.HIDDEN
     image = (rng.standard_normal((n, hidden)) * 0.5).astype(np.float32)
     text = np.zeros((length, hidden), dtype=np.float32)
@@ -58,7 +59,7 @@ def main() -> None:
     results, reference = {}, None
     for variant in args.variants:
         masked = variant != "exact"
-        seg = kg.DenoiserSegment.load(checkpoint, args.index, masked=masked)
+        seg = kg.DenoiserSegment.load(checkpoint, args.index, masked=masked, text_rows=length)
         example, dynamic = seg.example()
         path = args.workdir / f"{variant}.aimodel"
         info = convert(seg, example, dynamic, seg.input_names, seg.output_names, "segment", path)

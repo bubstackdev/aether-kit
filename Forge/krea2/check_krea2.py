@@ -23,7 +23,8 @@ Bars (FLUX.2's template):
   oracle conditioning, mean row cosine >= 0.999 and worst row >= 0.99 (the 0.0.x bars). The closed loop then runs from
   the chosen case's graph conditioning, and the teacher-forced steps from its oracle conditioning.
 - masked denoisers (a `textMask` input): every denoiser call takes the conditioning padded with zero rows to the
-  fixed length (1116) and `text_mask` (1 real, 0 padding);
+  fixed length (the manifest's `krea2.textLength`; 1116 when absent) and `text_mask` (1 real, 0 padding); a prompt
+  with more rows than that is refused (it belongs to a longer export);
   text carries are compared on the real rows. The closed-loop image is also saved as `<report>.npy` (float32 [3, H, W]
   on [-1, 1]) so two bundles' images can be compared (`--compare-image`: PSNR and SSIM against another check's .npy).
 One gate: exits nonzero when any bar fails. Refuses to start while the M2 Swift gates run (xctest).
@@ -94,9 +95,11 @@ class Segments:
         if "textMask" not in g["inputs"]:
             self.function = phases["step"]
         else:
-            if rows > kg.MASK_TEXT_ROWS:
-                raise SystemExit(f"{rows} conditioning rows exceed the denoisers' {kg.MASK_TEXT_ROWS}")
-            self.length = kg.MASK_TEXT_ROWS
+            length = kg.text_length(manifest)
+            if rows > length:
+                raise SystemExit(f"{rows} conditioning rows exceed the denoisers' text length {length} "
+                                 "(krea2.textLength): check this prompt on a longer export")
+            self.length = length
             self.function = phases["step"]
             self.mask = kg.text_mask(rows, self.length).numpy()
         self.graphs = [Graph(files[f"denoiser{i}"], self.function) for i in range(4)]
