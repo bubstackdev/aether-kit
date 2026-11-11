@@ -99,7 +99,8 @@
     `unsupportedOperation`). On the G4
     export only 960×544×124 turbo8 text-to-video is covered (its seeded footprints). Keyframed clips, turbo4 and
     544×960 there need the H2 gate's envelopes.
-  - **Not yet measured:** the envelopes come from the H2 gate on the GPU.
+  - **Measured:** the H2 gate's 33 renders recorded 21 envelopes (one per admission key measured) into the 0.2.0 H3
+    export on the M5 Max (`h17c`, 2026-11-11).
 - **Qwen3.5 / Qwen3.6 vision-language export (`Forge/qwen3_5/`, docs/QWEN3_5.md).** Any Qwen3_5ForConditionalGeneration
   checkpoint as a `vlm-static-inject@1` bundle: Qwen3-VL's grid-static tower without DeepStack, and the hybrid decoder
   (Gated DeltaNet and gated full attention, interleaved M-RoPE, untied head) as one function of up to 32 tokens a call
