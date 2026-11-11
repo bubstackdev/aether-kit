@@ -241,9 +241,28 @@ public actor Krea2Pipeline {
     /// Runs the text encoder on `prompt` alone and returns its conditioning, for ``generate(_:reusing:observing:)``:
     /// a prompt rendered at several seeds or sizes encodes once. The filter reviews the prompt first, as a generation
     /// does. Waits for the GPU (`job`'s priority) and this pipeline's turn, and plans memory against the canvas of the
-    /// last generation (so its kept denoisers stay); the text encoder then stays loaded or is released as for a
-    /// generation (``setRetention(_:)``). Refusals, pressure and cancellation are a generation's.
+    /// last generation (so its kept denoisers stay), or before any generation against a conditioning-only profile, whose
+    /// text encoder the first generation's canvas then releases (use ``encode(prompt:width:height:job:)`` to keep it);
+    /// the text encoder then stays loaded or is released as for a generation (``setRetention(_:)``). Refusals, pressure
+    /// and cancellation are a generation's.
     public func encode(prompt text: String, job: GPUJob? = nil) async throws -> Krea2Conditioning {
+        try await encode(prompt: text, profile: lastProfileForEncode, job: job)
+    }
+
+    /// ``encode(prompt:job:)`` for the generation that follows at `width` × `height`: the encode plans memory against
+    /// that canvas, as the generation will, so with ``ImageRetention/keepLoaded`` the text encoder stays resident beside
+    /// that canvas's denoisers and decoder instead of being released by the generation's change of canvas (the first
+    /// encode on a new pipeline, or one for another size than the last generation's). The canvas is checked as a
+    /// generation's would be (`invalidParameters`); nothing else changes.
+    public func encode(prompt text: String, width: Int, height: Int, job: GPUJob? = nil) async throws -> Krea2Conditioning {
+        _ = try latent.tokenGrid(width: width, height: height)
+        return try await encode(prompt: text, profile: Self.profile(width: width, height: height), job: job)
+    }
+
+    /// The admission profile of a canvas: the key generations and canvas-aware encodes plan under.
+    static func profile(width: Int, height: Int) -> String { "\(width)x\(height)" }
+
+    private func encode(prompt text: String, profile: String, job: GPUJob?) async throws -> Krea2Conditioning {
         pending += 1
         defer { pending -= 1 }
         try Task.checkCancellation()
@@ -253,7 +272,7 @@ public actor Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfile ?? "conditioning", shape: denoiserShape(rows: prompt.conditioningRows))
+            let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure, !admission.residentRoles.contains(wiring.text.role),
                await pressure.level == .critical {
                 admission.release()
@@ -273,10 +292,29 @@ public actor Krea2Pipeline {
                 if retention == .releaseAfterEachGeneration { admission.release() }
                 return conditioning
             } catch {
-                admission.release()
+                settle(after: error)
                 throw error
             }
         }
+    }
+
+    /// After an encode or a generation threw inside its turn. A cancellation (`CancellationError`, bare or as
+    /// ``AetherError/runtime(underlying:)``) keeps the resident graphs under ``ImageRetention/keepLoaded``, so the next
+    /// request starts warm (``ResidentAdmission/keepAfterCancellation()``: only graphs already measured stay); any other
+    /// failure, or a cancellation under ``ImageRetention/releaseAfterEachGeneration``, releases every graph.
+    func settle(after error: any Error) {
+        if retention == .keepLoaded, Self.isCancellation(error) {
+            admission.keepAfterCancellation()
+        } else {
+            admission.release()
+        }
+    }
+
+    /// Whether `error` is a cancellation: `CancellationError`, bare or wrapped as ``AetherError/runtime(underlying:)``.
+    nonisolated static func isCancellation(_ error: any Error) -> Bool {
+        if error is CancellationError { return true }
+        if case AetherError.runtime(let underlying) = error, underlying is CancellationError { return true }
+        return false
     }
 
     /// Whether the export has the VAE encoder that refine needs.
@@ -340,7 +378,7 @@ public actor Krea2Pipeline {
                 if retention == .releaseAfterEachGeneration { admission.release() }
                 return ImageLatents(rows: grid.rows, columns: grid.columns, channels: latent.channels, values: values)
             } catch {
-                admission.release()
+                settle(after: error)
                 throw error
             }
         }
@@ -441,7 +479,7 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
-            let profile = "\(size.width)x\(size.height)"
+            let profile = Self.profile(width: size.width, height: size.height)
             let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: source.rows))
             lastProfile = profile
             // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't
@@ -464,7 +502,7 @@ public actor Krea2Pipeline {
                 if retention == .releaseAfterEachGeneration { admission.release() }
                 return image
             } catch {
-                admission.release()
+                settle(after: error)
                 throw error
             }
         }

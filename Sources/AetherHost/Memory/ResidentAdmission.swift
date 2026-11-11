@@ -12,7 +12,8 @@ public import AetherRuntime
 ///    graphs stay loaded, nothing when they were released per phase), so a second pipeline on the same coordinator
 ///    can't take memory these graphs still use.
 /// 3. ``release()`` after a failure and on ``begin(profile:shape:)``'s refusal: every graph is released and so is the
-///    reservation. ``unload()`` does the same and also drops the bundle's reader lease.
+///    reservation. ``unload()`` does the same and also drops the bundle's reader lease. After a cancellation a pipeline
+///    may call ``keepAfterCancellation()`` instead, which keeps the graphs already measured.
 ///
 /// **Reader lease.** Given a bundle from a ``ModelStore``, the admission holds its reader lease
 /// (``InstalledBundle/readLease()``) from creation until ``unload()`` or deinit, so the store refuses to remove files
@@ -273,6 +274,28 @@ public final class ResidentAdmission {
             reservedBytes = 0
             return true
         }
+        do {
+            try reserve(residentBytes)
+            return true
+        } catch {
+            release()
+            return false
+        }
+    }
+
+    /// After a generation that was cancelled: keeps the resident graphs and resizes the reservation to what they hold,
+    /// as ``finish()`` does, but measures nothing (a generation cut short says nothing of a whole one's peak). Kept only
+    /// when the residency is all resident and its open phase loaded no graph, so every graph kept was measured; otherwise,
+    /// or when the coordinator can't hold the resized reservation, everything is released as ``release()`` does. Returns
+    /// whether the graphs stayed.
+    @discardableResult
+    package func keepAfterCancellation() -> Bool {
+        guard let residency, residency.abandonOpenPhase(), !residency.residentRoles.isEmpty else {
+            release()
+            return false
+        }
+        residentBytes = inputs(profile: residency.profile, specializations: residency.specializations).phases.values
+            .reduce(0) { $0 + $1.heldBytes }
         do {
             try reserve(residentBytes)
             return true
