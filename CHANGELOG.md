@@ -35,9 +35,15 @@
     `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
     `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
     `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
-    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
+    KV state, position and images survive a reload, so prefix reuse continues. G5 passes (see below). Over
     48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
     stayed under 12.9 GiB.
+  - **G5's memory bar.** With a reload budget, `DescriberRetentionGateTests` now checks the budget's bound, not growth
+    after warm-up under 1 GiB. The old figure depended on how much the warm-up happened to retain (880 MiB passed
+    because the warm-up had retained 1,209 MiB), and read only after requests, missing the 1,139 MiB peak a reload
+    released. Now: after every request the model holds at most the budget past its level after the first request, and
+    the peak stays under that plus one warm-up request and the engine's buffers. Both growth figures are recorded; an
+    engine without a budget keeps the 1 GiB bar, on the peak. Each row records `reloads`. Test-only.
 
 ### New
 
