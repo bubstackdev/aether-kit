@@ -24,7 +24,7 @@ swiftpm-testing-helper --yes`).
 | `MiniMaxH3ProfileGateTests` via `scripts/h3-memory-gate` | `Tests/AetherVideoTests/MiniMaxH3ProfileGateTests.swift` | every profile, recipe and task once: phase peaks within the profile's bar; then `Forge/h3/record_envelopes_h3.py` records the envelopes admission uses | an H3 export with every profile's graphs |
 | `Qwen3 decoder-lm export gates` | `Tests/AetherTextTests/DecoderLMExportGateTests.swift` | a Forge `decoder-lm@1` export's greedy replies vs the earlier export's (near-tie rule) | a local Qwen3 export |
 | `DescriberGateTests` | `Tests/AetherTextTests/DescriberGateTests.swift` | the Qwen3-VL driver's greedy output vs the earlier describer on synthetic pictures (near-tie rule) | a local Qwen3-VL export + its reference |
-| `DescriberRetentionGateTests` | `Tests/AetherTextTests/DescriberRetentionGateTests.swift` | 20 mixed requests: growth after warm-up under 1 GiB; decode and prefill times | the same |
+| `DescriberRetentionGateTests` | `Tests/AetherTextTests/DescriberRetentionGateTests.swift` | 20 mixed requests: the reload budget's bound after every request and at the peak (growth after warm-up recorded; the 1 GiB bar without a budget); decode and prefill times | the same |
 | `check_qwen3vl.py` | `Forge/qwen3vl/check_qwen3vl.py` | every graph vs CPU float32 transformers (`reference_qwen3vl.py`, `--pictures` for pins without photographs) | the export + its reference |
 
 **Device gate.** As for 0.1.0, plus any 0.2.0 driver that ships an iOS variant, recorded in docs/DEVICE.md.
