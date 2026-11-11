@@ -151,7 +151,7 @@
       "passed" : true
     },
     {
-      "detail" : "rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 116.5 ms",
+      "detail" : "rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 97.6 ms",
       "name" : "depth-anything-3-small.gpu.soh-000.depth",
       "passed" : true
     },
@@ -181,7 +181,7 @@
       "passed" : true
     },
     {
-      "detail" : "rel L2 0.00016923846820482189 (bar 0.02), max |Δ| 0.0007919073104858398, 37.3 ms",
+      "detail" : "rel L2 0.00016923846820482189 (bar 0.02), max |Δ| 0.0007919073104858398, 37.7 ms",
       "name" : "depth-anything-3-small.gpu.synthetic-7.depth",
       "passed" : true
     },
@@ -206,7 +206,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.99999994 (bar 0.999), norm 1.0, 532.0 ms",
+      "detail" : "cosine 0.99999994 (bar 0.999), norm 1.0, 553.2 ms",
       "name" : "embeddinggemma-300m.gpu.query-short.cosine",
       "passed" : true
     },
@@ -221,7 +221,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.8 ms",
+      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.6 ms",
       "name" : "embeddinggemma-300m.gpu.query-long.cosine",
       "passed" : true
     },
@@ -236,7 +236,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.8 ms",
+      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.6 ms",
       "name" : "embeddinggemma-300m.gpu.query-french.cosine",
       "passed" : true
     },
@@ -251,7 +251,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.99999994, 31.8 ms",
+      "detail" : "cosine 0.99999994 (bar 0.999), norm 0.99999994, 31.5 ms",
       "name" : "embeddinggemma-300m.gpu.document-short.cosine",
       "passed" : true
     },
@@ -266,7 +266,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.8 ms",
+      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.5 ms",
       "name" : "embeddinggemma-300m.gpu.document-medium.cosine",
       "passed" : true
     },
@@ -281,7 +281,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
+      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.7 ms",
       "name" : "embeddinggemma-300m.gpu.document-near-256.cosine",
       "passed" : true
     },
@@ -296,7 +296,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
+      "detail" : "cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.5 ms",
       "name" : "embeddinggemma-300m.gpu.document-truncated.cosine",
       "passed" : true
     },
@@ -331,7 +331,7 @@
       "passed" : true
     },
     {
-      "detail" : "17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 229.4 ms",
+      "detail" : "17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 218.0 ms",
       "name" : "clip-vit-b32.gpu.textTower",
       "passed" : true
     },
@@ -341,7 +341,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 137.2 ms",
+      "detail" : "cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 133.7 ms",
       "name" : "clip-vit-b32.gpu.astronaut.image",
       "passed" : true
     },
@@ -351,7 +351,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 5.6 ms",
+      "detail" : "cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 4.7 ms",
       "name" : "clip-vit-b32.gpu.chelsea.image",
       "passed" : true
     },
@@ -361,7 +361,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 4.1 ms",
+      "detail" : "cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 4.0 ms",
       "name" : "clip-vit-b32.gpu.coffee.image",
       "passed" : true
     },
@@ -371,7 +371,7 @@
       "passed" : true
     },
     {
-      "detail" : "cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 4.0 ms",
+      "detail" : "cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 3.9 ms",
       "name" : "clip-vit-b32.gpu.rocket.image",
       "passed" : true
     },
@@ -416,7 +416,7 @@
       "passed" : true
     },
     {
-      "detail" : "5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 59.3 ms",
+      "detail" : "5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 62.8 ms",
       "name" : "yolox-s.gpu.dog.detections",
       "passed" : true
     },
@@ -426,7 +426,7 @@
       "passed" : true
     },
     {
-      "detail" : "11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 23.9 ms",
+      "detail" : "11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 24.9 ms",
       "name" : "yolox-s.gpu.demo.detections",
       "passed" : true
     },
@@ -436,7 +436,7 @@
       "passed" : true
     },
     {
-      "detail" : "9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 23.6 ms",
+      "detail" : "9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 24.3 ms",
       "name" : "yolox-s.gpu.demo-traffic.detections",
       "passed" : true
     },
@@ -446,7 +446,7 @@
       "passed" : true
     },
     {
-      "detail" : "5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 24.1 ms",
+      "detail" : "5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 23.8 ms",
       "name" : "yolox-s.gpu.demo-soccer.detections",
       "passed" : true
     },
@@ -456,7 +456,7 @@
       "passed" : true
     },
     {
-      "detail" : "4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 24.0 ms",
+      "detail" : "4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 24.5 ms",
       "name" : "yolox-s.gpu.demo-bikes.detections",
       "passed" : true
     },
@@ -466,7 +466,7 @@
       "passed" : true
     },
     {
-      "detail" : "0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 24.1 ms",
+      "detail" : "0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 24.2 ms",
       "name" : "yolox-s.gpu.synthetic-7.detections",
       "passed" : true
     },
@@ -481,7 +481,7 @@
       "passed" : true
     },
     {
-      "detail" : "19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 120.2 ms",
+      "detail" : "19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 115.8 ms",
       "name" : "rf-detr-nano.gpu.burnside-irt.detections",
       "passed" : true
     },
@@ -491,7 +491,7 @@
       "passed" : true
     },
     {
-      "detail" : "9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 24.1 ms",
+      "detail" : "9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 25.0 ms",
       "name" : "rf-detr-nano.gpu.wood-green-1981.detections",
       "passed" : true
     },
@@ -501,7 +501,7 @@
       "passed" : true
     },
     {
-      "detail" : "14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 24.5 ms",
+      "detail" : "14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
       "name" : "rf-detr-nano.gpu.bicycle-parade-271.detections",
       "passed" : true
     },
@@ -511,7 +511,7 @@
       "passed" : true
     },
     {
-      "detail" : "11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 24.3 ms",
+      "detail" : "11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
       "name" : "rf-detr-nano.gpu.bicycle-parade-285.detections",
       "passed" : true
     },
@@ -521,7 +521,7 @@
       "passed" : true
     },
     {
-      "detail" : "1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 24.6 ms",
+      "detail" : "1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
       "name" : "rf-detr-nano.gpu.black-cat-sofa.detections",
       "passed" : true
     },
@@ -531,7 +531,7 @@
       "passed" : true
     },
     {
-      "detail" : "0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 24.7 ms",
+      "detail" : "0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 26.1 ms",
       "name" : "rf-detr-nano.gpu.synthetic-7.detections",
       "passed" : true
     },
@@ -546,7 +546,7 @@
       "passed" : true
     },
     {
-      "detail" : "16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 169.3 ms",
+      "detail" : "16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 139.9 ms",
       "name" : "rf-detr-seg-nano.gpu.burnside-irt.detections",
       "passed" : true
     },
@@ -556,7 +556,7 @@
       "passed" : true
     },
     {
-      "detail" : "8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.2 ms",
+      "detail" : "8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.0 ms",
       "name" : "rf-detr-seg-nano.gpu.wood-green-1981.detections",
       "passed" : true
     },
@@ -566,7 +566,7 @@
       "passed" : true
     },
     {
-      "detail" : "13 vs 13 detections, classes same, 13 pairs, min IoU 0.999996787539567 (bar 0.95), max |Δscore| 9.536743e-07 (bar 0.01), min mask IoU 0.9973045822102425 (bar 0.95), unmatched [] (+0 borderline), 34.4 ms",
+      "detail" : "13 vs 13 detections, classes same, 13 pairs, min IoU 0.999996787539567 (bar 0.95), max |Δscore| 9.536743e-07 (bar 0.01), min mask IoU 0.9973045822102425 (bar 0.95), unmatched [] (+0 borderline), 34.8 ms",
       "name" : "rf-detr-seg-nano.gpu.bicycle-parade-271.detections",
       "passed" : true
     },
@@ -576,7 +576,7 @@
       "passed" : true
     },
     {
-      "detail" : "9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.7 ms",
+      "detail" : "9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.2 ms",
       "name" : "rf-detr-seg-nano.gpu.bicycle-parade-285.detections",
       "passed" : true
     },
@@ -586,7 +586,7 @@
       "passed" : true
     },
     {
-      "detail" : "1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.1 ms",
+      "detail" : "1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.3 ms",
       "name" : "rf-detr-seg-nano.gpu.black-cat-sofa.detections",
       "passed" : true
     },
@@ -596,7 +596,7 @@
       "passed" : true
     },
     {
-      "detail" : "0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 35.1 ms",
+      "detail" : "0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 35.8 ms",
       "name" : "rf-detr-seg-nano.gpu.synthetic-7.detections",
       "passed" : true
     },
@@ -619,119 +619,119 @@
     "m4"
   ],
   "measurements" : {
-    "clip-vit-b32.gpu.firstRequestSeconds" : 0.502978334,
-    "clip-vit-b32.gpu.footprintDeltaMB" : -41.0933837890625,
-    "clip-vit-b32.gpu.ledgerPeakMB" : 282,
-    "clip-vit-b32.gpu.medianMS" : 5.732834,
-    "depth-anything-3-small.gpu.firstRequestSeconds" : 0.339692166,
-    "depth-anything-3-small.gpu.footprintDeltaMB" : -936.8749313354492,
+    "clip-vit-b32.gpu.firstRequestSeconds" : 0.478924959,
+    "clip-vit-b32.gpu.footprintDeltaMB" : -42.46833801269531,
+    "clip-vit-b32.gpu.ledgerPeakMB" : 295,
+    "clip-vit-b32.gpu.medianMS" : 6.231459,
+    "depth-anything-3-small.gpu.firstRequestSeconds" : 0.313629625,
+    "depth-anything-3-small.gpu.footprintDeltaMB" : -966.2186813354492,
     "depth-anything-3-small.gpu.ledgerPeakMB" : 207,
-    "depth-anything-3-small.gpu.medianMS" : 37.431542,
-    "embeddinggemma-300m.gpu.firstRequestSeconds" : 1.428653834,
-    "embeddinggemma-300m.gpu.footprintDeltaMB" : 85.53193664550781,
-    "embeddinggemma-300m.gpu.ledgerPeakMB" : 503,
-    "embeddinggemma-300m.gpu.medianMS" : 32.854042,
-    "kokoro.kokoro-82m@f3ff3571791e39611d31c381e3a41a3af07b4987#466578ee6e8a67d5\/ios-h19p[frames<=512].perStep.heldMB" : 2328,
-    "kokoro.kokoro-82m@f3ff3571791e39611d31c381e3a41a3af07b4987#466578ee6e8a67d5\/ios-h19p[frames<=512].perStep.peakMB" : 2565,
-    "kokoro.loadSeconds" : 0.009707625,
-    "kokoro.medium-af_bella.seconds" : 1.370993542,
-    "kokoro.physFootprintPeakMB" : 2388,
-    "kokoro.sentence-am_michael.seconds" : 0.794545708,
-    "kokoro.short-af_heart.seconds" : 0.944738917,
-    "kokoro.speed-bf_emma.seconds" : 0.517608375,
-    "rf-detr-nano.gpu.firstRequestSeconds" : 0.427193792,
-    "rf-detr-nano.gpu.footprintDeltaMB" : 36.18754577636719,
-    "rf-detr-nano.gpu.ledgerPeakMB" : 60,
-    "rf-detr-nano.gpu.medianMS" : 24.938292,
-    "rf-detr-seg-nano.gpu.firstRequestSeconds" : 0.607278125,
-    "rf-detr-seg-nano.gpu.footprintDeltaMB" : 61.78131866455078,
-    "rf-detr-seg-nano.gpu.ledgerPeakMB" : 77,
-    "rf-detr-seg-nano.gpu.medianMS" : 39.487874999999995,
-    "sd-turbo.availableBeforeMB" : 6134.639007568359,
+    "depth-anything-3-small.gpu.medianMS" : 37.847125000000005,
+    "embeddinggemma-300m.gpu.firstRequestSeconds" : 1.430216584,
+    "embeddinggemma-300m.gpu.footprintDeltaMB" : 72.54753875732422,
+    "embeddinggemma-300m.gpu.ledgerPeakMB" : 492,
+    "embeddinggemma-300m.gpu.medianMS" : 32.315375,
+    "kokoro.kokoro-82m@f3ff3571791e39611d31c381e3a41a3af07b4987#466578ee6e8a67d5\/ios-h19p[frames<=512].perStep.heldMB" : 2311,
+    "kokoro.kokoro-82m@f3ff3571791e39611d31c381e3a41a3af07b4987#466578ee6e8a67d5\/ios-h19p[frames<=512].perStep.peakMB" : 2547,
+    "kokoro.loadSeconds" : 0.009043625,
+    "kokoro.medium-af_bella.seconds" : 1.3731343329999999,
+    "kokoro.physFootprintPeakMB" : 2406,
+    "kokoro.sentence-am_michael.seconds" : 0.796910208,
+    "kokoro.short-af_heart.seconds" : 0.971496125,
+    "kokoro.speed-bf_emma.seconds" : 0.518059458,
+    "rf-detr-nano.gpu.firstRequestSeconds" : 0.422282458,
+    "rf-detr-nano.gpu.footprintDeltaMB" : 49.125091552734375,
+    "rf-detr-nano.gpu.ledgerPeakMB" : 61,
+    "rf-detr-nano.gpu.medianMS" : 26.4485,
+    "rf-detr-seg-nano.gpu.firstRequestSeconds" : 0.566595167,
+    "rf-detr-seg-nano.gpu.footprintDeltaMB" : 61.82823944091797,
+    "rf-detr-seg-nano.gpu.ledgerPeakMB" : 85,
+    "rf-detr-seg-nano.gpu.medianMS" : 40.469583,
+    "sd-turbo.availableBeforeMB" : 6134.560882568359,
     "sd-turbo.budgetMB" : 5599,
-    "sd-turbo.fox-4.availableAfterMB" : 5402.573760986328,
-    "sd-turbo.fox-4.firstSeconds" : 0.748208333,
-    "sd-turbo.fox-4.warmSeconds" : 0.746791708,
-    "sd-turbo.loadSeconds" : 0.050232042,
-    "sd-turbo.physFootprintPeakMB" : 770,
+    "sd-turbo.fox-4.availableAfterMB" : 5379.933181762695,
+    "sd-turbo.fox-4.firstSeconds" : 0.755424875,
+    "sd-turbo.fox-4.warmSeconds" : 0.752469458,
+    "sd-turbo.loadSeconds" : 0.053512333,
+    "sd-turbo.physFootprintPeakMB" : 790,
     "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perImage.heldMB" : 642,
-    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perImage.peakMB" : 642,
-    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perPrompt.heldMB" : 1278,
-    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perPrompt.peakMB" : 1279,
+    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perImage.peakMB" : 645,
+    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perPrompt.heldMB" : 1275,
+    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perPrompt.peakMB" : 1278,
     "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perStep.heldMB" : 1741,
-    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perStep.peakMB" : 1753,
-    "sd-turbo.teapot-1.availableAfterMB" : 5402.683135986328,
-    "sd-turbo.teapot-1.coldSeconds" : 5.021849416,
-    "sd-turbo.teapot-1.warmSeconds" : 0.455918625,
-    "yolox-s.gpu.firstRequestSeconds" : 0.388707417,
-    "yolox-s.gpu.footprintDeltaMB" : 92.81254577636719,
-    "yolox-s.gpu.ledgerPeakMB" : 90,
-    "yolox-s.gpu.medianMS" : 22.387791
+    "sd-turbo.sd-turbo@b261bac6fd2cf515557d5d0707481eafa0485ec2#1a66be111a8fac8d\/ios-h19p[512x512].perStep.peakMB" : 1756,
+    "sd-turbo.teapot-1.availableAfterMB" : 5382.120681762695,
+    "sd-turbo.teapot-1.coldSeconds" : 5.025783542,
+    "sd-turbo.teapot-1.warmSeconds" : 0.46396825,
+    "yolox-s.gpu.firstRequestSeconds" : 0.3870565,
+    "yolox-s.gpu.footprintDeltaMB" : 83.28131866455078,
+    "yolox-s.gpu.ledgerPeakMB" : 102,
+    "yolox-s.gpu.medianMS" : 22.765917
   },
   "placement" : [
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 40.730220268656716,
-      "cpuMSPerRun" : 9.354182835820895,
+      "cpuEnergyMJPerRun" : 41.27231695075758,
+      "cpuMSPerRun" : 9.616299242424242,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : -936.8749313354492,
+      "footprintDeltaMB" : -966.2186813354492,
       "gpuMSPerRun" : 0,
-      "iterations" : 268,
+      "iterations" : 264,
       "ledgerPeakMB" : 207,
-      "loopSeconds" : 10.034751417,
-      "medianMS" : 37.431542,
-      "minMS" : 36.941292,
+      "loopSeconds" : 10.001245167,
+      "medianMS" : 37.847125000000005,
+      "minMS" : 37.280333,
       "model" : "depth-anything-3-small",
-      "p90MS" : 37.658958,
+      "p90MS" : 38.128833,
       "parity" : [
-        "soh-000.depth: rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 116.5 ms",
+        "soh-000.depth: rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 97.6 ms",
         "soh-000.confidence: rel L2 0.00044901283946016283 (bar 0.02), max |Δ| 0.004424095153808594",
         "soh-000.repeat: a repeat is bit-identical",
         "soh-010.depth: rel L2 0.0004963365924203417 (bar 0.02), max |Δ| 0.004680037498474121, 37.7 ms",
+        "soh-010.confidence: rel L2 0.0002707755191066483 (bar 0.02), max |Δ| 0.0030517578125",
+        "soh-010.repeat: a repeat is bit-identical",
+        "synthetic-7.depth: rel L2 0.00016923846820482189 (bar 0.02), max |Δ| 0.0007919073104858398, 37.7 ms",
+        "synthetic-7.confidence: rel L2 0.0014919500100174846 (bar 0.02), max |Δ| 0.00764775276184082",
+        "synthetic-7.repeat: a repeat is bit-identical"
+      ],
+      "parityAndLoadSeconds" : 0.313629625,
+      "physFootprintPeakMB" : 2406,
+      "status" : "ran",
+      "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
+      "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
+      "withinBars" : true
+    },
+    {
+      "compute" : "neuralEngine",
+      "cpuEnergyMJPerRun" : 31.339499665427507,
+      "cpuMSPerRun" : 6.5202304832713756,
+      "failed" : [
+
+      ],
+      "footprintDeltaMB" : 100.3437728881836,
+      "gpuMSPerRun" : 0,
+      "iterations" : 269,
+      "ledgerPeakMB" : 109,
+      "loopSeconds" : 10.002165334,
+      "medianMS" : 37.185167,
+      "minMS" : 36.709666,
+      "model" : "depth-anything-3-small",
+      "p90MS" : 37.377667,
+      "parity" : [
+        "soh-000.depth: rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 103.1 ms",
+        "soh-000.confidence: rel L2 0.00044901283946016283 (bar 0.02), max |Δ| 0.004424095153808594",
+        "soh-000.repeat: a repeat is bit-identical",
+        "soh-010.depth: rel L2 0.0004963365924203417 (bar 0.02), max |Δ| 0.004680037498474121, 36.9 ms",
         "soh-010.confidence: rel L2 0.0002707755191066483 (bar 0.02), max |Δ| 0.0030517578125",
         "soh-010.repeat: a repeat is bit-identical",
         "synthetic-7.depth: rel L2 0.00016923846820482189 (bar 0.02), max |Δ| 0.0007919073104858398, 37.3 ms",
         "synthetic-7.confidence: rel L2 0.0014919500100174846 (bar 0.02), max |Δ| 0.00764775276184082",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.339692166,
-      "physFootprintPeakMB" : 2388,
-      "status" : "ran",
-      "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
-      "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
-      "withinBars" : true
-    },
-    {
-      "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 30.776939062271065,
-      "cpuMSPerRun" : 6.136736263736264,
-      "failed" : [
-
-      ],
-      "footprintDeltaMB" : 101.45319366455078,
-      "gpuMSPerRun" : 0,
-      "iterations" : 273,
-      "ledgerPeakMB" : 111,
-      "loopSeconds" : 10.018135667,
-      "medianMS" : 36.684875,
-      "minMS" : 36.282458,
-      "model" : "depth-anything-3-small",
-      "p90MS" : 36.88775,
-      "parity" : [
-        "soh-000.depth: rel L2 0.0006523220060112331 (bar 0.02), max |Δ| 0.0058792829513549805, 101.8 ms",
-        "soh-000.confidence: rel L2 0.00044901283946016283 (bar 0.02), max |Δ| 0.004424095153808594",
-        "soh-000.repeat: a repeat is bit-identical",
-        "soh-010.depth: rel L2 0.0004963365924203417 (bar 0.02), max |Δ| 0.004680037498474121, 36.8 ms",
-        "soh-010.confidence: rel L2 0.0002707755191066483 (bar 0.02), max |Δ| 0.0030517578125",
-        "soh-010.repeat: a repeat is bit-identical",
-        "synthetic-7.depth: rel L2 0.00016923846820482189 (bar 0.02), max |Δ| 0.0007919073104858398, 36.6 ms",
-        "synthetic-7.confidence: rel L2 0.0014919500100174846 (bar 0.02), max |Δ| 0.00764775276184082",
-        "synthetic-7.repeat: a repeat is bit-identical"
-      ],
-      "parityAndLoadSeconds" : 0.306297958,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.3089755,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -739,97 +739,97 @@
     },
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 29.32395078877888,
-      "cpuMSPerRun" : 8.955947194719473,
+      "cpuEnergyMJPerRun" : 29.168091724025974,
+      "cpuMSPerRun" : 8.150896103896104,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 85.53193664550781,
+      "footprintDeltaMB" : 72.54753875732422,
       "gpuMSPerRun" : 0,
-      "iterations" : 303,
-      "ledgerPeakMB" : 503,
-      "loopSeconds" : 10.020276167,
-      "medianMS" : 32.854042,
-      "minMS" : 31.424415999999997,
+      "iterations" : 308,
+      "ledgerPeakMB" : 492,
+      "loopSeconds" : 10.002499041,
+      "medianMS" : 32.315375,
+      "minMS" : 31.447000000000003,
       "model" : "embeddinggemma-300m",
-      "p90MS" : 34.259167,
+      "p90MS" : 33.052667,
       "parity" : [
         "query-short.tokens: ids, mask and truncation equal the reference's",
-        "query-short.cosine: cosine 0.99999994 (bar 0.999), norm 1.0, 532.0 ms",
+        "query-short.cosine: cosine 0.99999994 (bar 0.999), norm 1.0, 553.2 ms",
         "query-short.repeat: a repeat is bit-identical",
         "query-long.tokens: ids, mask and truncation equal the reference's",
-        "query-long.cosine: cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.8 ms",
+        "query-long.cosine: cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.6 ms",
         "query-long.repeat: a repeat is bit-identical",
         "query-french.tokens: ids, mask and truncation equal the reference's",
-        "query-french.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.8 ms",
-        "query-french.repeat: a repeat is bit-identical",
-        "document-short.tokens: ids, mask and truncation equal the reference's",
-        "document-short.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999994, 31.8 ms",
-        "document-short.repeat: a repeat is bit-identical",
-        "document-medium.tokens: ids, mask and truncation equal the reference's",
-        "document-medium.cosine: cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.8 ms",
-        "document-medium.repeat: a repeat is bit-identical",
-        "document-near-256.tokens: ids, mask and truncation equal the reference's",
-        "document-near-256.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
-        "document-near-256.repeat: a repeat is bit-identical",
-        "document-truncated.tokens: ids, mask and truncation equal the reference's",
-        "document-truncated.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
-        "document-truncated.repeat: a repeat is bit-identical",
-        "query-short.retrieval: best document-short, max |Δ cosine| to the reference 2.305953598025212e-05 (bar 0.005)",
-        "query-long.retrieval: best document-truncated, max |Δ cosine| to the reference 5.143611383437441e-05 (bar 0.005)",
-        "query-french.retrieval: best document-medium, max |Δ cosine| to the reference 1.553854751590311e-05 (bar 0.005)"
-      ],
-      "parityAndLoadSeconds" : 1.428653834,
-      "physFootprintPeakMB" : 2388,
-      "status" : "ran",
-      "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
-      "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
-      "withinBars" : true
-    },
-    {
-      "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 20.10729620209059,
-      "cpuMSPerRun" : 6.845508710801394,
-      "failed" : [
-
-      ],
-      "footprintDeltaMB" : 9.172309875488281,
-      "gpuMSPerRun" : 0,
-      "iterations" : 287,
-      "ledgerPeakMB" : 373,
-      "loopSeconds" : 10.013387708,
-      "medianMS" : 33.558958,
-      "minMS" : 31.273792,
-      "model" : "embeddinggemma-300m",
-      "p90MS" : 38.957083000000004,
-      "parity" : [
-        "query-short.tokens: ids, mask and truncation equal the reference's",
-        "query-short.cosine: cosine 0.99999994 (bar 0.999), norm 1.0, 537.6 ms",
-        "query-short.repeat: a repeat is bit-identical",
-        "query-long.tokens: ids, mask and truncation equal the reference's",
-        "query-long.cosine: cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.5 ms",
-        "query-long.repeat: a repeat is bit-identical",
-        "query-french.tokens: ids, mask and truncation equal the reference's",
-        "query-french.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.4 ms",
+        "query-french.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.6 ms",
         "query-french.repeat: a repeat is bit-identical",
         "document-short.tokens: ids, mask and truncation equal the reference's",
         "document-short.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999994, 31.5 ms",
         "document-short.repeat: a repeat is bit-identical",
         "document-medium.tokens: ids, mask and truncation equal the reference's",
-        "document-medium.cosine: cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.7 ms",
+        "document-medium.cosine: cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.5 ms",
         "document-medium.repeat: a repeat is bit-identical",
         "document-near-256.tokens: ids, mask and truncation equal the reference's",
-        "document-near-256.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
+        "document-near-256.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.7 ms",
         "document-near-256.repeat: a repeat is bit-identical",
         "document-truncated.tokens: ids, mask and truncation equal the reference's",
-        "document-truncated.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.8 ms",
+        "document-truncated.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.5 ms",
         "document-truncated.repeat: a repeat is bit-identical",
         "query-short.retrieval: best document-short, max |Δ cosine| to the reference 2.305953598025212e-05 (bar 0.005)",
         "query-long.retrieval: best document-truncated, max |Δ cosine| to the reference 5.143611383437441e-05 (bar 0.005)",
         "query-french.retrieval: best document-medium, max |Δ cosine| to the reference 1.553854751590311e-05 (bar 0.005)"
       ],
-      "parityAndLoadSeconds" : 1.40549525,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 1.430216584,
+      "physFootprintPeakMB" : 2406,
+      "status" : "ran",
+      "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
+      "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
+      "withinBars" : true
+    },
+    {
+      "compute" : "neuralEngine",
+      "cpuEnergyMJPerRun" : 20.095109157342655,
+      "cpuMSPerRun" : 6.612503496503496,
+      "failed" : [
+
+      ],
+      "footprintDeltaMB" : 15.406730651855469,
+      "gpuMSPerRun" : 0,
+      "iterations" : 286,
+      "ledgerPeakMB" : 382,
+      "loopSeconds" : 10.031981,
+      "medianMS" : 33.319500000000005,
+      "minMS" : 31.282999999999998,
+      "model" : "embeddinggemma-300m",
+      "p90MS" : 40.039208,
+      "parity" : [
+        "query-short.tokens: ids, mask and truncation equal the reference's",
+        "query-short.cosine: cosine 0.99999994 (bar 0.999), norm 1.0, 548.0 ms",
+        "query-short.repeat: a repeat is bit-identical",
+        "query-long.tokens: ids, mask and truncation equal the reference's",
+        "query-long.cosine: cosine 0.99999994 (bar 0.999), norm 0.9999998, 31.3 ms",
+        "query-long.repeat: a repeat is bit-identical",
+        "query-french.tokens: ids, mask and truncation equal the reference's",
+        "query-french.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999976, 31.3 ms",
+        "query-french.repeat: a repeat is bit-identical",
+        "document-short.tokens: ids, mask and truncation equal the reference's",
+        "document-short.cosine: cosine 0.99999994 (bar 0.999), norm 0.99999994, 31.3 ms",
+        "document-short.repeat: a repeat is bit-identical",
+        "document-medium.tokens: ids, mask and truncation equal the reference's",
+        "document-medium.cosine: cosine 0.9999999 (bar 0.999), norm 0.99999994, 31.3 ms",
+        "document-medium.repeat: a repeat is bit-identical",
+        "document-near-256.tokens: ids, mask and truncation equal the reference's",
+        "document-near-256.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.3 ms",
+        "document-near-256.repeat: a repeat is bit-identical",
+        "document-truncated.tokens: ids, mask and truncation equal the reference's",
+        "document-truncated.cosine: cosine 0.9999999 (bar 0.999), norm 0.9999999, 31.6 ms",
+        "document-truncated.repeat: a repeat is bit-identical",
+        "query-short.retrieval: best document-short, max |Δ cosine| to the reference 2.305953598025212e-05 (bar 0.005)",
+        "query-long.retrieval: best document-truncated, max |Δ cosine| to the reference 5.143611383437441e-05 (bar 0.005)",
+        "query-french.retrieval: best document-medium, max |Δ cosine| to the reference 1.553854751590311e-05 (bar 0.005)"
+      ],
+      "parityAndLoadSeconds" : 1.409221791,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -837,31 +837,31 @@
     },
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 6.12776255354201,
-      "cpuMSPerRun" : 1.497677100494234,
+      "cpuEnergyMJPerRun" : 6.025221204383887,
+      "cpuMSPerRun" : 1.4358281990521327,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : -41.0933837890625,
+      "footprintDeltaMB" : -42.46833801269531,
       "gpuMSPerRun" : 0,
-      "iterations" : 1821,
-      "ledgerPeakMB" : 282,
-      "loopSeconds" : 10.003303875,
-      "medianMS" : 5.732834,
-      "minMS" : 3.582666,
+      "iterations" : 1688,
+      "ledgerPeakMB" : 295,
+      "loopSeconds" : 10.006776667,
+      "medianMS" : 6.231459,
+      "minMS" : 3.539083,
       "model" : "clip-vit-b32",
-      "p90MS" : 6.045542,
+      "p90MS" : 6.717,
       "parity" : [
         "tokenizer: 17\/17 texts id-exact",
-        "textTower: 17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 229.4 ms",
+        "textTower: 17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 218.0 ms",
         "textTower.bucket1: bucket 1 vs its bucket-8 row: cosine 0.99999976",
-        "astronaut.image: cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 137.2 ms",
+        "astronaut.image: cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 133.7 ms",
         "astronaut.repeat: a repeat is bit-identical",
-        "chelsea.image: cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 5.6 ms",
+        "chelsea.image: cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 4.7 ms",
         "chelsea.repeat: a repeat is bit-identical",
-        "coffee.image: cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 4.1 ms",
+        "coffee.image: cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 4.0 ms",
         "coffee.repeat: a repeat is bit-identical",
-        "rocket.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 4.0 ms",
+        "rocket.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 3.9 ms",
         "rocket.repeat: a repeat is bit-identical",
         "motorcycle.image: cosine 0.9999985 (bar 0.999), zero-shot motorcycle (reference motorcycle), logits max |Δ| 0.012607574, 3.9 ms",
         "motorcycle.repeat: a repeat is bit-identical",
@@ -870,8 +870,8 @@
         "synthetic-7.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.011957169, 3.9 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.502978334,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.478924959,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -879,41 +879,41 @@
     },
     {
       "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 5.393648465958775,
-      "cpuMSPerRun" : 1.2370293566520925,
+      "cpuEnergyMJPerRun" : 5.313817963896458,
+      "cpuMSPerRun" : 1.299158719346049,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 18.891036987304688,
+      "footprintDeltaMB" : 32.422264099121094,
       "gpuMSPerRun" : 0,
-      "iterations" : 1601,
-      "ledgerPeakMB" : 364,
-      "loopSeconds" : 10.002172292,
-      "medianMS" : 6.311833,
-      "minMS" : 5.064084,
+      "iterations" : 1468,
+      "ledgerPeakMB" : 367,
+      "loopSeconds" : 10.005776667,
+      "medianMS" : 6.7885,
+      "minMS" : 5.391875,
       "model" : "clip-vit-b32",
-      "p90MS" : 6.645667,
+      "p90MS" : 7.285417,
       "parity" : [
         "tokenizer: 17\/17 texts id-exact",
-        "textTower: 17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 225.8 ms",
+        "textTower: 17 texts (buckets 8+8+1), cosine min 0.9999992 (bar 0.999), 229.5 ms",
         "textTower.bucket1: bucket 1 vs its bucket-8 row: cosine 0.99999976",
-        "astronaut.image: cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 151.7 ms",
+        "astronaut.image: cosine 0.99999857 (bar 0.999), zero-shot astronaut (reference astronaut), logits max |Δ| 0.006910324, 151.0 ms",
         "astronaut.repeat: a repeat is bit-identical",
-        "chelsea.image: cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 5.3 ms",
+        "chelsea.image: cosine 0.9999996 (bar 0.999), zero-shot cat (reference cat), logits max |Δ| 0.010059357, 5.5 ms",
         "chelsea.repeat: a repeat is bit-identical",
-        "coffee.image: cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 5.2 ms",
+        "coffee.image: cosine 0.9999983 (bar 0.999), zero-shot cup of coffee (reference cup of coffee), logits max |Δ| 0.0069713593, 5.8 ms",
         "coffee.repeat: a repeat is bit-identical",
-        "rocket.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 5.3 ms",
+        "rocket.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.008964539, 5.6 ms",
         "rocket.repeat: a repeat is bit-identical",
-        "motorcycle.image: cosine 0.9999985 (bar 0.999), zero-shot motorcycle (reference motorcycle), logits max |Δ| 0.012607574, 5.1 ms",
+        "motorcycle.image: cosine 0.9999985 (bar 0.999), zero-shot motorcycle (reference motorcycle), logits max |Δ| 0.012607574, 5.7 ms",
         "motorcycle.repeat: a repeat is bit-identical",
-        "camera.image: cosine 0.9999991 (bar 0.999), zero-shot man holding a camera (reference man holding a camera), logits max |Δ| 0.005012512, 5.0 ms",
+        "camera.image: cosine 0.9999991 (bar 0.999), zero-shot man holding a camera (reference man holding a camera), logits max |Δ| 0.005012512, 5.7 ms",
         "camera.repeat: a repeat is bit-identical",
-        "synthetic-7.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.011957169, 5.2 ms",
+        "synthetic-7.image: cosine 0.9999993 (bar 0.999), zero-shot rocket (reference rocket), logits max |Δ| 0.011957169, 5.8 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.518836416,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.529714125,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -921,36 +921,36 @@
     },
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 24.735796208988766,
-      "cpuMSPerRun" : 5.313173033707866,
+      "cpuEnergyMJPerRun" : 22.614835639534885,
+      "cpuMSPerRun" : 4.742409302325582,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 92.81254577636719,
+      "footprintDeltaMB" : 83.28131866455078,
       "gpuMSPerRun" : 0,
-      "iterations" : 445,
-      "ledgerPeakMB" : 90,
-      "loopSeconds" : 10.012153375,
-      "medianMS" : 22.387791,
-      "minMS" : 21.372374999999998,
+      "iterations" : 430,
+      "ledgerPeakMB" : 102,
+      "loopSeconds" : 10.022218667,
+      "medianMS" : 22.765917,
+      "minMS" : 22.160583000000003,
       "model" : "yolox-s",
-      "p90MS" : 23.908833,
+      "p90MS" : 25.437875,
       "parity" : [
-        "dog.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 59.3 ms",
+        "dog.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 62.8 ms",
         "dog.repeat: a repeat is bit-identical",
-        "demo.detections: 11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 23.9 ms",
+        "demo.detections: 11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 24.9 ms",
         "demo.repeat: a repeat is bit-identical",
-        "demo-traffic.detections: 9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 23.6 ms",
+        "demo-traffic.detections: 9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 24.3 ms",
         "demo-traffic.repeat: a repeat is bit-identical",
-        "demo-soccer.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 24.1 ms",
+        "demo-soccer.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 23.8 ms",
         "demo-soccer.repeat: a repeat is bit-identical",
-        "demo-bikes.detections: 4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 24.0 ms",
+        "demo-bikes.detections: 4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 24.5 ms",
         "demo-bikes.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 24.1 ms",
+        "synthetic-7.detections: 0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 24.2 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.388707417,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.3870565,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -958,36 +958,36 @@
     },
     {
       "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 23.786399070967743,
-      "cpuMSPerRun" : 4.878227956989248,
+      "cpuEnergyMJPerRun" : 21.31699882326622,
+      "cpuMSPerRun" : 4.248136465324385,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 77.17192077636719,
+      "footprintDeltaMB" : 72.40629577636719,
       "gpuMSPerRun" : 0,
-      "iterations" : 465,
-      "ledgerPeakMB" : 88,
-      "loopSeconds" : 10.013486875,
-      "medianMS" : 21.518167000000002,
-      "minMS" : 20.680041,
+      "iterations" : 447,
+      "ledgerPeakMB" : 92,
+      "loopSeconds" : 10.017273667,
+      "medianMS" : 22.340666,
+      "minMS" : 21.627709,
       "model" : "yolox-s",
-      "p90MS" : 21.771792,
+      "p90MS" : 22.873125,
       "parity" : [
-        "dog.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 59.5 ms",
+        "dog.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999978207711688 (bar 0.95), max |Δscore| 6.625092900947038e-07 (bar 0.01), 57.4 ms",
         "dog.repeat: a repeat is bit-identical",
-        "demo.detections: 11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 21.0 ms",
+        "demo.detections: 11 detected \/ 11 reference, 11 matched, same class set true, min IoU 0.9999987417231629 (bar 0.95), max |Δscore| 1.2177558588177817e-06 (bar 0.01), 21.7 ms",
         "demo.repeat: a repeat is bit-identical",
-        "demo-traffic.detections: 9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 21.0 ms",
+        "demo-traffic.detections: 9 detected \/ 9 reference, 9 matched, same class set true, min IoU 0.9999982166650224 (bar 0.95), max |Δscore| 2.414986262522234e-06 (bar 0.01), 21.7 ms",
         "demo-traffic.repeat: a repeat is bit-identical",
-        "demo-soccer.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 20.9 ms",
+        "demo-soccer.detections: 5 detected \/ 5 reference, 5 matched, same class set true, min IoU 0.9999983836549442 (bar 0.95), max |Δscore| 1.1041624752294865e-06 (bar 0.01), 21.9 ms",
         "demo-soccer.repeat: a repeat is bit-identical",
-        "demo-bikes.detections: 4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 20.9 ms",
+        "demo-bikes.detections: 4 detected \/ 4 reference, 4 matched, same class set true, min IoU 0.9999987655404924 (bar 0.95), max |Δscore| 8.006260330262194e-07 (bar 0.01), 21.9 ms",
         "demo-bikes.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 21.0 ms",
+        "synthetic-7.detections: 0 detected \/ 0 reference, 0 matched, same class set true, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), 21.9 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.327094291,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.331990209,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -995,36 +995,36 @@
     },
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 16.242389799492386,
-      "cpuMSPerRun" : 3.952144670050761,
+      "cpuEnergyMJPerRun" : 15.908844489304814,
+      "cpuMSPerRun" : 3.845096256684492,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 36.18754577636719,
+      "footprintDeltaMB" : 49.125091552734375,
       "gpuMSPerRun" : 0,
-      "iterations" : 394,
-      "ledgerPeakMB" : 60,
-      "loopSeconds" : 10.00901375,
-      "medianMS" : 24.938292,
-      "minMS" : 24.332916,
+      "iterations" : 374,
+      "ledgerPeakMB" : 61,
+      "loopSeconds" : 10.024425959,
+      "medianMS" : 26.4485,
+      "minMS" : 26.037333,
       "model" : "rf-detr-nano",
-      "p90MS" : 27.212540999999998,
+      "p90MS" : 28.201957999999998,
       "parity" : [
-        "burnside-irt.detections: 19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 120.2 ms",
+        "burnside-irt.detections: 19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 115.8 ms",
         "burnside-irt.repeat: a repeat is bit-identical",
-        "wood-green-1981.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 24.1 ms",
+        "wood-green-1981.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 25.0 ms",
         "wood-green-1981.repeat: a repeat is bit-identical",
-        "bicycle-parade-271.detections: 14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 24.5 ms",
+        "bicycle-parade-271.detections: 14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
         "bicycle-parade-271.repeat: a repeat is bit-identical",
-        "bicycle-parade-285.detections: 11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 24.3 ms",
+        "bicycle-parade-285.detections: 11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
         "bicycle-parade-285.repeat: a repeat is bit-identical",
-        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 24.6 ms",
+        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 25.7 ms",
         "black-cat-sofa.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 24.7 ms",
+        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 26.1 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.427193792,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.422282458,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -1032,36 +1032,36 @@
     },
     {
       "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 13.494339743718594,
-      "cpuMSPerRun" : 3.0310125628140705,
+      "cpuEnergyMJPerRun" : 13.376412792207793,
+      "cpuMSPerRun" : 3.02405974025974,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 32.89069366455078,
+      "footprintDeltaMB" : 19.89069366455078,
       "gpuMSPerRun" : 0,
-      "iterations" : 398,
-      "ledgerPeakMB" : 51,
-      "loopSeconds" : 10.008518375,
-      "medianMS" : 24.940292,
-      "minMS" : 23.881875,
+      "iterations" : 385,
+      "ledgerPeakMB" : 42,
+      "loopSeconds" : 10.019660209,
+      "medianMS" : 25.945959000000002,
+      "minMS" : 25.018583,
       "model" : "rf-detr-nano",
-      "p90MS" : 26.463542,
+      "p90MS" : 26.578541,
       "parity" : [
-        "burnside-irt.detections: 19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 114.5 ms",
+        "burnside-irt.detections: 19 vs 19 detections, classes same, 19 pairs, min IoU 0.9999964466458408 (bar 0.95), max |Δscore| 3.8146973e-06 (bar 0.01), unmatched [] (+0 borderline), 115.0 ms",
         "burnside-irt.repeat: a repeat is bit-identical",
-        "wood-green-1981.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 23.0 ms",
+        "wood-green-1981.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999967252313808 (bar 0.95), max |Δscore| 3.2186508e-06 (bar 0.01), unmatched [] (+0 borderline), 24.7 ms",
         "wood-green-1981.repeat: a repeat is bit-identical",
-        "bicycle-parade-271.detections: 14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 23.2 ms",
+        "bicycle-parade-271.detections: 14 vs 14 detections, classes same, 14 pairs, min IoU 0.9999979472510466 (bar 0.95), max |Δscore| 1.847744e-06 (bar 0.01), unmatched [] (+0 borderline), 24.8 ms",
         "bicycle-parade-271.repeat: a repeat is bit-identical",
-        "bicycle-parade-285.detections: 11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 23.3 ms",
+        "bicycle-parade-285.detections: 11 vs 11 detections, classes same, 11 pairs, min IoU 0.9999969856031862 (bar 0.95), max |Δscore| 1.1324883e-06 (bar 0.01), unmatched [] (+0 borderline), 24.8 ms",
         "bicycle-parade-285.repeat: a repeat is bit-identical",
-        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 23.8 ms",
+        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995491000456 (bar 0.95), max |Δscore| 2.3841858e-07 (bar 0.01), unmatched [] (+0 borderline), 24.8 ms",
         "black-cat-sofa.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 23.8 ms",
+        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 25.0 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.385873291,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.400543458,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -1069,36 +1069,36 @@
     },
     {
       "compute" : "gpu",
-      "cpuEnergyMJPerRun" : 31.38452485375494,
-      "cpuMSPerRun" : 6.975948616600791,
+      "cpuEnergyMJPerRun" : 31.924809870445344,
+      "cpuMSPerRun" : 7.191133603238867,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 61.78131866455078,
+      "footprintDeltaMB" : 61.82823944091797,
       "gpuMSPerRun" : 0,
-      "iterations" : 253,
-      "ledgerPeakMB" : 77,
-      "loopSeconds" : 10.018189625,
-      "medianMS" : 39.487874999999995,
-      "minMS" : 35.770375,
+      "iterations" : 247,
+      "ledgerPeakMB" : 85,
+      "loopSeconds" : 10.000979167,
+      "medianMS" : 40.469583,
+      "minMS" : 36.574875,
       "model" : "rf-detr-seg-nano",
-      "p90MS" : 40.791542,
+      "p90MS" : 41.885125,
       "parity" : [
-        "burnside-irt.detections: 16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 169.3 ms",
+        "burnside-irt.detections: 16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 139.9 ms",
         "burnside-irt.repeat: a repeat is bit-identical",
-        "wood-green-1981.detections: 8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.2 ms",
+        "wood-green-1981.detections: 8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.0 ms",
         "wood-green-1981.repeat: a repeat is bit-identical",
-        "bicycle-parade-271.detections: 13 vs 13 detections, classes same, 13 pairs, min IoU 0.999996787539567 (bar 0.95), max |Δscore| 9.536743e-07 (bar 0.01), min mask IoU 0.9973045822102425 (bar 0.95), unmatched [] (+0 borderline), 34.4 ms",
+        "bicycle-parade-271.detections: 13 vs 13 detections, classes same, 13 pairs, min IoU 0.999996787539567 (bar 0.95), max |Δscore| 9.536743e-07 (bar 0.01), min mask IoU 0.9973045822102425 (bar 0.95), unmatched [] (+0 borderline), 34.8 ms",
         "bicycle-parade-271.repeat: a repeat is bit-identical",
-        "bicycle-parade-285.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 34.7 ms",
+        "bicycle-parade-285.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.2 ms",
         "bicycle-parade-285.repeat: a repeat is bit-identical",
-        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.1 ms",
+        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 35.3 ms",
         "black-cat-sofa.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 35.1 ms",
+        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 35.8 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.607278125,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.566595167,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
@@ -1106,41 +1106,41 @@
     },
     {
       "compute" : "neuralEngine",
-      "cpuEnergyMJPerRun" : 27.5707235625,
-      "cpuMSPerRun" : 5.82674609375,
+      "cpuEnergyMJPerRun" : 27.13217787890625,
+      "cpuMSPerRun" : 5.73406640625,
       "failed" : [
 
       ],
-      "footprintDeltaMB" : 41.29694366455078,
+      "footprintDeltaMB" : 51.32826232910156,
       "gpuMSPerRun" : 0,
       "iterations" : 256,
-      "ledgerPeakMB" : 73,
-      "loopSeconds" : 10.001664917,
-      "medianMS" : 39.116,
-      "minMS" : 37.165917,
+      "ledgerPeakMB" : 78,
+      "loopSeconds" : 10.009342959,
+      "medianMS" : 38.867958,
+      "minMS" : 37.670708999999995,
       "model" : "rf-detr-seg-nano",
-      "p90MS" : 39.808625,
+      "p90MS" : 40.052333000000004,
       "parity" : [
-        "burnside-irt.detections: 16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 181.3 ms",
+        "burnside-irt.detections: 16 vs 16 detections, classes same, 16 pairs, min IoU 0.9999979148206036 (bar 0.95), max |Δscore| 1.3709068e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 184.3 ms",
         "burnside-irt.repeat: a repeat is bit-identical",
-        "wood-green-1981.detections: 8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 36.4 ms",
+        "wood-green-1981.detections: 8 vs 8 detections, classes same, 8 pairs, min IoU 0.9999983324373733 (bar 0.95), max |Δscore| 1.4305115e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 36.6 ms",
         "wood-green-1981.repeat: a repeat is bit-identical",
         "bicycle-parade-271.detections: 13 vs 13 detections, classes same, 13 pairs, min IoU 0.999996787539567 (bar 0.95), max |Δscore| 9.536743e-07 (bar 0.01), min mask IoU 0.9973045822102425 (bar 0.95), unmatched [] (+0 borderline), 36.6 ms",
         "bicycle-parade-271.repeat: a repeat is bit-identical",
-        "bicycle-parade-285.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 37.2 ms",
+        "bicycle-parade-285.detections: 9 vs 9 detections, classes same, 9 pairs, min IoU 0.9999981755232012 (bar 0.95), max |Δscore| 1.6093254e-06 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 37.1 ms",
         "bicycle-parade-285.repeat: a repeat is bit-identical",
-        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 37.1 ms",
+        "black-cat-sofa.detections: 1 vs 1 detections, classes same, 1 pairs, min IoU 0.9999995967826005 (bar 0.95), max |Δscore| 4.7683716e-07 (bar 0.01), min mask IoU 1.0 (bar 0.95), unmatched [] (+0 borderline), 36.7 ms",
         "black-cat-sofa.repeat: a repeat is bit-identical",
-        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 37.5 ms",
+        "synthetic-7.detections: 0 vs 0 detections, classes same, 0 pairs, min IoU 1.0 (bar 0.95), max |Δscore| 0.0 (bar 0.01), unmatched [] (+0 borderline), 37.3 ms",
         "synthetic-7.repeat: a repeat is bit-identical"
       ],
-      "parityAndLoadSeconds" : 0.617505667,
-      "physFootprintPeakMB" : 2388,
+      "parityAndLoadSeconds" : 0.61717775,
+      "physFootprintPeakMB" : 2406,
       "status" : "ran",
       "thermalEnd" : "NSProcessInfoThermalState(rawValue: 0)",
       "thermalStart" : "NSProcessInfoThermalState(rawValue: 0)",
       "withinBars" : true
     }
   ],
-  "runID" : "run-20261106-194748-48556"
+  "runID" : "run-20261111-084256-62582"
 }
