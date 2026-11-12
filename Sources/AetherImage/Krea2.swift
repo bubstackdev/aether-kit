@@ -263,11 +263,13 @@ public actor Krea2Pipeline {
     /// generation's would be (`invalidParameters`); nothing else changes.
     public func encode(prompt text: String, width: Int, height: Int, job: GPUJob? = nil) async throws -> Krea2Conditioning {
         _ = try latent.tokenGrid(width: width, height: height)
-        return try await encode(prompt: text, profile: Self.profile(width: width, height: height), job: job)
+        return try await encode(prompt: text, profile: profile(width: width, height: height), job: job)
     }
 
     /// The admission profile of a canvas: the key generations and canvas-aware encodes plan under.
-    static func profile(width: Int, height: Int) -> String { "\(width)x\(height)" }
+    func profile(width: Int, height: Int) -> String {
+        "\(width)x\(height)" + (decoderTiling.map { ".\($0.profile)" } ?? "")
+    }
 
     private func encode(prompt text: String, profile: String, job: GPUJob?) async throws -> Krea2Conditioning {
         pending += 1
@@ -513,7 +515,7 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
-            let profile = Self.profile(width: size.width, height: size.height) + (decoderTiling.map { ".\($0.profile)" } ?? "")
+            let profile = profile(width: size.width, height: size.height)
             let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: source.rows))
             lastProfile = profile
             // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't

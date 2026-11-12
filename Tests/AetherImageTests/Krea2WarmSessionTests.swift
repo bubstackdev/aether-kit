@@ -28,8 +28,10 @@ struct Krea2WarmSessionTests {
 
     /// Before: the first encode on a pipeline planned under a conditioning-only profile, so the generation that followed
     /// (another profile) released the text encoder, and the next picture's encode loaded it again.
-    @Test func anEncodeForTheCanvasKeepsTheTextEncoderResident() async throws {
+    @Test(arguments: [false, true])
+    func anEncodeForTheCanvasKeepsTheTextEncoderResident(tiled: Bool) async throws {
         let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls())
+        if tiled { try await pipeline.setDecoderTiling(tileSize: 32, overlap: 16) }
         let first = try await pipeline.encode(prompt: "a cat", width: 48, height: 32)
         let generation = try await pipeline.generate(Self.request(), reusing: first)
         #expect(generation.metrics.loadedRoles == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"])
@@ -77,8 +79,10 @@ struct Krea2WarmSessionTests {
     /// Reference pictures, warm: the canvas-aware reference encode keeps the denoisers and decoder the last generation
     /// kept (its vision tower and text encoder are released after each encode, as before), so the next picture loads
     /// only the conditioning graphs.
-    @Test func aReferenceEncodeForTheCanvasKeepsTheDenoisers() async throws {
+    @Test(arguments: [false, true])
+    func aReferenceEncodeForTheCanvasKeepsTheDenoisers(tiled: Bool) async throws {
         let (pipeline, loads) = try Krea2ReferenceTests.pipeline(calls: Calls())
+        if tiled { try await pipeline.setDecoderTiling(tileSize: 32, overlap: 16) }
         let picture = ImageRequest(prompt: "a cat", seed: 3, steps: 2, width: 32, height: 32)
         let first = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square], width: 32, height: 32)
         _ = try await pipeline.generate(picture, reusing: first)

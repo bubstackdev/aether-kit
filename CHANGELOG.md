@@ -127,6 +127,10 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
 
 ### Fixed
 
+- **Krea 2 canvas-aware conditioning keeps tiled sessions warm.** Text-only and reference-image encodes now use
+  the same canvas-and-decoder-tiling admission profile as generation. An encode/render loop with tiling enabled no
+  longer discards its resident graphs at each profile change; the existing admission budget still bounds residency.
+
 - **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after
   picture, kept losing warm graphs. Two changes, for `ImageRetention.keepLoaded` (the default):
   - **Canvas-aware encode.** New `Krea2Pipeline.encode(prompt:width:height:job:)` plans memory against the canvas

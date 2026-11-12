@@ -419,7 +419,7 @@ extension Krea2Pipeline {
         prompt text: String, references: [Krea2ReferenceImage], width: Int, height: Int, job: GPUJob? = nil
     ) async throws -> Krea2Conditioning {
         _ = try latent.tokenGrid(width: width, height: height)
-        return try await encode(prompt: text, references: references, profile: Self.profile(width: width, height: height), job: job)
+        return try await encode(prompt: text, references: references, profile: profile(width: width, height: height), job: job)
     }
 
     private func encode(
