@@ -117,7 +117,7 @@ struct Krea2ShapeQualificationTests {
             images[name] = images[name] ?? generation.image
             let render = Render(
                 index: index, prompt: name, rows: rows, firstUseOfRows: first, metrics: generation.metrics,
-                metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.residentBytes,
+                metalAllocatedAfter: metal.currentAllocatedSize, residentBytesAfter: await pipeline.plannedResidentBytes,
                 pixelsSHA256: Self.digest(generation.image))
             renders.append(render)
             print("shapes: \(index) \(name) rows \(rows) first \(first) total \(generation.metrics.totalSeconds)s "

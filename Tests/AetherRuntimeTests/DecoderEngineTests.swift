@@ -115,6 +115,38 @@ struct DecoderEngineTests {
         #expect(try Logits.argmax(continued.last) == Logits.argmax(reference.last))
     }
 
+    /// G5 regression (Core AI's reshape retention, ``DecoderEngine/reshapeSafePrefillWidth``): a prefill width
+    /// narrows the manifest's dynamic chunk, so a 513-token prompt is fed in calls of at most 32 tokens, never one of
+    /// 512, and greedy decoding is unchanged. The manifest's chunk still caps a wider width; a width below 1 is refused.
+    @Test func aPrefillWidthNarrowsTheDynamicChunk() async throws {
+        #expect(DecoderEngine.reshapeSafePrefillWidth == 32)
+        var options = Self.options()
+        options.prefillWidth = DecoderEngine.reshapeSafePrefillWidth
+        let (narrow, calls, _) = try await Self.engine(prefillLimit: 512, options: options)
+        #expect(narrow.description.schedule.dynamicChunk == 32)
+        let prompt = Self.prompt(513)
+        _ = try await narrow.prefill(prompt)
+        #expect(calls.calls == Array(repeating: 32, count: 16) + [1])
+        try await narrow.reset()
+        let (wide, wideCalls, _) = try await Self.engine(prefillLimit: 512)
+        #expect(try await Self.greedy(narrow, prompt, count: 6) == Self.greedy(wide, prompt, count: 6))
+        #expect(wideCalls.calls.first == 512)
+
+        options.prefillWidth = 1000
+        #expect(try await Self.engine(prefillLimit: 64, options: options).0.description.schedule.dynamicChunk == 64)
+        options.prefillWidth = 0
+        await #expect(throws: AetherError.self) { _ = try await Self.engine(options: options) }
+    }
+
+    /// Without a width, only a Core AI graph specialized with `expectFrequentReshapes` is narrowed: a fake backend
+    /// keeps the manifest's chunk (its reshape hint is the manifest's, but nothing of Core AI runs).
+    @Test func theDefaultWidthIsTheManifestsChunkOffCoreAI() async throws {
+        let (engine, _, _) = try await Self.engine(prefillLimit: 512)
+        #expect(engine.description.schedule.dynamicChunk == 512)
+        #expect(try DecoderEngine.prefillWidth(requested: nil, step: FakeLM(FakeLM.Config())) == nil)
+        #expect(try DecoderEngine.prefillWidth(requested: 16, step: FakeLM(FakeLM.Config())) == 16)
+    }
+
     @Test func everyScheduleGivesTheSameOutput() async throws {
         let prompt = Self.prompt(37)
         let expected = Self.expectedGreedy(prompt, count: 12)
@@ -255,6 +287,21 @@ struct DecoderEngineTests {
         let after = try await engine.prefill([7])!
         #expect(try Logits.argmax(after.last) == Self.expectedGreedy(prompt + [7], count: 1)[0])
         await #expect(throws: AetherError.self) { try await engine.rewind(to: 99) }
+    }
+
+    @Test func kvGrowthKeepsRecurrentStorageAndValues() async throws {
+        let (engine, _, _) = try await Self.engine(FakeLM.Config(recurrent: true), options: Self.options(initial: 4))
+        func verify(_ engine: isolated DecoderEngine) async throws {
+            let recurrent = try #require(engine.core.states["rec"])
+            let keys = try #require(engine.core.states["keys"])
+            let prompt = Self.prompt(20)
+            let logits = try #require(try await engine.prefill(prompt))
+            #expect(engine.capacity == 32)
+            #expect(try #require(engine.core.states["rec"]).isSameStorage(as: recurrent))
+            #expect(!(try #require(engine.core.states["keys"])).isSameStorage(as: keys))
+            #expect(try Logits.argmax(logits.last) == Self.expectedGreedy(prompt, count: 1)[0])
+        }
+        try await verify(engine)
     }
 
     @Test func recurrentModelsRefusePartialRewindAndRestoreSnapshots() async throws {

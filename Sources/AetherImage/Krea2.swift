@@ -401,8 +401,17 @@ public actor Krea2Pipeline {
     public var residentRoles: [String] { admission.residentRoles }
 
     /// What the graphs kept between generations hold, measured on the pipeline's probe (Metal allocations, so Core AI's
-    /// memory is counted): the last generation's plan of what stays loaded. 0 when nothing is.
-    public var residentBytes: Int64 { admission.residentBytes }
+    /// memory is counted): the last generation's plan of what stays loaded, which is what stays reserved on a
+    /// coordinator. 0 when nothing is. Planned, not read at the call.
+    public var plannedResidentBytes: Int64 { admission.residentBytes }
+
+    /// What the graphs kept between generations hold now, read on the pipeline's probe at the call (Metal allocations
+    /// included, so Core AI's memory is counted): the process's level above where it stood before the graphs loaded.
+    /// 0 when nothing is resident. Live where ``plannedResidentBytes`` is the plan: it follows whatever the kept graphs
+    /// retained after the last generation, and it counts anything else the process allocated since they loaded, so a
+    /// host that loads other models after this pipeline reads them here too. Read during a generation, it includes
+    /// that generation's working memory.
+    public var liveResidentBytes: Int64 { admission.liveResidentBytes }
 
     /// Sets what happens to the graphs after each generation. A generation already running applies the new choice
     /// when it ends.

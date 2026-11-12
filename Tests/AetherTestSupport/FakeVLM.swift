@@ -98,7 +98,7 @@ public enum FakeVLM {
         return graph
     }
 
-    public static func decoderGraph(slots: Int, maxContext: Int = 4096, prefillChunk: Int = 512) -> Manifest.Graph {
+    public static func decoderGraph(slots: Int, maxContext: Int = 4096, prefillChunk: Int = 512, recurrent: Bool = false) -> Manifest.Graph {
         func s(_ name: String) -> Manifest.Binding {
             var b = Manifest.Binding(stringLiteral: name)
             b.binding = .static
@@ -113,23 +113,34 @@ public enum FakeVLM {
                      "ropeShiftStart": s("rope_shift_start"), "ropeShiftAmount": s("rope_shift_amount")],
             inputEncodings: ["tokens": encodings],
             outputs: ["logits": "logits"],
-            states: Manifest.States(sequence: [Manifest.SequenceState(tensors: ["keys", "values"], seqAxis: 1)]),
+            states: Manifest.States(sequence: [Manifest.SequenceState(tensors: ["keys", "values"], seqAxis: 1)],
+                                    recurrent: recurrent ? [Manifest.RecurrentState(name: "rec")] : []),
             limits: Manifest.Limits(maxContext: maxContext, prefillChunk: prefillChunk), compute: .gpu,
             expectFrequentReshapes: true)
     }
 
-    /// A VLM engine over the fakes: `patchRows` tower rows (`patchRows / 4` tokens an image), `slots` and `images`.
+    /// A VLM engine over the fakes: `patchRows` tower rows (`patchRows / 4` tokens an image), `slots` and `images`;
+    /// `recurrent` adds a recurrent state (a hybrid such as Qwen3.5's).
     public static func engine(
         patchRows: Int = 16, slots: Int = 24, images: Int = 4, prefillChunk: Int = 512, capacity: Int = 1024,
-        towerLog: CallLog? = nil, rope: RopeLog? = nil, towerGate: TowerGate? = nil
+        towerLog: CallLog? = nil, rope: RopeLog? = nil, towerGate: TowerGate? = nil, options: DecoderEngine.Options? = nil,
+        probe: GPUMemoryProbe? = nil, modelBytes: Int64 = 0, recurrent: Bool = false
     ) async throws -> DecoderEngine {
-        let decoder = FakeVLMDecoder(slots: slots, images: images, rope: rope)
+        let decoder = FakeVLMDecoder(slots: slots, images: images, rope: rope, recurrent: recurrent)
         let tower = FakeVisionTower(rows: patchRows, log: towerLog, gate: towerGate)
+        let device = Device(platform: .macOS, architecture: "fake9", physicalMemory: 64 << 30)
+        let options = options ?? DecoderEngine.Options(capacity: capacity, memoryBudget: .bytes(1 << 30))
+        guard let probe else {
+            return try await DecoderEngine(
+                step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk, recurrent: recurrent), vision: tower,
+                visionGraph: visionGraph(), image: try imageBlock(slots: slots, images: images),
+                preprocess: preprocess(patchRows: patchRows), device: device, options: options)
+        }
         return try await DecoderEngine(
-            step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk), vision: tower,
+            step: decoder, graph: decoderGraph(slots: slots, prefillChunk: prefillChunk, recurrent: recurrent), vision: tower,
             visionGraph: visionGraph(), image: try imageBlock(slots: slots, images: images),
-            preprocess: preprocess(patchRows: patchRows), device: Device(platform: .macOS, architecture: "fake9", physicalMemory: 64 << 30),
-            options: DecoderEngine.Options(capacity: capacity, memoryBudget: .bytes(1 << 30)))
+            preprocess: preprocess(patchRows: patchRows), device: device, options: options, probe: probe,
+            modelBytes: modelBytes)
     }
 
     /// A deterministic `width` × `height` RGB image, different for each `seed`.
@@ -198,15 +209,19 @@ public final class FakeVisionTower: GraphBackend {
 }
 
 /// The fake decoder (see ``FakeVLM``): `input_ids` [1, S], `position_ids` [1, T], the five static inputs, KV-like
-/// states `keys`/`values` [1, C], logits [1, S, vocab].
+/// states `keys`/`values` [1, C], logits [1, S, vocab]. With `recurrent`, a fully static state `rec` [1, 1] (a running
+/// hash of every fed feature, like convState/recState): the row's peak moves by one when it disagrees with the hash of
+/// `keys[0...p]`, so a recurrent state that was lost, kept stale or ran ahead changes the output.
 public final class FakeVLMDecoder: GraphBackend {
     public let signature: GraphSignature
     let slots: Int
     let rope: RopeLog?
+    let recurrent: Bool
 
-    public init(slots: Int, images: Int, rope: RopeLog? = nil) {
+    public init(slots: Int, images: Int, rope: RopeLog? = nil, recurrent: Bool = false) {
         self.slots = slots
         self.rope = rope
+        self.recurrent = recurrent
         signature = GraphSignature(
             function: "main",
             inputs: [
@@ -219,7 +234,8 @@ public final class FakeVLMDecoder: GraphBackend {
                 TensorSpec(name: "rope_shift_amount", scalarType: .int32, shape: [images]),
             ],
             states: [TensorSpec(name: "keys", scalarType: .float32, shape: [1, -1]),
-                     TensorSpec(name: "values", scalarType: .float32, shape: [1, -1])],
+                     TensorSpec(name: "values", scalarType: .float32, shape: [1, -1])]
+                + (recurrent ? [TensorSpec(name: "rec", scalarType: .float32, shape: [1, 1])] : []),
             outputs: [TensorSpec(name: "logits", scalarType: .float32, shape: [1, -1, FakeVLM.vocab])])
     }
 
@@ -243,6 +259,7 @@ public final class FakeVLMDecoder: GraphBackend {
         let e = try embeds.read(Float16.self), d = try deep.read(Float16.self)
         let ip = try imagePositions.read(Int32.self), st = try start.read(Int32.self), am = try amount.read(Int32.self)
         var cache = try keys.read(Float.self)
+        var rec = recurrent ? try bindings.state("rec")!.read(Float.self)[0] : 0
         let h = FakeVLM.hidden, v = FakeVLM.vocab
         for i in 0..<s {
             let position = Int(pos[p - s + i])
@@ -265,12 +282,19 @@ public final class FakeVLMDecoder: GraphBackend {
             cache[position] = Float(feature)
             try values.write([Float(position)], startingAt: position)
             // Printable bytes only, so the byte-level test tokenizer decodes every reply.
-            let target = 32 + Self.mix(cache[0...position].map { Int($0) }) % 95
+            var target = 32 + Self.mix(cache[0...position].map { Int($0) }) % 95
+            if recurrent {
+                rec = Self.step(rec, feature)
+                if rec != cache[0...position].reduce(Float(0), { Self.step($0, Int($1)) }) { target = 32 + (target - 31) % 95 }
+            }
             try bindings.output("logits")?.write((0..<v).map { $0 == target ? Float(10) : -Float(abs($0 - target)) * 0.01 },
                                                  startingAt: i * v)
         }
         try keys.write(cache)
+        if recurrent { try bindings.state("rec")!.write([rec]) }
     }
+
+    static func step(_ h: Float, _ feature: Int) -> Float { Float((Int(h) * 31 + feature + 1) % 65521) }
 }
 
 /// ``ByteRenderer`` with images: a user turn's images render as `[open, pad, close]` each, before its text.
@@ -291,9 +315,10 @@ public struct VLMByteRenderer: PromptRenderer {
 extension FakeVLM {
     /// A Generator over a fake VLM engine with the byte-level test tokenizer.
     public static func generator(
-        towerLog: CallLog? = nil, slots: Int = 64, images: Int = 4, towerGate: TowerGate? = nil
+        towerLog: CallLog? = nil, slots: Int = 64, images: Int = 4, towerGate: TowerGate? = nil, recurrent: Bool = false
     ) async throws -> Generator {
-        let engine = try await engine(slots: slots, images: images, towerLog: towerLog, towerGate: towerGate)
+        let engine = try await engine(slots: slots, images: images, towerLog: towerLog, towerGate: towerGate,
+                                      recurrent: recurrent)
         return Generator(engine: engine, decoder: ByteDecoding(), renderer: VLMByteRenderer(), stopTokens: [ByteVocab.imEnd],
                          profile: ByteVocab.profile, gpu: .unadmitted)
     }

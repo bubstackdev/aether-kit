@@ -163,6 +163,13 @@ public actor Generator {
     /// The image contract of the engine, nil when it takes no images.
     public nonisolated var imageInput: ImageInputSpec? { (engine as? any ImageConditionedEngine)?.imageInput }
 
+    /// Reloads a ``DecoderEngine`` whose model retained more than its budget (``DecoderEngine/reloadIfRetainedPastBudget()``).
+    /// A failed reload is not the request's failure: the engine loads its graphs again at the next feed.
+    private func reloadIfRetainedPastBudget() async {
+        guard let engine = engine as? DecoderEngine else { return }
+        _ = try? await engine.reloadIfRetainedPastBudget()
+    }
+
     /// The CPU half of a request's images, off the actor, before the GPU grant.
     @concurrent nonisolated static func prepare(_ images: [ChatImage], spec: ImageInputSpec?) async throws -> [PreparedPromptImage] {
         guard !images.isEmpty else { return [] }
@@ -208,14 +215,18 @@ public actor Generator {
                 // A request cancelled while it waits for its turn leaves the queue at once: it renders and prefills
                 // nothing.
                 try await self.gate.withTurn {
+                    var failure: (any Error)?
                     do {
                         try await body(self, continuation, prepared)
-                        continuation.finish()
                     } catch AetherError.runtime(let underlying) where underlying is CancellationError {
-                        continuation.finish(throwing: CancellationError())
+                        failure = CancellationError()
                     } catch {
-                        continuation.finish(throwing: error)
+                        failure = error
                     }
+                    // The reload budget (docs/VLM.md, V6): after the request's last event, before its stream ends,
+                    // inside the turn and the grant, so the next request waits for a reload instead of racing it.
+                    await self.reloadIfRetainedPastBudget()
+                    if let failure { continuation.finish(throwing: failure) } else { continuation.finish() }
                 }
             } catch {
                 continuation.finish(throwing: error)
@@ -237,7 +248,7 @@ public actor Generator {
         if recurrent, let images {
             let bound = await images.engine.boundImages
             if !images.plan.images.isEmpty || !bound.isEmpty {
-                throw AetherError.unsupportedOperation("images on a model with recurrent state (snapshot reuse with images is not implemented)")
+                return try await prepareRecurrent(prompt, images: images, bound: bound)
             }
         }
         if !recurrent {
@@ -298,6 +309,39 @@ public actor Generator {
         // DESIGN §6.2: a snapshot at the end of each prompt replaces partial rewind on hybrids.
         fresh.append((prompt, try await engine.snapshot(), logits))
         snapshots = fresh
+        return (logits, reused)
+    }
+
+    /// ``prepare`` for a model with recurrent state when images are involved (the prompt's, or ones still bound). A
+    /// recurrent state can't be rewound, and a snapshot holds the images bound when it was taken, so the only reuse is
+    /// the live state: when the prompt extends what the engine fed and every image the engine holds is still the
+    /// plan's at the same place, the plan's later images are bound and the rest of the prompt fed. Otherwise the engine
+    /// starts from an empty state (a reset also unbinds every image). No snapshots are kept: one taken with images bound
+    /// could only be restored with the same images bound.
+    private func prepareRecurrent(
+        _ prompt: [Int32], images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine),
+        bound: [ImagePromptPlan.Image]
+    ) async throws -> (Logits, Int) {
+        snapshots = []
+        let ahead = await engine.stateRanAhead
+        let live = liveValid && !ahead && !mirror.isEmpty && mirror.count < prompt.count && prompt.starts(with: mirror)
+            && mirror.count <= images.plan.reusableLimit(bound: bound)
+        let reused = live ? mirror.count : 0
+        if !live {
+            try await engine.reset()
+            mirror = []
+        }
+        do {
+            try await images.engine.bindImages(images.plan, prepared: images.prepared)
+        } catch {
+            // A failed bind leaves no image bound, and the engine refuses to feed on a state that held images: start
+            // the next request from an empty state.
+            try? await engine.reset()
+            mirror = []
+            throw error
+        }
+        let logits = try await engine.prefill(Array(prompt[reused...]), logits: .last)!
+        mirror = prompt
         return (logits, reused)
     }
 

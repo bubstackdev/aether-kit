@@ -2,7 +2,31 @@
 
 ## Unreleased
 
+### Fixed
+
+- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
+  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
+  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
+  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
+    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
+    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
+    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
+  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
+    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
+    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
+    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
+    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
+    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
+    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
+    stayed under 12.9 GiB.
+
 ### New
+
+- **Lower-memory Qwen 27B export.** `--embedding-bits 8` packs token embeddings per row and dequantizes after gather:
+  1.27 GB smaller on disk and about 1.2 GiB less Metal memory on the existing two-picture reference gate. The variant
+  passes the accuracy and repeated-request gates; fp16 remains the default pending broader quality checks. KV growth
+  also keeps recurrent buffers in place, avoiding about 147 MiB of temporary allocation/copying on the 27B.
+  Measurements and reproduction details are in `docs/QWEN3_5.md`.
 
 - **Opt-in Krea 2 tiled VAE decode.** `try await pipeline.setDecoderTiling(tileSize: 512, overlap: 256)` decodes
   overlapping tiles with cosine blending, reusing one input/output buffer pair. Edge tiles shift back to keep one
@@ -20,6 +44,46 @@
     selftest checks coverage, edge shifts and normalization. Raw isolated/native results are in
     `Forge/krea2/vae-tiling-report.json`. The native mask qualification accepts `_TILE`, `_OVERLAP` and, in `revisit`,
     `_PIXELS` alongside its existing `AETHER_KREA2_MASK…` variables. The API baseline adds only the opt-in setter.
+- **Qwen3.5 / Qwen3.6 vision-language export (`Forge/qwen3_5/`, docs/QWEN3_5.md).** Any Qwen3_5ForConditionalGeneration
+  checkpoint as a `vlm-static-inject@1` bundle: Qwen3-VL's grid-static tower without DeepStack, and the hybrid decoder
+  (Gated DeltaNet and gated full attention, interleaved M-RoPE, untied head) as one function of up to 32 tokens a call
+  over `keyCache`/`valueCache` and the recurrent `convState`/`recState`. Built a layer at a time from the shards, decoder
+  Linears int4 and the head int8: the Qwen3.6-27B abliterated export is 18.5 GB, made in 3.6 minutes on a 64 GB Mac,
+  and runs at about 20 GB of Metal (flat over mixed requests), a two-picture describer prompt in 2.6 s and 56 ms a
+  token. `Qwen35GateTests` (opt-in) checks a bundle against a reference from the same checkpoint: the 27B against
+  mlx-vlm at 8 bits, teacher-forced, agrees on 40 of 48 tokens with the reference's in our top five at every step.
+- **Images on a decoder with recurrent state.** The `Generator` refused images on a hybrid model. It now reuses the
+  live state when the prompt extends it with every bound image still in place, and otherwise starts from an empty
+  state; no snapshots are kept while images are bound.
+
+- **A live resident-bytes reading for kept graphs.** `Krea2Pipeline.liveResidentBytes` (and
+  `ResidentAdmission.liveResidentBytes`, `GraphResidency.liveResidentBytes`) read the pipeline's probe at the call: the
+  process's level above where it stood before the graphs loaded, Metal included, 0 when nothing is resident. It follows
+  what the kept graphs retain after the plan, where `Krea2Pipeline.plannedResidentBytes` (and
+  `ResidentAdmission.residentBytes`) stays the last plan's held bytes (what remains reserved on a coordinator). The
+  probe reads the whole process, so models loaded after the pipeline count too. `DecoderEngine.Memory` names its live
+  reading `liveResidentBytes` too. Additive; the API baselines record it.
+- **Measured and declared model memory for the decoder engine** (`decoder-lm@1` and `vlm-static-inject@1`;
+  docs/VLM.md §5, V5). Loading allocates almost nothing, so load charged the KV budget with the graph files' size
+  (8.28 GiB for the 4B Qwen3-VL export, against 9.4–13.6 GiB of Metal measured over a session).
+  - `DecoderEngine.memory` reads the engine's memory at the call: the level before load, now and at its highest, the
+    engine's own buffers, the charge, `measuredModelBytes` (the model's memory above the engine's buffers) and
+    `liveResidentBytes` (the level now above the level before load).
+  - `DecoderEngine.Options.modelCharge` `.declared(bytes:)` declares the model's memory (an earlier session's
+    measurement, or a gate's); load charges the larger of it and what it measured, and refuses with `capacity` when
+    the KV no longer fits.
+  - Without a declaration, the charge is as before. Additive; the API baselines record it.
+  - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
+    grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
+- **Qualified model bytes for known decoder exports.** The kit keeps a table of measured model memory (package
+  only), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture, as H3's qualified
+  footprints are; `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. A `decoder-lm@1` or
+  `vlm-static-inject@1` bundle load with `Options.modelCharge` `.qualified` (the default) declares its export's entry,
+  so the first load charges the measured memory without the host persisting `measuredModelBytes`; `.measured` or
+  `.declared(bytes:)` wins, and an export or chip without an entry charges what load measures, as before.
+  `DecoderEngine.declaredModelBytes` reports the figure load was given. The table ships empty: the G5 retention gate and the
+  Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
+  covers what they measure. Additive; the API baselines record it.
 
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
@@ -71,8 +135,8 @@
   refuses too.
 - **Krea 2 residency controls:** `setRetention(_:)` chooses `ImageRetention.keepLoaded` (the default, as before) or
   `.releaseAfterEachGeneration`. `releaseIfIdle()` releases every graph only while no generation is running or
-  waiting: it never waits and never interrupts one, and returns `false` otherwise. `residentBytes` is the measured
-  (Metal-inclusive) footprint the kept graphs hold.
+  waiting: it never waits and never interrupts one, and returns `false` otherwise. `plannedResidentBytes` is the measured
+  (Metal-inclusive) footprint the kept graphs hold, as the last generation planned it.
 - **An opt-in memory-pressure gate for pipelines** (`PipelineOptions.pressure`, absent by default): with a
   `MemoryPressureMonitor` set, a Krea 2 generation that would have to load graphs throws `AetherError.memoryPressure`
   while the monitor reads critical, and graphs already resident still run.
@@ -123,9 +187,9 @@
   one specialization (`PhasedGraphBackend`, `GraphFunctionSet`). Additive; the API baselines record it.
 - **GPU waiters (`AetherHost`)**: a waiting `SharedGPULease.acquire` and `scripts/gpu-lease` hold a shared flock on the
   lease's `<name>.waiters` file while they wait (this user's single-link, mode-0600 sibling, checked as `<name>.reclaim`
-  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:legacyWrapper:)`
+  is). A holder that keeps the GPU between its own jobs can ask `SharedGPULease.hasWaiters(directory:)`
   (or `othersWaiting` on its lease) and step aside. The answer also covers the lab wrapper's exclusive lock on
-  `~/.cache/aether-kit/gpu.lock`. Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
+  `~/.cache/aether-kit/gpu.lock`; `hasWaiters(directory:legacyWrapper:)` names another wrapper lock, or none (`nil`). Never blocks. The lease protocol is otherwise unchanged. Additive; the `AetherHost`
   API baseline records it.
 - **Compile-cache tooling:** `scripts/coreai-cache list [--entries]` shows Core AI's compile cache by OS build and
   bucket (one bucket per process name), with sizes, entry counts and dates. `scripts/coreai-cache prune` deletes what
@@ -186,6 +250,30 @@
   Adding the `smartResize` case to
   `Manifest.ImagePreprocess.Resize.Mode` breaks an exhaustive `switch` over it; the API baselines record the change.
   The FoundationModels bridge stays text-only for now.
+
+### Changed
+
+- **API freeze review (#180 findings 5 and 8, approved by the owner).** Renamed or hidden before 0.2.0; each was public
+  only in the 0.2.0 alphas, so 0.1.0 is unaffected:
+  - `Krea2Pipeline.residentBytes` is now `plannedResidentBytes`: it is the last generation's plan, and the live
+    reading is a different figure. (`ResidentAdmission.residentBytes`, frozen in 0.1.0, keeps its name.)
+  - `SharedGPULease.legacyWrapperLock` is no longer public. `hasWaiters(directory:)` checks the lab wrapper's lock
+    itself; `hasWaiters(directory:legacyWrapper:)` stays for another lock, or `nil` for none, with no default.
+- **API freeze review (#180 finding 7, approved by the owner): the VLM plumbing is mostly package-only.** All of it
+  was public only in the 0.2.0 alphas.
+  - Now `package`: `PhasedGraphBackend` and `GraphFunctionSet`; the 9-argument `DecoderEngine.init(step:prefill:graph:
+    vision:visionGraph:image:preprocess:device:options:)` (hosts load a bundle); `ImagePromptPlan.init(rendered:images:
+    spec:)`, `placeholderTokens`, `imagePositions(slots:)`, `ropeShifts(entries:)`, `reusableLimit(bound:)`,
+    `unusedShiftStart` and `Image.shiftAmount`; `ImageInputSpec.prepare(_:)`; `PreparedPromptImage`'s `init`,
+    `values`, `rowLength`, `merge` and `geometry`.
+  - `DecoderEngine.imageEncodes` is `@_spi(Diagnostics)`.
+  - Still public, so a host can stand in its own engine for the describer (Atelier's tests do):
+    `ImageConditionedEngine`, `ImageInputSpec` (and its init), `ImagePromptPlan` with `tokens`, `images`, `idBase` and
+    `ImagePromptPlan.Image`, and `PreparedPromptImage` with its grid, `digest` and `tokens`.
+  - Those that stay are renamed to the Swift-side convention: `gridH`/`gridW` → `gridHeight`/`gridWidth`
+    (`PreparedPromptImage`, `ImagePromptPlan.Image`) and `padId`/`openId`/`closeId` → `padID`/`openID`/`closeID`
+    (`ImageInputSpec`, `ImagePromptPlan.padID`). `idBase` keeps its name, which already follows the convention.
+    Manifest `Codable` fields (`image.tokens.padId`, …) keep their JSON spelling.
 
 ### Fixed
 

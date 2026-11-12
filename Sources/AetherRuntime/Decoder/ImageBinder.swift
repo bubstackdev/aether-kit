@@ -114,7 +114,7 @@ final class ImageBinder {
             throw .manifestInvalid(field: "image.tokens", reason: "ids must fit Int32")
         }
         self.spec = ImageInputSpec(
-            padId: padId, openId: tokens.openId.flatMap { Int32(exactly: $0) }, closeId: tokens.closeId.flatMap { Int32(exactly: $0) },
+            padID: padId, openID: tokens.openId.flatMap { Int32(exactly: $0) }, closeID: tokens.closeId.flatMap { Int32(exactly: $0) },
             idBase: idBase, slots: slots, maxImages: maxImages, patchRows: rows, merge: merge,
             preprocessor: try ImagePreprocessor(preprocess))
         self.tower = tower
@@ -174,13 +174,13 @@ final class ImageBinder {
     }
 
     private func encode(_ image: PreparedPromptImage, into base: Int, _ statics: [String: TensorBuffer]) async throws(AetherError) {
-        let rows = image.gridH * image.gridW
+        let rows = image.gridHeight * image.gridWidth
         guard image.rowLength == patches.shape[1], rows <= patches.shape[0], image.values.count == rows * image.rowLength else {
             throw .invalidInput("a prepared image of \(rows)x\(image.rowLength) for patches \(patches.shape)")
         }
         try patches.zero()
         try patches.write(image.values)
-        try grid?.write([Int32(image.gridH), Int32(image.gridW)])
+        try grid?.write([Int32(image.gridHeight), Int32(image.gridWidth)])
         var b = Bindings(arena: arena)
         try b.bindInput(towerRoles.patches, to: patches)
         if let name = towerRoles.grid, let grid { try b.bindInput(name, to: grid) }
@@ -239,12 +239,12 @@ final class ImageBinder {
 extension ImagePromptPlan {
     /// A plan with no image: the text-only rotary inputs.
     static func empty(_ spec: ImageInputSpec) -> ImagePromptPlan {
-        ImagePromptPlan(tokens: [], images: [], idBase: spec.idBase, padId: spec.padId)
+        ImagePromptPlan(tokens: [], images: [], idBase: spec.idBase, padID: spec.padID)
     }
 
     /// A plan holding `images` as already placed (the images kept by a rewind).
     static func retaining(_ images: [Image], spec: ImageInputSpec) -> ImagePromptPlan {
-        ImagePromptPlan(tokens: [], images: images, idBase: spec.idBase, padId: spec.padId)
+        ImagePromptPlan(tokens: [], images: images, idBase: spec.idBase, padID: spec.padID)
     }
 }
 
@@ -253,7 +253,7 @@ extension DecoderEngine: ImageConditionedEngine {
     public var boundImages: [ImagePromptPlan.Image] { imageBinder?.bound ?? [] }
 
     /// Tower calls since load (diagnostics: a reused image isn't encoded again).
-    public var imageEncodes: Int { imageBinder?.encodes ?? 0 }
+    @_spi(Diagnostics) public var imageEncodes: Int { imageBinder?.encodes ?? 0 }
 
     public func bindImages(_ plan: ImagePromptPlan, prepared: [PreparedPromptImage]) async throws(AetherError) {
         guard let binder = imageBinder else {
@@ -263,6 +263,7 @@ extension DecoderEngine: ImageConditionedEngine {
         // Held as the engine's operation across the tower calls: no prefill, decode, rewind or second bind runs while
         // a bind is suspended.
         let core = core
+        defer { sampleMemory() }
         try await core.withStatics(operation: "an image bind") { statics throws(AetherError) in
             let previous = binder.bound
             do throws(AetherError) {
