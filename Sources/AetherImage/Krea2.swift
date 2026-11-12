@@ -253,7 +253,7 @@ public actor Krea2Pipeline {
     /// the text encoder then stays loaded or is released as for a generation (``setRetention(_:)``). Refusals, pressure
     /// and cancellation are a generation's.
     public func encode(prompt text: String, job: GPUJob? = nil) async throws -> Krea2Conditioning {
-        try await encode(prompt: text, profile: lastProfileForEncode, job: job)
+        try await encode(prompt: text, canvas: nil, job: job)
     }
 
     /// ``encode(prompt:job:)`` for the generation that follows at `width` × `height`: the encode plans memory against
@@ -263,13 +263,26 @@ public actor Krea2Pipeline {
     /// generation's would be (`invalidParameters`); nothing else changes.
     public func encode(prompt text: String, width: Int, height: Int, job: GPUJob? = nil) async throws -> Krea2Conditioning {
         _ = try latent.tokenGrid(width: width, height: height)
-        return try await encode(prompt: text, profile: Self.profile(width: width, height: height), job: job)
+        return try await encode(prompt: text, canvas: (width, height), job: job)
     }
 
     /// The admission profile of a canvas: the key generations and canvas-aware encodes plan under.
     static func profile(width: Int, height: Int) -> String { "\(width)x\(height)" }
 
-    private func encode(prompt text: String, profile: String, job: GPUJob?) async throws -> Krea2Conditioning {
+    /// The profile a generation at `width` × `height` plans under with this pipeline's decoder setting: the canvas, plus
+    /// the tile policy when tiling is set. Every canvas-aware plan (generations and the canvas-aware encodes) uses it,
+    /// so an encode for the next generation keeps that generation's graphs (a different string releases them all).
+    func canvasProfile(width: Int, height: Int) -> String {
+        Self.profile(width: width, height: height) + (decoderTiling.map { ".\($0.profile)" } ?? "")
+    }
+
+    /// What an encode plans under, read in the pipeline's turn (so after any ``setDecoderTiling(tileSize:overlap:)``
+    /// queued before it): the canvas's profile for a canvas-aware encode, else the last generation's.
+    func encodeProfile(canvas: (width: Int, height: Int)?) -> String {
+        canvas.map { canvasProfile(width: $0.width, height: $0.height) } ?? lastProfileForEncode
+    }
+
+    private func encode(prompt text: String, canvas: (width: Int, height: Int)?, job: GPUJob?) async throws -> Krea2Conditioning {
         pending += 1
         defer { pending -= 1 }
         try Task.checkCancellation()
@@ -280,7 +293,7 @@ public actor Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: prompt.conditioningRows))
+            let residency = try admission.begin(profile: encodeProfile(canvas: canvas), shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure, !admission.residentRoles.contains(wiring.text.role),
                await pressure.level == .critical {
                 admission.release()
@@ -345,7 +358,7 @@ public actor Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfile ?? "\(image.width)x\(image.height)")
+            let residency = try admission.begin(profile: lastProfile ?? canvasProfile(width: image.width, height: image.height))
             if let pressure = options.pressure, !admission.residentRoles.contains(encoder.role),
                await pressure.level == .critical {
                 admission.release()
@@ -513,7 +526,7 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
-            let profile = Self.profile(width: size.width, height: size.height) + (decoderTiling.map { ".\($0.profile)" } ?? "")
+            let profile = canvasProfile(width: size.width, height: size.height)
             let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: source.rows))
             lastProfile = profile
             // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't

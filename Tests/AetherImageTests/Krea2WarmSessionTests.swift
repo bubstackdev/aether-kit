@@ -41,6 +41,22 @@ struct Krea2WarmSessionTests {
         #expect(loads.log.count == loaded && loads.log.filter { $0 == "textEncoder" }.count == 1)
     }
 
+    /// Under decoder tiling the canvas-aware encode plans under the tiled generation's profile (canvas plus tile
+    /// policy). In 0.2.0 it planned under the bare canvas, so every tiled picture changed profile twice and
+    /// admission released and reloaded every graph (Atelier's lab: about 40 s became 85–100 s at 768×1344).
+    @Test func anEncodeForTheCanvasKeepsTheGraphsResidentUnderTiling() async throws {
+        let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls())
+        try await pipeline.setDecoderTiling(tileSize: 32, overlap: 16)
+        let first = try await pipeline.encode(prompt: "a cat", width: 48, height: 32)
+        let generation = try await pipeline.generate(Self.request(), reusing: first)
+        #expect(generation.metrics.loadedRoles == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"])
+        #expect(await pipeline.residentRoles == Self.roles)
+        let loaded = loads.log.count
+        let second = try await pipeline.encode(prompt: "a dog", width: 48, height: 32)
+        #expect(try await pipeline.generate(Self.request("a dog"), reusing: second).metrics.loadedRoles.isEmpty)
+        #expect(loads.log.count == loaded && loads.log.filter { $0 == "textEncoder" }.count == 1)
+    }
+
     /// The unchanged ``Krea2Pipeline/encode(prompt:job:)``: before any generation it plans a conditioning-only profile,
     /// whose text encoder the first generation's canvas releases (and the second picture's encode loads again).
     @Test func anEncodeWithoutTheCanvasStillPlansAConditioningProfile() async throws {
@@ -91,6 +107,22 @@ struct Krea2WarmSessionTests {
         #expect(await Krea2ConditioningTests.isInvalidParameters {
             _ = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square], width: 33, height: 32)
         })
+    }
+
+    /// The canvas-aware reference encode under decoder tiling plans under the tiled generation's profile, so the
+    /// denoisers and decoder stay (in 0.2.0 it planned under the bare canvas and released them every picture).
+    @Test func aReferenceEncodeForTheCanvasKeepsTheDenoisersUnderTiling() async throws {
+        let (pipeline, loads) = try Krea2ReferenceTests.pipeline(calls: Calls())
+        try await pipeline.setDecoderTiling(tileSize: 32, overlap: 16)
+        let picture = ImageRequest(prompt: "a cat", seed: 3, steps: 2, width: 32, height: 32)
+        let first = try await pipeline.encode(prompt: "a cat", references: [Krea2ReferenceTests.square], width: 32, height: 32)
+        _ = try await pipeline.generate(picture, reusing: first)
+        let denoisers = ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"]
+        #expect(await pipeline.residentRoles == denoisers)
+        let second = try await pipeline.encode(prompt: "a dog", references: [Krea2ReferenceTests.wide], width: 32, height: 32)
+        let dog = ImageRequest(prompt: "a dog", seed: 3, steps: 2, width: 32, height: 32)
+        #expect(try await pipeline.generate(dog, reusing: second).metrics.loadedRoles.isEmpty)
+        #expect(loads.log.filter { denoisers.contains($0) }.count == denoisers.count)
     }
 
     // MARK: - Cancellation
