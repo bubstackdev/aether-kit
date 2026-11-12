@@ -4,6 +4,23 @@
 
 ### New
 
+- **Opt-in Krea 2 tiled VAE decode.** `try await pipeline.setDecoderTiling(tileSize: 512, overlap: 256)` decodes
+  overlapping tiles with cosine blending, reusing one input/output buffer pair. Edge tiles shift back to keep one
+  decoder shape; small canvases use a full decode. `tileSize: nil` restores full decoding. Changing the setting waits
+  for the pipeline's turn and releases its graphs to discard older decoder specializations; admission profiles
+  distinguish tile policies. Full decoding is the default; tiling approximates global attention and changes pixels.
+  - On an M5 Max 64 GB, macOS 27.2, masked realism at 1024² / 8 steps, separate native processes under
+    `scripts/gpu-lease` sampled 46.36 GiB peak with full decode and 37.41 GiB with tiles (8.96 GiB less). The mug
+    prompt's tiled image reached SSIM 0.99992 / PSNR 66 dB against full decode; decode time rose from 1.08 to 2.79 s
+    in the debug build. Total cold-render timings are not a speed comparison.
+  - Isolated VAE measurements on the harbor reference: 11.49 → 2.54 GiB retained Metal memory, SSIM 0.995 / PSNR
+    44 dB with 512-pixel tiles. 640- and 768-pixel tiles also passed SSIM 0.99 / PSNR 35 dB against full decode.
+    These are two qualification images, not a guarantee for every prompt.
+  - `Forge/krea2/bench_krea2_vae_tiles.py` records memory, repeats, image/error maps and seam-band error; its CPU
+    selftest checks coverage, edge shifts and normalization. Raw isolated/native results are in
+    `Forge/krea2/vae-tiling-report.json`. The native mask qualification accepts `_TILE`, `_OVERLAP` and, in `revisit`,
+    `_PIXELS` alongside its existing `AETHER_KREA2_MASK…` variables. The API baseline adds only the opt-in setter.
+
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
   4B pins) get CPU float32 references for `check_qwen3vl.py`.
@@ -171,6 +188,15 @@
   The FoundationModels bridge stays text-only for now.
 
 ### Fixed
+
+- **Krea 2 tensor lifetimes.** Step buffers are returned to the arena before VAE decode, text encoder inputs are
+  released after encoding, and reused conditioning's staging rows are released after padding. Segment outputs reuse
+  storage only after its last consumer, with matching shape, scalar type and strides; a call's inputs and outputs
+  never alias. On the masked realism export at 1024², 8 steps (M5 Max, 64 GB, macOS 27.2), fresh-process renders under
+  `scripts/gpu-lease` retained 480 MiB less Metal memory and sampled a peak about 919 MiB lower, with identical output
+  pixels. These are single-run memory measurements, not a timing comparison; raw reports are in
+  `Forge/krea2/memory-report.json`. The fake-graph regression checks live bytes at the step and decoder boundaries,
+  non-aliasing within calls, the host recipe and repeat equality.
 
 - **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
   each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop

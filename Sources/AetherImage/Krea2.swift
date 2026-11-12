@@ -81,6 +81,7 @@ public actor Krea2Pipeline {
     var pending = 0
     /// What happens to the graphs after each generation (default ``ImageRetention/keepLoaded``).
     public private(set) var retention: ImageRetention = .keepLoaded
+    private var decoderTiling: Krea2VAETiling?
     /// The export a ``Krea2Conditioning`` must come from: the manifest's ``Manifest/contentDigest``.
     nonisolated let export: String
     /// The canvas of the last generation, so an ``encode(prompt:job:)`` plans against the residency it would keep.
@@ -407,6 +408,32 @@ public actor Krea2Pipeline {
     /// when it ends.
     public func setRetention(_ retention: ImageRetention) { self.retention = retention }
 
+    /// Uses overlapping VAE tiles to reduce decoder working memory. Sizes are output pixels, multiples of 16:
+    /// `tileSize` must be at least 32 and `overlap` smaller than it. `nil` restores the default full decode.
+    ///
+    /// Tiles approximate the decoder's global attention, so pixels differ slightly from a full decode. 512-pixel
+    /// tiles with 256-pixel overlap reduced isolated decoder Metal memory from 11.49 to 2.54 GiB at 1024², with
+    /// SSIM 0.995 against the full decode on the qualification image. Decoding takes longer.
+    /// Waits for this pipeline's turn. Changing the setting releases its graphs so old decoder specializations
+    /// cannot keep the full-decode allocation alive; the next generation loads again.
+    public func setDecoderTiling(tileSize: Int?, overlap: Int = 256) async throws {
+        let tiling: Krea2VAETiling?
+        if let tileSize {
+            guard latent.pixelsPerToken == 16 else {
+                throw AetherError.generation(.invalidParameters("decoder tiling requires 16 pixels per latent token"))
+            }
+            tiling = try Krea2VAETiling(tileSize: tileSize, overlap: overlap)
+        }
+        else { tiling = nil }
+        await gate.withTurnIgnoringCancellation {
+            if decoderTiling != tiling {
+                admission.release()
+                lastProfile = nil
+                decoderTiling = tiling
+            }
+        }
+    }
+
     /// Releases every graph now, but only while no generation is running or waiting: it never waits and never
     /// interrupts one. Returns `false`, changing nothing, while a generation is in progress (it keeps its graphs; call
     /// again later, or use ``unload()`` to wait for it). The bundle stays open, unlike ``unload()``.
@@ -432,7 +459,7 @@ public actor Krea2Pipeline {
             // load without the reshape hint, so each new count keeps its own specialization (ResidentAdmission.Settings).
             meter.lap(into: \.waitSeconds)
             let used = (source.reused ? [] : [wiring.text.role]) + wiring.segments.map(\.role) + [wiring.decoder.role]
-            let profile = "\(size.width)x\(size.height)"
+            let profile = "\(size.width)x\(size.height)" + (decoderTiling.map { ".\($0.profile)" } ?? "")
             let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: source.rows))
             lastProfile = profile
             // What is resident once admission has planned: it may have released the graphs (a new shape that doesn't
@@ -493,6 +520,7 @@ public actor Krea2Pipeline {
             conditioning: conditioning, textRows: source.rows, seed: seed, schedule: schedule, refine: refine, grid: grid,
             residency: residency, arena: arena, meter: meter, onProgress: onProgress)
         residency.endPhase(.perStep)
+        if case .buffer(let rows) = conditioning { try arena.release(rows) }
         try Task.checkCancellation()
 
         // Image: the packed tokens, raster order, are the decoder's [rows, columns, channels].
@@ -511,6 +539,10 @@ public actor Krea2Pipeline {
         grid: (rows: Int, columns: Int), residency: GraphResidency, arena: TensorArena, meter: ImageGenerationMeter,
         onProgress: (@Sendable (ImageProgress) throws -> Void)?
     ) async throws -> [Float] {
+        // Handles do not own storage: dropping this function's locals leaves their arrays in the arena. Return
+        // every step buffer before the decoder starts, including on cancellation or a failed graph call.
+        var scratch: [TensorBuffer] = []
+        defer { for buffer in scratch { try? arena.release(buffer) } }
         let tokens = grid.rows * grid.columns, count = tokens * latent.channels
         var loaded: [any GraphBackend] = []
         for segment in wiring.segments { loaded.append(try await residency.graph(segment.role)) }
@@ -519,17 +551,26 @@ public actor Krea2Pipeline {
         let dims = Dimensions(textRows: length, imageTokens: tokens)
         let first = graphs[0]
         let sample = try first.makeBuffer(for: wiring.latents, role: .input, dimensions: [tokens], in: arena)
+        scratch.append(sample)
         let sigma = try first.makeBuffer(for: wiring.sigma, role: .input, dimensions: [], in: arena)
+        scratch.append(sigma)
         let imageRotary = try first.makeBuffer(for: wiring.imageRotary, role: .input, dimensions: [tokens], in: arena)
+        scratch.append(imageRotary)
         guard sample.shape == [tokens, latent.channels] else {
             throw AetherError.manifestMismatch(
                 field: "latent.channels", expected: "denoiser latents [\(tokens), \(latent.channels)]", found: "\(sample.shape)")
         }
         try imageRotary.write(Krea2Rotary.image(rows: grid.rows, columns: grid.columns, rotary: krea2.rotary))
         let conditioning = try conditioningBuffer(source, rows: textRows, length: length, graph: first, dims: dims, arena: arena)
+        if case .buffer(let original) = source, conditioning.isSameStorage(as: original) {
+            // The caller owns the encoder's rows.
+        } else {
+            scratch.append(conditioning)
+        }
         var textMask: TensorBuffer?
         if let name = wiring.textMask {
             let mask = try first.makeBuffer(for: name, role: .input, dimensions: dims.of("textMask", in: first, name: name), in: arena)
+            scratch.append(mask)
             guard mask.shape == [length] else {
                 throw AetherError.manifestMismatch(
                     field: "graphs.\(wiring.segments[0].role).inputs.textMask", expected: "[\(length)]", found: "\(mask.shape)")
@@ -542,11 +583,33 @@ public actor Krea2Pipeline {
             textMask = mask
         }
         var outputs: [String: TensorBuffer] = [:]
-        for (segment, graph) in zip(wiring.segments, graphs) {
+        // Reuse only after the last consumer, never within a call. Keep the velocity live through the host update.
+        var lastUse: [String: Int] = [wiring.velocity: wiring.segments.count]
+        for (index, segment) in wiring.segments.enumerated() {
+            for input in segment.inputs {
+                if case .output(let ref) = input.source { lastUse[ref] = max(lastUse[ref] ?? index, index) }
+            }
+        }
+        var slots: [(buffer: TensorBuffer, lastUse: Int)] = []
+        for (index, pair) in zip(wiring.segments, graphs).enumerated() {
+            let (segment, graph) = pair
             for output in segment.outputs {
-                outputs[output.ref] = try graph.makeBuffer(
+                let candidate = try graph.makeBuffer(
                     for: output.name, role: .output, dimensions: dims.of(output.role, in: graph, name: output.name, output: true),
                     in: arena)
+                // Ask the backend for its actual layout rather than guessing Core AI's preferred strides.
+                if let slot = slots.firstIndex(where: {
+                    $0.lastUse < index && $0.buffer.shape == candidate.shape
+                        && $0.buffer.scalarType == candidate.scalarType && $0.buffer.strides == candidate.strides
+                }) {
+                    try arena.release(candidate)
+                    outputs[output.ref] = slots[slot].buffer
+                    slots[slot].lastUse = lastUse[output.ref] ?? index
+                } else {
+                    scratch.append(candidate)
+                    outputs[output.ref] = candidate
+                    slots.append((candidate, lastUse[output.ref] ?? index))
+                }
             }
         }
         let velocity = outputs[wiring.velocity]!
@@ -643,6 +706,9 @@ public actor Krea2Pipeline {
             real = try arena.allocate(name: "\(wiring.conditioning).rows", shape: [value.rows, value.columns], scalarType: value.scalarType)
             try real.writeBytes(value.bytes)
         }
+        // Reused rows are staging storage; only the padded destination is needed by the steps.
+        defer { if case .reused = source { try? arena.release(real) } }
+
         let padded = try graph.makeBuffer(
             for: wiring.conditioning, role: .input, dimensions: dims.of("conditioning", in: graph, name: wiring.conditioning), in: arena)
         guard padded.scalarType == real.scalarType, padded.shape == [length, columns], real.shape == [rows, columns] else {
@@ -662,6 +728,9 @@ public actor Krea2Pipeline {
     ) async throws -> GeneratedImage {
         let count = grid.rows * grid.columns * latent.channels
         let vae = try await residency.graph(wiring.decoder.role)
+        if let tiling = decoderTiling, size.width > tiling.tileSize || size.height > tiling.tileSize {
+            return try await decodeTiles(latents, grid: grid, size: size, tiling: tiling, vae: vae, residency: residency, arena: arena)
+        }
         let input = try vae.makeBuffer(for: wiring.decoder.latents, role: .input, dimensions: [grid.rows, grid.columns], in: arena)
         let output = try vae.makeBuffer(for: wiring.decoder.image, role: .output, dimensions: [size.height, size.width], in: arena)
         guard input.shape == [grid.rows, grid.columns, latent.channels], output.shape == [3, size.height, size.width] else {
@@ -679,11 +748,50 @@ public actor Krea2Pipeline {
         return try GeneratedImage(width: size.width, height: size.height, planarRGB: try output.readFloats())
     }
 
+    private func decodeTiles(
+        _ latents: [Float], grid: (rows: Int, columns: Int), size: (width: Int, height: Int), tiling: Krea2VAETiling,
+        vae: any GraphBackend, residency: GraphResidency, arena: TensorArena
+    ) async throws -> GeneratedImage {
+        var accumulator = Krea2VAETiling.Accumulator(width: size.width, height: size.height, tiling: tiling)
+        let rows = accumulator.y.size / 16, columns = accumulator.x.size / 16, channels = latent.channels
+        let input = try vae.makeBuffer(for: wiring.decoder.latents, role: .input, dimensions: [rows, columns], in: arena)
+        let output = try vae.makeBuffer(
+            for: wiring.decoder.image, role: .output, dimensions: [accumulator.y.size, accumulator.x.size], in: arena)
+        guard input.shape == [rows, columns, channels], output.shape == [3, accumulator.y.size, accumulator.x.size] else {
+            throw AetherError.manifestMismatch(
+                field: "graphs.\(wiring.decoder.role)",
+                expected: "[\(rows), \(columns), \(channels)] → [3, \(accumulator.y.size), \(accumulator.x.size)]",
+                found: "\(input.shape) → \(output.shape)")
+        }
+        var bindings = Bindings(arena: arena)
+        try bindings.bindInput(wiring.decoder.latents, to: input)
+        try bindings.bindOutput(wiring.decoder.image, to: output)
+        var pixels: [Float] = []
+        for (iy, y) in accumulator.y.starts.enumerated() {
+            for (ix, x) in accumulator.x.starts.enumerated() {
+                try Task.checkCancellation()
+                try input.write(Float16.self, count: rows * columns * channels) { i in
+                    let token = i / channels
+                    let source = ((y / 16 + token / columns) * grid.columns + x / 16 + token % columns) * channels + i % channels
+                    return Float16(latents[source])
+                }
+                try await vae.run(&bindings)
+                residency.sample()
+                try Task.checkCancellation()
+                try output.readFloats(0..<output.count, into: &pixels)
+                try accumulator.add(pixels, row: iy, column: ix)
+            }
+        }
+        return try GeneratedImage(width: size.width, height: size.height, planarRGB: accumulator.finish())
+    }
+
     /// Runs the text encoder on `prompt`: its conditioning rows, `[n − dropLeadingRows, taps · width]`, in `arena`.
     private func encode(_ prompt: Prompt, with text: any GraphBackend, in arena: TensorArena) async throws -> TensorBuffer {
         let n = prompt.ids.count
         let ids = try text.makeBuffer(for: wiring.text.tokens, role: .input, dimensions: [n], in: arena)
+        defer { try? arena.release(ids) }
         let positions = try text.makeBuffer(for: wiring.text.positions, role: .input, dimensions: [n], in: arena)
+        defer { try? arena.release(positions) }
         let rows = try text.makeBuffer(for: wiring.text.conditioning, role: .output, dimensions: [prompt.conditioningRows], in: arena)
         guard rows.shape == [prompt.conditioningRows, krea2.conditioning.columns] else {
             throw AetherError.manifestMismatch(

@@ -15,6 +15,8 @@ import Testing
 ///
 /// optional AETHER_KREA2_MASK_BUNDLE (default: the Forge `krea-2-turbo-realism-masked` output), _EXACT (the
 /// exact-length export compared against, default `krea-2-turbo-realism`), _SIZE (1024), _STEPS (8). Modes:
+/// _TILE (output pixels) and _OVERLAP (256) opt into tiled decoding. In `revisit`, _PIXELS saves raw planar float32
+/// RGB to a new file for cross-process comparisons. The report includes the tile settings.
 /// - `timing`: render A, then A again, then a very short and a very long prompt, each with its metrics (wall time, first
 ///   step, loaded roles, Metal peak) and the Metal allocation after it; then one render from four-reference
 ///   conditioning (the `references` function) with the Metal before and after, which shows whether the second function
@@ -104,6 +106,8 @@ struct Krea2TextMaskQualificationTests {
         var pairs: [Pair] = []
         var sharing: Sharing?
         var repeatIdentical: Bool?
+        var decoderTileSize: Int?
+        var decoderTileOverlap: Int?
     }
 
     final class AllowAll: ContentFilter {
@@ -120,7 +124,13 @@ struct Krea2TextMaskQualificationTests {
         let model = try await Registry.image.load(
             bundle, as: Krea2Driver.self,
             options: LoadOptions(device: LatentDiffusionGateTests.mac, cachePolicy: .default, cache: .default))
-        return try await model.pipeline(filter: AllowAll())
+        let pipeline = try await model.pipeline(filter: AllowAll())
+        if let raw = environment["AETHER_KREA2_MASK_TILE"] {
+            let size = try #require(Int(raw))
+            let overlap = try #require(Int(environment["AETHER_KREA2_MASK_OVERLAP"] ?? "256"))
+            try await pipeline.setDecoderTiling(tileSize: size, overlap: overlap)
+        }
+        return pipeline
     }
 
     static func render(
@@ -186,6 +196,10 @@ struct Krea2TextMaskQualificationTests {
             mode: mode, bundle: bundleURL.lastPathComponent, side: side, steps: steps, seed: Self.seed,
             architecture: LatentDiffusionGateTests.mac.architecture, pid: ProcessInfo.processInfo.processIdentifier,
             metalBeforeLoad: metal.currentAllocatedSize)
+        report.decoderTileSize = Self.environment["AETHER_KREA2_MASK_TILE"].flatMap(Int.init)
+        if report.decoderTileSize != nil {
+            report.decoderTileOverlap = Int(Self.environment["AETHER_KREA2_MASK_OVERLAP"] ?? "256")
+        }
 
         switch mode {
         case "timing", "revisit":
@@ -196,6 +210,11 @@ struct Krea2TextMaskQualificationTests {
             for (name, label) in order {
                 let (render, image) = try await Self.render(pipeline, label: label, prompt: texts[name]!, side: side, steps: steps, metal: metal)
                 report.renders.append(render)
+                if mode == "revisit", let path = Self.environment["AETHER_KREA2_MASK_PIXELS"] {
+                    try image.planarRGB.withUnsafeBytes { bytes in
+                        try Data(bytes).write(to: URL(filePath: path), options: .withoutOverwriting)
+                    }
+                }
                 if let earlier = images[name] { report.repeatIdentical = earlier == image }
                 images[name] = images[name] ?? image
             }

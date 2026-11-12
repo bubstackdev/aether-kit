@@ -1,0 +1,219 @@
+{
+  "date": "2026-11-11",
+  "hardware": "M5 Max, 64 GB",
+  "os": "macOS 27.2",
+  "gpuLock": "scripts/gpu-lease (each GPU measurement in its own process)",
+  "runtime": {
+    "bundle": "krea-2-turbo-realism-masked",
+    "side": 1024,
+    "steps": 8,
+    "seed": 18,
+    "before": {
+      "architecture": "h17c",
+      "bundle": "krea-2-turbo-realism-masked",
+      "metalBeforeLoad": 65536,
+      "mode": "revisit",
+      "pairs": [],
+      "pid": 97874,
+      "renders": [
+        {
+          "firstStepSeconds": 51.243131875,
+          "label": "A",
+          "laterStepMeanSeconds": 4.607136166714286,
+          "ledger": [
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perImage: peak 11010 held 10998",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perPrompt: peak 7410 held 7403",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perStep: peak 30306 held 29802"
+          ],
+          "metalAllocatedAfter": 50181652480,
+          "metrics": {
+            "conditioningRows": 27,
+            "conditioningSeconds": 27.091404375,
+            "decodeSeconds": 1.220986083,
+            "denoiserPreparationSeconds": 38.388558792,
+            "imageReviewSeconds": 1.7625e-05,
+            "imageTokens": 4096,
+            "loadedRoles": [
+              "denoiser0",
+              "denoiser1",
+              "denoiser2",
+              "denoiser3",
+              "textEncoder",
+              "vaeDecoder"
+            ],
+            "peakAllocatedBytes": 50642190336,
+            "promptReviewSeconds": 2.7375e-05,
+            "samplingSeconds": 83.493085042,
+            "stepSeconds": [
+              51.243131875,
+              4.686912333,
+              4.695659459,
+              4.469792083,
+              4.508127375,
+              4.748649292,
+              4.564949916,
+              4.575862709
+            ],
+            "totalSeconds": 150.209354958,
+            "waitSeconds": 0.000450625
+          },
+          "pixelsSHA256": "0027410c0db1538ad98e088a91e2386ac93dd2eff5ab7b06fa1dc4bce545e561",
+          "prompt": "A",
+          "residentBytesAfter": 50546310232,
+          "rows": 27
+        }
+      ],
+      "seed": 18,
+      "side": 1024,
+      "steps": 8
+    },
+    "after": {
+      "architecture": "h17c",
+      "bundle": "krea-2-turbo-realism-masked",
+      "metalBeforeLoad": 65536,
+      "mode": "revisit",
+      "pairs": [],
+      "pid": 6644,
+      "renders": [
+        {
+          "firstStepSeconds": 57.091529042,
+          "label": "A",
+          "laterStepMeanSeconds": 5.023062559428572,
+          "ledger": [
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perImage: peak 10912 held 10516",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perPrompt: peak 7407 held 7403",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perStep: peak 30184 held 29365"
+          ],
+          "metalAllocatedAfter": 49678336000,
+          "metrics": {
+            "conditioningRows": 27,
+            "conditioningSeconds": 6.535634792,
+            "decodeSeconds": 1.787027917,
+            "denoiserPreparationSeconds": 19.903551708,
+            "imageReviewSeconds": 1.9625e-05,
+            "imageTokens": 4096,
+            "loadedRoles": [
+              "denoiser0",
+              "denoiser1",
+              "denoiser2",
+              "denoiser3",
+              "textEncoder",
+              "vaeDecoder"
+            ],
+            "peakAllocatedBytes": 49678860288,
+            "promptReviewSeconds": 1.1416e-05,
+            "samplingSeconds": 92.25296695799997,
+            "stepSeconds": [
+              57.091529042,
+              6.417464041,
+              5.3699325,
+              4.832965209,
+              4.708379125,
+              4.627040291,
+              4.722505667,
+              4.483151083
+            ],
+            "totalSeconds": 120.481178625,
+            "waitSeconds": 0.000362167
+          },
+          "pixelsSHA256": "0027410c0db1538ad98e088a91e2386ac93dd2eff5ab7b06fa1dc4bce545e561",
+          "prompt": "A",
+          "residentBytesAfter": 49582718064,
+          "rows": 27
+        }
+      ],
+      "seed": 18,
+      "side": 1024,
+      "steps": 8
+    },
+    "pixelsIdentical": true,
+    "retainedMetalSavingBytes": 503316480,
+    "sampledPeakSavingBytes": 963330048,
+    "notes": [
+      "Before and after used separate debug builds of the same checkout, before and after the buffer lifetime changes.",
+      "Each report is one fresh-process render. Compiler cache warmth and other machine activity differ; timings are not a speed comparison.",
+      "Sampled peak uses the pipeline probe (max of process physical footprint and Metal allocations), not a continuously sampled high-water mark."
+    ],
+    "baseCommit": "056b441589c2394b9003c106400df34d83942e7a",
+    "afterSourceSHA256": "830ff90b3cbdc636c6d1cb72bdb7c88872066d9d8c698646eec9ad88be68cf2d"
+  },
+  "vaeFloat16Experiment": {
+    "status": "Not adopted: image checks passed at 512 and 1024, but retained Metal savings were below 1 MiB at both sizes.",
+    "notes": [
+      "Isolated VAE runs used the reference final latents, not a full diffusion loop.",
+      "The experimental graph casts convolution inputs, weights and biases to FP16, and stores the decoder norms in FP16; upstream RMS normalization still accumulates in FP32.",
+      "The experimental decoder asset remains in /tmp; existing bundles and exporter precision are unchanged.",
+      "Metal figures are allocations retained after three decoder calls, not continuously sampled peaks."
+    ],
+    "results512": {
+      "float32": {
+        "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+        "metalBefore": 65536,
+        "side": 512,
+        "metalAfterLoad": 458752,
+        "seconds": [
+          0.21128800010774285,
+          0.10922995791770518,
+          0.10899691702798009
+        ],
+        "metalAfterRun": 2725920768,
+        "maxRSS": 390430720,
+        "finite": true,
+        "psnrDB": 74.43846094356788,
+        "ssim": 0.9999939289749703
+      },
+      "float16": {
+        "asset": "/tmp/krea2-vae-half.aimodel",
+        "metalBefore": 65536,
+        "side": 512,
+        "metalAfterLoad": 458752,
+        "seconds": [
+          1.442311167018488,
+          0.07790537492837757,
+          0.07838270801585168
+        ],
+        "metalAfterRun": 2725068800,
+        "maxRSS": 380223488,
+        "finite": true,
+        "psnrDB": 68.29348885835218,
+        "ssim": 0.9999723808891421
+      },
+      "retainedMetalSavingBytes": 851968
+    },
+    "results1024": {
+      "float32": {
+        "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+        "metalBefore": 65536,
+        "side": 1024,
+        "metalAfterLoad": 458752,
+        "seconds": [
+          0.6562579580349848,
+          0.46238720801193267,
+          0.4611715000355616
+        ],
+        "metalAfterRun": 12339281920,
+        "maxRSS": 463536128,
+        "finite": true,
+        "psnrDB": 71.49629467485671,
+        "ssim": 0.9999901512923115
+      },
+      "float16": {
+        "asset": "/tmp/krea2-vae-half.aimodel",
+        "metalBefore": 65536,
+        "side": 1024,
+        "metalAfterLoad": 458752,
+        "seconds": [
+          0.730607624980621,
+          0.33148479100782424,
+          0.3458427080186084
+        ],
+        "metalAfterRun": 12338561024,
+        "maxRSS": 434831360,
+        "finite": true,
+        "psnrDB": 65.43618954890744,
+        "ssim": 0.9999586459899513
+      },
+      "retainedMetalSavingBytes": 720896
+    }
+  }
+}

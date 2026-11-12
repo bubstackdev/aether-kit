@@ -6024,6 +6024,45 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC16setDecoderTiling8tileSize7overlapySiSg_SitYaKF",
+      "moduleName": "AetherImage",
+      "name": "setDecoderTiling",
+      "printedName": "setDecoderTiling(tileSize:overlap:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC16setDecoderTiling8tileSize7overlapySiSg_SitYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Bool",
         "printedName": "Swift.Bool",
         "usr": "s:Sb"

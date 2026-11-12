@@ -453,6 +453,19 @@ Krea's recipe and the content filter its license requires:
   1.4 GiB (image); released per phase that plans to about 34 GiB, above `MemoryBudget.platformDefault`'s half of a
   64 GB Mac, so image pipelines default to `MemoryBudget.imageGeneration` (three quarters of RAM on macOS, about Metal's
   recommended working set). About 70 s cold (loading included) and 6–7 s warm.
+- **Optional tiled VAE decode:** `try await pipeline.setDecoderTiling(tileSize: 512, overlap: 256)` uses overlapping
+  tiles with cosine weights and normalized accumulation. Tile sizes and overlap are output pixels, multiples of 16;
+  the tile size is at least 32 and overlap is smaller. Edge tiles shift back to keep one decoder shape, and one
+  input/output buffer pair is reused throughout decode. Canvases that fit in one tile use a full decode. Passing
+  `tileSize: nil` restores full decoding. Changing the setting waits for the pipeline's turn and releases its graphs
+  to discard earlier decoder specializations; tile policies have separate admission profiles. Tiling approximates
+  global attention and changes pixels slightly. At 1024² on the harbor reference, isolated decoder Metal allocations
+  fell from 11.49 to 2.54 GiB with SSIM 0.995 / PSNR 44 dB against the full decode; decoding took about 1.4 s instead
+  of 0.5 s in the Python benchmark. `Forge/krea2/bench_krea2_vae_tiles.py` reproduces the comparison under
+  `scripts/gpu-lease`; `Forge/krea2/vae-tiling-report.json` records the measurements.
+  A fresh-process native comparison on the masked realism export (1024², 8 steps, mug prompt) sampled a whole-render
+  peak of 46.36 GiB with full decode versus 37.41 GiB with tiles; the tiled image reached SSIM 0.99992 / PSNR 66 dB
+  against full decode. Native debug decode time increased from 1.08 to 2.79 s.
 
 ### 6.6 Device chains, weight banks and shape profiles (G4 step 1)
 
