@@ -614,6 +614,17 @@ public final class GraphResidency {
         }
     }
 
+    /// Ends the open phase unrecorded and keeps every graph (a cancelled generation: a phase cut short measures
+    /// nothing). Returns whether every loaded graph has been measured, so its held bytes are known: false when the
+    /// open phase loaded one, or when graphs are released per phase (the open phase's would outlive it); the caller
+    /// then releases them instead. With no phase open, true.
+    package func abandonOpenPhase() -> Bool {
+        guard let current = open else { return mode == .allResident }
+        current.meter.stop()
+        open = nil
+        return mode == .allResident && !loadedInPhase
+    }
+
     /// Releases every graph (the driver unloads). An open phase is discarded unrecorded. What the graphs held goes in
     /// the release log: all resident, every phase's held bytes; per phase, the open phase's growth.
     public func releaseAll() {

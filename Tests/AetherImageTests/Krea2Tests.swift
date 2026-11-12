@@ -388,7 +388,8 @@ struct Krea2Tests {
     }
 
     /// Third review, P2-9: a cancellation that lands during the decoder's call (the last one) used to be ignored and
-    /// the image returned; now the request fails with `CancellationError` and the residency is released.
+    /// the image returned; now the request fails with `CancellationError`. Every graph had been measured by then (the
+    /// decoder's phase ended), so with the default retention they stay resident for the next request.
     @Test func cancellationDuringTheLastCallIsNotASuccess() async throws {
         let (pipeline, _) = try Self.pipeline(calls: Calls(), wrap: { role, graph in
             role == "vaeDecoder"
@@ -398,7 +399,7 @@ struct Krea2Tests {
         await #expect(throws: CancellationError.self) {
             try await pipeline.generate(.init(prompt: "a cat", steps: 1, width: 32, height: 32))
         }
-        #expect(await pipeline.residentRoles.isEmpty)
+        #expect(await pipeline.residentRoles == Krea2WarmSessionTests.roles)
     }
 
     @Test func refusalsComeBeforeAnyWork() async throws {

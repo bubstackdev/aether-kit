@@ -26,9 +26,11 @@ public struct MiniMaxH3Model: Sendable {
     public let manifest: Manifest
     public let device: Device
     public var options: VideoPipelineOptions
+    /// How the pipeline admits a profile it has no measured envelope for (default: it refuses it).
+    public var admissionPolicy: VideoAdmissionPolicy = .measuredOnly
 
     public func pipeline() async throws -> MiniMaxH3Pipeline {
-        try await MiniMaxH3Pipeline(bundle: bundle, manifest: manifest, device: device, options: options)
+        try await MiniMaxH3Pipeline(bundle: bundle, manifest: manifest, device: device, options: options, admissionPolicy: admissionPolicy)
     }
 }
 
@@ -91,10 +93,112 @@ public struct GeneratedVideo: Sendable {
     public static let framesPerSecond = 24
     public let width: Int
     public let height: Int
-    /// Each frame `width · height · 3` bytes, row-major RGB.
+    /// Each frame `width · height · 3` bytes, row-major RGB. Empty when the frames went to a sink
+    /// (``MiniMaxH3Pipeline/generate(_:onProgress:frames:)``); ``frameCount`` counts them either way.
     public let frames: [[UInt8]]
     public let audio: GeneratedAudio?
-    public var duration: Duration { .seconds(Double(frames.count) / Double(Self.framesPerSecond)) }
+    /// The frames decoded: `frames.count`, or the frames delivered to a sink.
+    public let frameCount: Int
+    /// The seed the clip was generated from (``VideoRequest/seed``): the same request with it gives the same clip.
+    public let seed: UInt64
+    public var duration: Duration { .seconds(Double(frameCount) / Double(Self.framesPerSecond)) }
+
+    init(width: Int, height: Int, frames: [[UInt8]], frameCount: Int? = nil, audio: GeneratedAudio?, seed: UInt64) {
+        self.width = width
+        self.height = height
+        self.frames = frames
+        self.frameCount = frameCount ?? frames.count
+        self.audio = audio
+        self.seed = seed
+    }
+}
+
+/// One decoded frame, delivered in order while a generation decodes (``MiniMaxH3Pipeline/generate(_:onProgress:frames:)``).
+public struct VideoFrame: Sendable, Hashable {
+    /// The frame's position in the clip, from 0.
+    public let index: Int
+    public let width: Int
+    public let height: Int
+    /// `width · height · 3` bytes, row-major interleaved RGB.
+    public let rgb: [UInt8]
+    /// The frame's start time at ``GeneratedVideo/framesPerSecond``.
+    public var time: Duration { .seconds(Double(index) / Double(GeneratedVideo.framesPerSecond)) }
+}
+
+/// The conditioning a clip leaves for its prompt (``MiniMaxH3Pipeline/clipLimits(profile:keyframeCount:)``): the export's
+/// bounds (`h3.limits`) and what the profile and keyframes take of them, in tokens of the bundle's tokenizer.
+public struct VideoClipLimits: Sendable, Hashable {
+    /// The profile's key (`960x544x124`).
+    public let profile: String
+    /// The keyframes the clip is anchored to (0, 1 or 2).
+    public let keyframeCount: Int
+    /// The conditioner's rows the export takes (`h3.limits.textTokens`): the prompt's tokens and, with keyframes, their
+    /// presentation.
+    public let presentationTokenRange: ClosedRange<Int>
+    /// The packed rows of one step the export takes (`h3.limits.rows`).
+    public let packedRowRange: ClosedRange<Int>
+    /// The conditioner's rows the keyframes' presentation (labels and vision blocks) adds before the prompt; 0 without.
+    public let keyframePresentationTokens: Int
+    /// The packed rows besides the presentation: the keyframe conditions, the audio and the video rows.
+    public let clipRows: Int
+
+    /// The longest prompt the clip takes, in tokens: the smaller of what the presentation bound and the packed-row bound
+    /// leave once the keyframes and the clip's rows are counted. Below ``minimumPromptTokens`` (or 1), no prompt fits.
+    public var maximumPromptTokens: Int {
+        min(presentationTokenRange.upperBound, packedRowRange.upperBound - clipRows) - keyframePresentationTokens
+    }
+
+    /// The shortest prompt the clip takes, in tokens.
+    public var minimumPromptTokens: Int {
+        max(0, max(presentationTokenRange.lowerBound, packedRowRange.lowerBound - clipRows) - keyframePresentationTokens)
+    }
+
+    /// Whether some non-empty prompt fits: false when the clip is too large at this profile with these keyframes.
+    public var fitsSomePrompt: Bool { maximumPromptTokens >= max(1, minimumPromptTokens) }
+
+    /// The conditioner's rows a prompt of `promptTokens` tokens gives.
+    public func presentationTokens(promptTokens: Int) -> Int { keyframePresentationTokens + promptTokens }
+
+    /// The packed rows a prompt of `promptTokens` tokens gives.
+    public func packedRows(promptTokens: Int) -> Int { presentationTokens(promptTokens: promptTokens) + clipRows }
+
+    /// Why a prompt of `promptTokens` tokens is refused for its length, if it is: a clip no prompt fits is too large at
+    /// this size whatever the prompt; otherwise a prompt past ``maximumPromptTokens`` is too long. (A prompt below
+    /// ``minimumPromptTokens`` is refused as invalid, `GenerationFailure.invalidParameters`.) Only
+    /// ``VideoRefusal/tooLargeAtSize(minimumPromptTokens:maximumPromptTokens:)`` and
+    /// ``VideoRefusal/promptTooLong(promptTokens:maximumPromptTokens:)``.
+    public func refusal(promptTokens: Int) -> VideoRefusal? {
+        if !fitsSomePrompt {
+            return .tooLargeAtSize(minimumPromptTokens: max(1, minimumPromptTokens), maximumPromptTokens: max(0, maximumPromptTokens))
+        }
+        if promptTokens > maximumPromptTokens {
+            return .promptTooLong(promptTokens: promptTokens, maximumPromptTokens: maximumPromptTokens)
+        }
+        return nil
+    }
+}
+
+/// A request resolved as ``MiniMaxH3Pipeline/generate(_:onProgress:)`` resolves it, on the CPU with no graph loaded
+/// (``MiniMaxH3Pipeline/preflight(_:)``): a request preflight accepts is one generation admits (until it runs).
+public struct VideoPreflight: Sendable, Hashable {
+    /// The profile's key and the recipe's name (`turbo8`), the request's or the defaults.
+    public let profile: String
+    public let recipe: String
+    public let seed: UInt64
+    /// The prompt's tokens.
+    public let promptTokens: Int
+    /// The conditioner's rows: the prompt's tokens, after the keyframes' presentation when there are keyframes.
+    public let presentationTokens: Int
+    /// The packed rows of one step: the presentation, the keyframe conditions, the audio and the video rows.
+    public let packedRows: Int
+    /// The clip's limits.
+    public let limits: VideoClipLimits
+    /// The ledger key the generation is admitted under (`<profile>`, `<profile>/fl2va<n>`).
+    public let admissionKey: VideoAdmissionKey
+    /// The measured envelope it is admitted under; nil under ``VideoAdmissionPolicy/measuring`` without one.
+    public let envelope: VideoMemoryEnvelope?
+    /// The frames the clip decodes (``GeneratedVideo/frameCount`` once it has).
+    public let frameCount: Int
 }
 
 /// Progress through a generation.
@@ -136,15 +240,27 @@ public actor MiniMaxH3Pipeline {
     private let admission: ResidentAdmission
     /// One request at a time, in arrival order (after the GPU grant).
     private let gate = SerialGate()
+    /// How generations are admitted.
+    public nonisolated let admissionPolicy: VideoAdmissionPolicy
+    /// The measured envelopes that hold for this export and device, by admission key (``measuredEnvelopes(manifest:device:)``).
+    public nonisolated let envelopes: [VideoAdmissionKey: VideoMemoryEnvelope]
 
     public init(bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options()) async throws {
+        try await self.init(bundle: bundle, manifest: manifest, device: device, options: options, admissionPolicy: .measuredOnly)
+    }
+
+    /// A pipeline admitting generations under `admissionPolicy`.
+    public init(
+        bundle: InstalledBundle, manifest: Manifest, device: Device, options: Options = Options(),
+        admissionPolicy: VideoAdmissionPolicy
+    ) async throws {
         try Self.requireMacOS(manifest, device)
         let tokenizer = try await TokenizerAdapter(bundle: bundle, manifest: manifest, forGeneration: false)
         let loader = GraphResidency.bundleLoader(
             bundle: bundle, manifest: manifest, device: device, cachePolicy: options.cachePolicy, cache: options.cache)
         let contract = DriverContract.minimaxH3
         try self.init(
-            manifest: manifest, device: device, bundle: bundle, options: options,
+            manifest: manifest, device: device, bundle: bundle, options: options, admissionPolicy: admissionPolicy,
             tokenize: { tokenizer.encode($0, addSpecialTokens: false) },
             load: { role throws(AetherError) in
                 let graph = try await loader(role)
@@ -159,6 +275,7 @@ public actor MiniMaxH3Pipeline {
 
     init(
         manifest: Manifest, device: Device, bundle: InstalledBundle?, options: Options,
+        admissionPolicy: VideoAdmissionPolicy = .measuredOnly,
         tokenize: @escaping @Sendable (String) -> [Int32], load: @escaping GraphResidency.Loader
     ) throws(AetherError) {
         try Self.requireMacOS(manifest, device)
@@ -176,13 +293,21 @@ public actor MiniMaxH3Pipeline {
         self.device = device
         self.bundle = bundle
         self.options = options
+        self.admissionPolicy = admissionPolicy
+        envelopes = Self.measuredEnvelopes(manifest: manifest, device: device)
         self.tokenize = tokenize
         self.load = load
         let fileBytes = { [manifest, device] (role: String) in Self.fileBytes(role, bundle: bundle, manifest: manifest, device: device) }
         admission = try options.admission(
             manifest: manifest, device: device, defaultMemory: .videoGeneration, bundle: bundle, load: load,
             fileBytes: fileBytes)
-        Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
+        // The gate measures from nothing: a seeded entry would be kept as the larger value of what it measures.
+        if admissionPolicy == .measuredOnly {
+            // The manifest's envelopes first: they win over the qualified footprints for a key both measured (the
+            // G4 export keeps its digest when envelopes are recorded into it).
+            Self.seed(options.ledger, model: admission.modelKey, envelopes: envelopes)
+            Self.seedQualified(options.ledger, model: admission.modelKey, manifest: manifest, device: device)
+        }
     }
 
     /// H3 is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).
@@ -193,25 +318,49 @@ public actor MiniMaxH3Pipeline {
     }
 
     /// Generates one clip. `onProgress` is called as layers, steps and windows finish.
+    ///
+    /// A prompt too long for the clip, or a clip no prompt fits, is refused before anything waits or loads with a
+    /// ``VideoRefusal``'s error (``preflight(_:)`` refuses the same).
     public func generate(
         _ request: VideoRequest, onProgress: (@Sendable (VideoProgress) -> Void)? = nil
     ) async throws -> GeneratedVideo {
-        try await generate(request, onProgress: onProgress, stepLimit: nil, trace: nil)
+        try await generate(request, onProgress: onProgress, frames: nil, stepLimit: nil, trace: nil)
+    }
+
+    /// Generates one clip, delivering each decoded frame to `frames` in order as its decoder window is stitched, and
+    /// keeping none: the returned clip's ``GeneratedVideo/frames`` is empty (its ``GeneratedVideo/frameCount`` counts
+    /// what was delivered) and its audio is decoded after the last frame. The pipeline holds at most one decoder
+    /// window's frames (17) rather than the clip's. Each call is awaited before decoding goes on; one that throws stops
+    /// the generation and releases its graphs, and the error is rethrown. A generation that fails after some frames
+    /// were delivered still throws.
+    public func generate(
+        _ request: VideoRequest, onProgress: (@Sendable (VideoProgress) -> Void)? = nil,
+        frames: @escaping @Sendable (VideoFrame) async throws -> Void
+    ) async throws -> GeneratedVideo {
+        try await generate(request, onProgress: onProgress, frames: frames, stepLimit: nil, trace: nil)
     }
 
     /// The generation, optionally stopped after `stepLimit` steps (no decode) and traced (the gates).
     func generate(
         _ request: VideoRequest, onProgress: (@Sendable (VideoProgress) -> Void)?, stepLimit: Int?, trace: Trace?
     ) async throws -> GeneratedVideo {
+        try await generate(request, onProgress: onProgress, frames: nil, stepLimit: stepLimit, trace: trace)
+    }
+
+    func generate(
+        _ request: VideoRequest, onProgress: (@Sendable (VideoProgress) -> Void)?,
+        frames sink: (@Sendable (VideoFrame) async throws -> Void)?, stepLimit: Int?, trace: Trace?
+    ) async throws -> GeneratedVideo {
         var plan = try plan(request)
+        try admit(plan)
         plan.stepLimit = stepLimit
         // The GPU first, so a request's priority also orders it among this pipeline's own requests.
         let grant = try await options.gpu.admit(job: request.job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: plan.admissionKey)
+            let residency = try admission.begin(profile: plan.admissionKey.description)
             do {
-                let video = try await render(plan, residency: residency, onProgress: onProgress, trace: trace)
+                let video = try await render(plan, residency: residency, onProgress: onProgress, frames: sink, trace: trace)
                 admission.finish()
                 return video
             } catch {
@@ -239,6 +388,8 @@ public actor MiniMaxH3Pipeline {
         var profile: Manifest.H3.Profile
         var geometry: H3Geometry
         var recipe: Manifest.H3.Recipe
+        /// The recipe's name (`turbo8`), without its task.
+        var recipeName: String = ""
         /// The recipe's largest step cardinality: the modulation is padded to it.
         var cardinality: Int
         var seed: UInt64
@@ -247,6 +398,8 @@ public actor MiniMaxH3Pipeline {
         var keyframes: [VideoKeyframe] = []
         var anchors: [H3Anchor] = []
         var presentation: H3Presentation?
+        /// The clip's limits (the prompt is inside them).
+        var limits: VideoClipLimits
         /// Gate only: stop after this many steps.
         var stepLimit: Int?
 
@@ -254,18 +407,76 @@ public actor MiniMaxH3Pipeline {
         var conditioningIDs: [Int32] { presentation?.ids ?? ids }
         var textTags: [Int32] { presentation?.tags ?? [Int32](repeating: H3KeyframeRules.textTag, count: ids.count) }
         /// The ledger key the generation is admitted under: a keyframed clip has its own footprints.
-        var admissionKey: String { anchors.isEmpty ? profile.key : "\(profile.key)/fl2va\(anchors.count)" }
+        var admissionKey: VideoAdmissionKey { VideoAdmissionKey(profile: profile.key, keyframeCount: anchors.count) }
+    }
+
+    /// Resolves `request` as ``generate(_:onProgress:)`` does, on the CPU with no graph loaded and nothing waited for:
+    /// its profile, recipe, keyframes, the prompt's tokens and the clip's limits, then admission (the profile's recipes
+    /// and shapes and, under ``VideoAdmissionPolicy/measuredOnly``, a measured envelope). It throws what generation
+    /// would throw before waiting: a prompt too long for the clip, a clip no prompt fits, an unmeasured key, a recipe
+    /// the profile doesn't offer or too little physical memory, each as a ``VideoRefusal``'s error.
+    public nonisolated func preflight(_ request: VideoRequest) throws(AetherError) -> VideoPreflight {
+        let plan = try plan(request)
+        try admit(plan)
+        let limits = plan.limits
+        return VideoPreflight(
+            profile: plan.profile.key, recipe: plan.recipeName, seed: plan.seed, promptTokens: plan.ids.count,
+            presentationTokens: plan.conditioningIDs.count, packedRows: limits.packedRows(promptTokens: plan.ids.count),
+            limits: limits, admissionKey: plan.admissionKey, envelope: envelopes[plan.admissionKey], frameCount: plan.profile.frames)
+    }
+
+    /// The limits a clip at `profile` (absent, the manifest's first) anchored to `keyframeCount` keyframes (0, 1 or 2)
+    /// leaves its prompt, before there is a prompt or keyframe pixels: the keyframes are counted at the profile's
+    /// canvas, as they must be. On the CPU, nothing loaded.
+    public nonisolated func clipLimits(profile key: String? = nil, keyframeCount keyframes: Int = 0) throws(AetherError) -> VideoClipLimits {
+        let profile = try resolveProfile(key)
+        guard (0...2).contains(keyframes) else {
+            throw .generation(.invalidParameters("\(keyframes) keyframes; a clip is anchored to 0, 1 or 2"))
+        }
+        var presentation = 0
+        if keyframes > 0 {
+            let rules = try keyframeSupport(profile)
+            let canvases = Array(repeating: (width: profile.width, height: profile.height), count: keyframes)
+            presentation = try H3Presentation(prompt: [], canvases: canvases, rules: rules,
+                                              tokenize: { [tokenize] label throws(AetherError) in tokenize(label) }).count
+        }
+        return limits(profile, keyframes: keyframes, presentation: presentation)
+    }
+
+    nonisolated func resolveProfile(_ key: String?) throws(AetherError) -> Manifest.H3.Profile {
+        guard let profile = key.map({ h3.profile($0) }) ?? h3.profiles.first else {
+            throw .generation(.invalidParameters(
+                "no qualified profile '\(key ?? "")'; the bundle has \(h3.profiles.map(\.key).joined(separator: ", "))"))
+        }
+        return profile
+    }
+
+    /// The FL2VA rules, when the export has the profile's keyframe encoder and vision tower.
+    nonisolated func keyframeSupport(_ profile: Manifest.H3.Profile) throws(AetherError) -> H3KeyframeRules {
+        let canvas = "\(profile.width)x\(profile.height)"
+        guard let rules = keyframeRules, let encoder = profile.keyframeEncoder, manifest.graphs[encoder] != nil,
+              manifest.graphs["videoEncoderTile"] != nil, manifest.graphs[Self.visionRole(canvas)] != nil else {
+            throw .unsupportedOperation("this H3 export has no keyframe encoder and vision tower for \(canvas)")
+        }
+        return rules
+    }
+
+    nonisolated func limits(_ profile: Manifest.H3.Profile, keyframes: Int, presentation: Int) -> VideoClipLimits {
+        let g = H3Geometry(profile)
+        return VideoClipLimits(
+            profile: profile.key, keyframeCount: keyframes,
+            presentationTokenRange: h3.limits.textTokens[0]...h3.limits.textTokens[1],
+            packedRowRange: h3.limits.rows[0]...h3.limits.rows[1], keyframePresentationTokens: presentation,
+            clipRows: keyframes * g.rowsPerLatentFrame + g.audioRows + g.videoRows)
     }
 
     /// Validates the request before waiting for a turn: the profile, recipe, keyframes and prompt length, and the
     /// packed rows.
-    func plan(_ request: VideoRequest) throws(AetherError) -> Plan {
-        guard let profile = request.profile.map({ h3.profile($0) }) ?? h3.profiles.first else {
-            throw .generation(.invalidParameters(
-                "no qualified profile '\(request.profile ?? "")'; the bundle has \(h3.profiles.map(\.key).joined(separator: ", "))"))
-        }
+    nonisolated func plan(_ request: VideoRequest) throws(AetherError) -> Plan {
+        let profile = try resolveProfile(request.profile)
         let keyframes = request.keyframes?.frames ?? []
-        let name = (request.recipe ?? h3.defaultRecipe) + (keyframes.isEmpty ? "/t2va" : "/fl2va")
+        let recipeName = request.recipe ?? h3.defaultRecipe
+        let name = recipeName + (keyframes.isEmpty ? "/t2va" : "/fl2va")
         guard let recipe = h3.recipes[name] else {
             throw .generation(.invalidParameters("no recipe '\(name)'; the bundle has \(h3.recipes.keys.sorted().joined(separator: ", "))"))
         }
@@ -274,10 +485,7 @@ public actor MiniMaxH3Pipeline {
         var presentation: H3Presentation?
         if !keyframes.isEmpty {
             let canvas = "\(profile.width)x\(profile.height)"
-            guard let rules = keyframeRules, let encoder = profile.keyframeEncoder, manifest.graphs[encoder] != nil,
-                  manifest.graphs["videoEncoderTile"] != nil, manifest.graphs[Self.visionRole(canvas)] != nil else {
-                throw .unsupportedOperation("this H3 export has no keyframe encoder and vision tower for \(canvas)")
-            }
+            let rules = try keyframeSupport(profile)
             for frame in keyframes where (frame.width, frame.height) != (profile.width, profile.height) {
                 throw .generation(.invalidParameters("a \(frame.width)x\(frame.height) keyframe for the \(canvas) canvas; keyframes are not resized"))
             }
@@ -285,19 +493,77 @@ public actor MiniMaxH3Pipeline {
                                               tokenize: { [tokenize] label throws(AetherError) in tokenize(label) })
         }
         let textTokens = presentation?.count ?? ids.count
-        let limits = h3.limits.textTokens[0]...h3.limits.textTokens[1]
-        guard limits.contains(textTokens) else {
+        // The keyframes' presentation is the same whatever the prompt: each piece is tokenized on its own.
+        let limits = limits(profile, keyframes: keyframes.count, presentation: textTokens - ids.count)
+        if let refusal = limits.refusal(promptTokens: ids.count) { throw refusal.error }
+        guard ids.count >= limits.minimumPromptTokens else {
             let presented = textTokens == ids.count ? "" : " (\(textTokens) with the keyframes' presentation)"
-            throw .generation(.invalidParameters("the prompt has \(ids.count) tokens\(presented); H3 takes \(limits)"))
-        }
-        let rows = textTokens + keyframes.count * geometry.rowsPerLatentFrame + geometry.audioRows + geometry.videoRows
-        guard (h3.limits.rows[0]...h3.limits.rows[1]).contains(rows) else {
-            throw .generation(.invalidParameters("\(rows) packed rows are outside \(h3.limits.rows)"))
+            throw .generation(.invalidParameters(
+                "the prompt has \(ids.count) tokens\(presented); this clip takes \(limits.minimumPromptTokens)...\(limits.maximumPromptTokens)"))
         }
         let cardinality = recipe.steps.map(\.timesteps.count).max() ?? 1
-        return Plan(ids: ids, profile: profile, geometry: geometry, recipe: recipe, cardinality: cardinality,
+        return Plan(ids: ids, profile: profile, geometry: geometry, recipe: recipe, recipeName: recipeName, cardinality: cardinality,
                     seed: request.seed, audio: request.audio, keyframes: keyframes,
-                    anchors: request.keyframes?.anchors ?? [], presentation: presentation, stepLimit: nil)
+                    anchors: request.keyframes?.anchors ?? [], presentation: presentation, limits: limits, stepLimit: nil)
+    }
+
+    /// Admission before anything waits or loads: the profile offers the recipe, the recipe's modulation is inside the
+    /// profile's shapes, and (``VideoAdmissionPolicy/measuredOnly``) a measured envelope covers the admission key and
+    /// recipe, on a device with the profile's minimum physical memory.
+    nonisolated func admit(_ plan: Plan) throws(AetherError) {
+        let p = plan.profile, key = plan.admissionKey
+        if !Self.runs(p, recipe: plan.recipeName, h3: h3, keyframes: !plan.keyframes.isEmpty) {
+            throw VideoRefusal.recipeNotOffered(
+                profile: p.key, recipe: plan.recipeName, offered: Self.offeredRecipes(p, h3: h3, keyframes: !plan.keyframes.isEmpty)).error
+        }
+        guard admissionPolicy == .measuredOnly else { return }
+        guard let envelope = envelopes[key], envelope.recipes.contains(plan.recipeName) else {
+            throw VideoRefusal.unmeasured(admissionKey: key, recipe: plan.recipeName).error
+        }
+        if UInt64(clamping: envelope.minimumPhysicalMemoryBytes) > device.physicalMemory {
+            throw VideoRefusal.insufficientPhysicalMemory(
+                admissionKey: key, neededBytes: envelope.minimumPhysicalMemoryBytes,
+                availableBytes: Int64(clamping: device.physicalMemory)).error
+        }
+    }
+
+    /// Whether `profile` runs `recipe` for its task: the profile's `recipes` (absent, every recipe) name it, the export
+    /// has it for the task, and its modulation tables are inside the profile's body shapes.
+    static func runs(_ profile: Manifest.H3.Profile, recipe name: String, h3: Manifest.H3, keyframes: Bool) -> Bool {
+        if let recipes = profile.recipes, !recipes.contains(name) { return false }
+        guard let recipe = h3.recipes[name + (keyframes ? "/fl2va" : "/t2va")] else { return false }
+        let cardinality = recipe.steps.map(\.timesteps.count).max() ?? 1
+        if let tables = profile.shapes?["body"]?["table"], !tables.contains([6, 3 * cardinality, 5376]) { return false }
+        return true
+    }
+
+    /// The recipes `profile` runs for its task (``runs(_:recipe:h3:keyframes:)``), sorted.
+    static func offeredRecipes(_ profile: Manifest.H3.Profile, h3: Manifest.H3, keyframes: Bool) -> [String] {
+        let task = keyframes ? "/fl2va" : "/t2va"
+        let names = h3.recipes.keys.filter { $0.hasSuffix(task) }.map { String($0.dropLast(task.count)) }
+        return Set(names).filter { runs(profile, recipe: $0, h3: h3, keyframes: keyframes) }.sorted()
+    }
+
+    /// The envelope a request would be admitted under (its profile, recipe and keyframe count resolved as
+    /// ``generate(_:onProgress:)`` resolves them), or nil when it has none: under ``VideoAdmissionPolicy/measuredOnly``
+    /// such a request is refused. Its recipe must be one the envelope measured.
+    public nonisolated func envelope(for request: VideoRequest) -> VideoMemoryEnvelope? {
+        guard let profile = request.profile.map({ h3.profile($0) }) ?? h3.profiles.first else { return nil }
+        let count = request.keyframes?.frames.count ?? 0
+        guard let envelope = envelopes[VideoAdmissionKey(profile: profile.key, keyframeCount: count)],
+              envelope.recipes.contains(request.recipe ?? h3.defaultRecipe) else { return nil }
+        return envelope
+    }
+
+    /// The body chain's ``ShapeProfile``: the profile's manifest shapes for the body (its modulation tables), else the
+    /// render's own, and the render's packed rows. `inputs` maps the contract's input names to the graph's tensors.
+    static func bodyShapes(_ profile: Manifest.H3.Profile, rows: Int, cardinality: Int, inputs: [String: String]) -> ShapeProfile {
+        var body: [String: Set<[Int]>] = [:]
+        for (input, shapes) in profile.shapes?["body"] ?? ["table": [[6, 3 * cardinality, 5376]]] {
+            if let name = inputs[input] { body[name] = Set(shapes) }
+        }
+        body[inputs["hidden"] ?? "hidden"] = [[1, rows, 5376]]
+        return ShapeProfile(name: profile.key, shapes: ["body": body])
     }
 
     /// The vision tower's role for a canvas (`conditionerVision960x544`).
@@ -332,7 +598,8 @@ public actor MiniMaxH3Pipeline {
     }
 
     func render(
-        _ plan: Plan, residency: GraphResidency, onProgress: (@Sendable (VideoProgress) -> Void)?, trace: Trace?
+        _ plan: Plan, residency: GraphResidency, onProgress: (@Sendable (VideoProgress) -> Void)?,
+        frames sink: (@Sendable (VideoFrame) async throws -> Void)? = nil, trace: Trace?
     ) async throws -> GeneratedVideo {
         let g = plan.geometry
         trace?.ids = plan.ids
@@ -365,17 +632,20 @@ public actor MiniMaxH3Pipeline {
         try await residency.beginPhase(.perImage)
         if let limit = plan.stepLimit, limit < plan.recipe.steps.count {
             residency.endPhase(.perImage)
-            return GeneratedVideo(width: g.width, height: g.height, frames: [], audio: nil)
+            return GeneratedVideo(width: g.width, height: g.height, frames: [], audio: nil, seed: plan.seed)
         }
         let generated = Array(latents.video.dropFirst(plan.anchors.count * g.rowsPerLatentFrame * 96))
-        let frames = try await decodeVideo(generated, geometry: g, residency: residency, host: host, onProgress: onProgress)
+        let decoder = try await residency.graph("videoDecoder")
+        let (frames, frameCount) = try await Self.decodeVideo(
+            generated, geometry: g, decoder: decoder, names: names("videoDecoder"), host: host,
+            sample: { residency.sample() }, onProgress: onProgress, sink: sink)
         let audio = plan.audio ? try await decodeAudio(latents.audio, plan: plan, residency: residency, host: host) : nil
         residency.sample()
         residency.endPhase(.perImage)
         // A cancellation during the last decoder call (the audio decode, or the last video tile): don't report success
         // for a request the caller has given up on; `generate` releases the residency.
         try Task.checkCancellation()
-        return GeneratedVideo(width: g.width, height: g.height, frames: frames, audio: audio)
+        return GeneratedVideo(width: g.width, height: g.height, frames: frames, frameCount: frameCount, audio: audio, seed: plan.seed)
     }
 
     // MARK: Prompt
@@ -536,8 +806,7 @@ public actor MiniMaxH3Pipeline {
         let audioOut = try heads.makeBuffer(for: h.outputs["audio"]!, role: .output, dimensions: [g.audioRows], in: host)
 
         // The body chain on the GPU: rotary tables, tags and one AdaLN table per block, written before each step's run.
-        let profile = ShapeProfile(name: plan.profile.key, shapes: ["body": [
-            b.inputs["hidden"]!: [[1, rows, hidden]], b.inputs["table"]!: [[6, 3 * c, hidden]]]])
+        let profile = Self.bodyShapes(plan.profile, rows: rows, cardinality: c, inputs: b.inputs)
         let chain = try GraphChain(graph: body, link: (b.inputs["hidden"]!, b.outputs["hidden"]!), dimensions: [rows],
                                    arena: metal, profile: profile)
         let banks = try weightBanks("body", graph: body, arena: metal)
@@ -625,12 +894,14 @@ public actor MiniMaxH3Pipeline {
 
     // MARK: Decode
 
-    private func decodeVideo(
-        _ packed: [Float], geometry g: H3Geometry, residency: GraphResidency, host: TensorArena,
-        onProgress: (@Sendable (VideoProgress) -> Void)?
-    ) async throws -> [[UInt8]] {
-        let decoder = try await residency.graph("videoDecoder")
-        let d = names("videoDecoder")
+    /// The video decode: per temporal window each tile through `decoder`, stitched, cross-faded and converted to RGB8.
+    /// With a `sink` each frame goes to it in order as its window finishes and none is kept (the returned frames are
+    /// empty); the count is the frames decoded either way.
+    static func decodeVideo(
+        _ packed: [Float], geometry g: H3Geometry, decoder: any GraphBackend,
+        names d: (inputs: [String: String], outputs: [String: String]), host: TensorArena, sample: () -> Void,
+        onProgress: (@Sendable (VideoProgress) -> Void)?, sink: (@Sendable (VideoFrame) async throws -> Void)?
+    ) async throws -> (frames: [[UInt8]], count: Int) {
         let rows = try decoder.makeBuffer(for: d.inputs["rows"]!, role: .input, dimensions: [], in: host)
         let pixels = try decoder.makeBuffer(for: d.outputs["pixels"]!, role: .output, dimensions: [], in: host)
         guard rows.shape == [7 * 64, 96], pixels.shape == [1, 3, 22, H3Tiling.side, H3Tiling.side] else {
@@ -639,7 +910,19 @@ public actor MiniMaxH3Pipeline {
         }
         let tiling = H3Tiling(width: g.width, height: g.height)
         var temporal = H3TemporalStitcher(width: g.width, height: g.height)
-        var frames: [[UInt8]] = []
+        var frames: [[UInt8]] = [], count = 0
+        func emit(_ batch: [[UInt8]]) async throws {
+            guard let sink else {
+                frames += batch
+                count += batch.count
+                return
+            }
+            for rgb in batch {
+                try Task.checkCancellation()
+                try await sink(VideoFrame(index: count, width: g.width, height: g.height, rgb: rgb))
+                count += 1
+            }
+        }
         for window in 0..<g.videoWindows {
             let windowRows = g.windowRows(packed, index: window)
             var spatial = H3SpatialStitcher(tiling: tiling, width: g.width, height: g.height)
@@ -652,15 +935,15 @@ public actor MiniMaxH3Pipeline {
                 try await decoder.run(&bindings)
                 spatial.push(try pixels.readFloats())
             }
-            residency.sample()
-            frames += H3Pixels.rgb8(temporal.push(spatial.output), width: g.width, height: g.height)
+            sample()
+            try await emit(H3Pixels.rgb8(temporal.push(spatial.output), width: g.width, height: g.height))
             onProgress?(.window(window + 1, of: g.videoWindows))
         }
-        frames += H3Pixels.rgb8(temporal.finish(), width: g.width, height: g.height)
-        guard frames.count == g.frames else {
-            throw AetherError.tensor(name: "video", reason: .unsupported("decoded \(frames.count) frames, not \(g.frames)"))
+        try await emit(H3Pixels.rgb8(temporal.finish(), width: g.width, height: g.height))
+        guard count == g.frames else {
+            throw AetherError.tensor(name: "video", reason: .unsupported("decoded \(count) frames, not \(g.frames)"))
         }
-        return frames
+        return (frames, count)
     }
 
     private func decodeAudio(
@@ -705,6 +988,46 @@ extension MiniMaxH3Pipeline {
     /// export is this one.
     public static let qualifiedExportDigest = "46dc5fb190adb038fd5715559a238f9a32afd685b2793629794c166503d66584"
     public static let qualifiedArchitecture = "h17c"
+
+    /// The envelopes that hold for `manifest` on `device`, by admission key: the manifest's `h3.envelopes` measured on
+    /// this export (``Manifest/contentDigest``, which leaves the envelopes out) and the device's Core AI architecture,
+    /// with their profiles' bars;
+    /// and, for the export and chip ``qualifiedFootprints`` were measured on, those (turbo8, 18 GiB) where the manifest
+    /// has none for the key.
+    public static func measuredEnvelopes(manifest: Manifest, device: Device) -> [VideoAdmissionKey: VideoMemoryEnvelope] {
+        guard device.platform == .macOS, let h3 = manifest.h3 else { return [:] }
+        var out: [VideoAdmissionKey: VideoMemoryEnvelope] = [:]
+        let digest = manifest.contentDigest
+        for e in h3.envelopes ?? [] where e.export == digest && e.architecture == device.architecture {
+            guard let memory = h3.profile(e.profile)?.memory,
+                  let key = VideoAdmissionKey(e.key) else { continue }
+            out[key] = VideoMemoryEnvelope(
+                key: key, recipes: e.recipes,
+                phases: [.perPrompt: PhaseFootprint(peakBytes: e.perPrompt.peakBytes, heldBytes: e.perPrompt.heldBytes),
+                         .perStep: PhaseFootprint(peakBytes: e.perStep.peakBytes, heldBytes: e.perStep.heldBytes),
+                         .perImage: PhaseFootprint(peakBytes: e.perImage.peakBytes, heldBytes: e.perImage.heldBytes)],
+                marginBytes: e.marginBytes, barBytes: memory.barBytes, minimumPhysicalMemoryBytes: memory.minimumPhysicalMemoryBytes)
+        }
+        if device.architecture == qualifiedArchitecture, manifest.contentDigest == qualifiedExportDigest {
+            for (profile, phases) in qualifiedFootprints where h3.profile(profile) != nil {
+                let key = VideoAdmissionKey(profile: profile)
+                guard out[key] == nil else { continue }
+                out[key] = VideoMemoryEnvelope(key: key, recipes: ["turbo8"], phases: phases, marginBytes: 256 << 20,
+                                               barBytes: 18 << 30, minimumPhysicalMemoryBytes: 0)
+            }
+        }
+        return out
+    }
+
+    /// Seeds `ledger` under `model` with each envelope's phases, keyed by its admission key.
+    static func seed(_ ledger: FootprintLedger, model: String, envelopes: [VideoAdmissionKey: VideoMemoryEnvelope]) {
+        for (key, envelope) in envelopes {
+            for (phase, footprint) in envelope.phases {
+                let entry = FootprintLedger.Key(model: model, profile: key.description, phase: phase)
+                if ledger.footprint(entry) == nil { ledger.record(entry, footprint) }
+            }
+        }
+    }
 
     /// Seeds `ledger` under `model`, the pipeline's ledger key (``ResidentAdmission/modelKey``: the manifest id, the
     /// weights' source revision, the export and the device), so the seeded entries are the ones its plans read; only

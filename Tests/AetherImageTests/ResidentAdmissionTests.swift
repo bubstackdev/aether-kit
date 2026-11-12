@@ -85,6 +85,34 @@ struct ResidentAdmissionTests {
         other.release()
     }
 
+    /// A cancelled generation keeps graphs that were all measured, its reservation resized to what they hold (as after
+    /// a success, but recording nothing of the cut-short run); graphs its open phase loaded were never measured, so a
+    /// cancellation then releases everything, as a failure does.
+    @Test func aCancellationKeepsMeasuredGraphsReserved() async throws {
+        let coordinator = try ResourceCoordinator(capacityBytes: 1_000)
+        let admission = try Self.admission(coordinator: coordinator)
+        try await Self.loadAll(try admission.begin(profile: "512x512"))
+        admission.finish()
+        #expect(admission.residentBytes == 120)
+        // The next generation, warm, cancelled during its steps.
+        let warm = try admission.begin(profile: "512x512")
+        try await warm.beginPhase(.perStep)
+        #expect(admission.keepAfterCancellation())
+        #expect(admission.residentRoles == ["denoiser", "textEncoder", "vaeDecoder"])
+        #expect(admission.residentBytes == 120 && coordinator.snapshot.reservedBytes == 120)
+        #expect(try admission.begin(profile: "512x512") === warm, "the next generation reuses the residency")
+        admission.finish()
+
+        let cold = try Self.admission(coordinator: coordinator)
+        let residency = try cold.begin(profile: "512x512")
+        try await residency.beginPhase(.perStep)
+        _ = try await residency.graph("denoiser")
+        #expect(cold.keepAfterCancellation() == false)
+        #expect(cold.residentRoles.isEmpty && cold.residentBytes == 0)
+        #expect(coordinator.snapshot.reservedBytes == 120, "only the first admission's graphs stay reserved")
+        admission.release()
+    }
+
     /// Third review, P1-2: when the generation measures more than it planned and the coordinator can't grow the
     /// reservation, `finish()` kept the graphs on the smaller reservation (held 200, reserved 1, 99 free to others).
     /// Now the graphs and the reservation are released and `finish()` says so.

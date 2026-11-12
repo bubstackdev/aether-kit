@@ -573,8 +573,24 @@ runtime pieces:
   conditioner chain runs over the presentation (labels, vision blocks, prompt) with M-RoPE tables gathered from the
   text ones and runs in segments so DeepStack's bf16 adds happen on the host after layers 0–2. The steps lay out
   `[text | conditions | audio | video]` (MANIFEST.md §5.10), the conditions noised first from Kit's stream and left
-  alone by the scheduler. A keyframed generation is admitted under its own ledger key (`<profile>/fl2va<n>`), so it
-  plans from files until its phases are measured.
+  alone by the scheduler. A keyframed generation is admitted under its own ledger key (`<profile>/fl2va<n>`).
+- **Measured admission (H2):** a generation runs only under a measured envelope for its key and recipe on this export
+  and Core AI architecture (`h3.envelopes`, MANIFEST.md §5.10), on a device with the profile's minimum physical memory;
+  an unmeasured one is refused before anything loads. The ledger is seeded from the envelopes. The memory gate runs
+  with `VideoAdmissionPolicy.measuring` (SPI; every profile, planned from its files, nothing seeded). A refusal is a
+  typed `VideoRefusal`; the envelopes are not part of the export's identity (`contentDigest`).
+- **Preflight and clip limits:** `clipLimits(profile:keyframeCount:)` gives what a clip leaves its prompt
+  (`VideoClipLimits`: the export's bounds, the keyframes' presentation tokens, the clip's packed rows, the longest
+  and shortest prompt), before there is a prompt or keyframe pixels; `preflight(_:)` resolves a whole request as
+  generation does (profile, recipe, the prompt's and presentation's tokens, packed rows, admission key and envelope)
+  and throws what generation throws before waiting. A prompt too long and a clip too large at its size are
+  `VideoRefusal.promptTooLong` and `.tooLargeAtSize`, thrown as `AetherError.capacity` and read back by
+  `VideoRefusal(_:)`, so a host refuses early without redoing the arithmetic or matching text. Both run on the CPU with nothing loaded.
+- **Streaming frames:** `generate(_:onProgress:frames:)` hands each decoded frame (`VideoFrame`) to an async sink in
+  order as its window is stitched and keeps none, so the pipeline holds one window's frames, not the clip's (5 s at
+  960×544 is about 190 MB of RGB8); the returned clip has empty `frames` and its `frameCount`. A sink that throws
+  stops the generation between frames and releases its graphs. `generate(_:onProgress:)` keeps every frame as before.
+- **Seed:** `GeneratedVideo.seed` is the seed the clip came from.
 - macOS only (`unsupportedDevice` on iOS before loading).
 - **Measured (gates, M5 Max, 960×544×124 turbo8, debug build):** the first two steps bit-identical to the graph
   reference; a whole clip and its repeat bit-identical, 425 s each (the debug build's host decode and stitching

@@ -2,6 +2,36 @@
 
 How a release of Aether-Kit is cut. Tagging is the owner's action.
 
+## Pre-tag checklist (0.2.0)
+
+Everything in the 0.1.0 checklist below still applies (its gates, catalog, licenses and docs, with 0.2.0 for 0.1.0).
+On top of it:
+
+**Scope.** Every 0.2.0 workstream is merged and gated: Krea 2 observation, preparation, conditioning reuse,
+residency, references and refine; MiniMax H3 keyframes, every offered profile and bundle status; the Qwen3 decoder-lm
+exporter and the Qwen3-VL driver; content identity and GPU waiters. Nothing in the CHANGELOG's Unreleased section is
+marked in progress.
+
+**The new gates.** Each in a fresh process under `scripts/gpu-lease`, serially, with nothing else heavy running
+(check `df` and `memory_pressure` first), then prune the test runners' buckets (`scripts/coreai-cache prune --bucket
+swiftpm-testing-helper --yes`).
+
+| Suite or tool | File | What it checks | Needs |
+| --- | --- | --- | --- |
+| `Krea 2 gates` on the masked export | `Tests/AetherImageTests/Krea2GateTests.swift` | the fixed-length, masked denoisers from the seed vs CPU Diffusers (SSIM ≥ 0.94), references and refine | `forge-outputs/krea-2-turbo-realism-masked` + references |
+| `Krea 2 text mask qualification` | `Tests/AetherImageTests/Krea2TextMaskQualificationTests.swift` | one fresh process: first render, repeats at several prompt lengths and a four-reference render with nothing reloaded, resident and live bytes under the budget | the masked and exact-length exports |
+| `Bundle status gate` | `Tests/AetherCoreTests/BundleStatusGateTests.swift` | the cheap status of a 94 GB export in well under a second; with `AETHER_GATES_FULL_VERIFY=1`, every byte hashed in bounded memory (no GPU) | a local H3 export |
+| `MiniMaxH3ProfileGateTests` via `scripts/h3-memory-gate` | `Tests/AetherVideoTests/MiniMaxH3ProfileGateTests.swift` | every profile, recipe and task once: phase peaks within the profile's bar; then `Forge/h3/record_envelopes_h3.py` records the envelopes admission uses | an H3 export with every profile's graphs |
+| `Qwen3 decoder-lm export gates` | `Tests/AetherTextTests/DecoderLMExportGateTests.swift` | a Forge `decoder-lm@1` export's greedy replies vs the earlier export's (near-tie rule) | a local Qwen3 export |
+| `DescriberGateTests` | `Tests/AetherTextTests/DescriberGateTests.swift` | the Qwen3-VL driver's greedy output vs the earlier describer on synthetic pictures (near-tie rule) | a local Qwen3-VL export + its reference |
+| `DescriberRetentionGateTests` | `Tests/AetherTextTests/DescriberRetentionGateTests.swift` | 20 mixed requests: the reload budget's bound after every request and at the peak (growth after warm-up recorded; the 1 GiB bar without a budget); decode and prefill times | the same |
+| `check_qwen3vl.py` | `Forge/qwen3vl/check_qwen3vl.py` | every graph vs CPU float32 transformers (`reference_qwen3vl.py`, `--pictures` for pins without photographs) | the export + its reference |
+
+**Device gate.** As for 0.1.0, plus any 0.2.0 driver that ships an iOS variant, recorded in docs/DEVICE.md.
+
+**API.** `scripts/check-api.sh --update` on the release commit; the diff against 0.1.0's baseline holds only additive
+changes, or breaking ones the CHANGELOG lists under "Breaking".
+
 ## Pre-tag checklist (0.1.0)
 
 **Scope.** Every row of INTEGRATION.md's port table is ported and gated, including **MiniMax H3** (its exporter, its

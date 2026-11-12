@@ -210,8 +210,47 @@
       "compute": "gpu",
       "expectFrequentReshapes": false
     },
+    "videoEncoderTail1280x704": {
+      "file": "main:models/video-encoder-tail-1280x704.aimodel",
+      "function": "main",
+      "inputs": {
+        "tiles": "tiles"
+      },
+      "outputs": {
+        "condition": "condition"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
     "videoEncoderTail544x960": {
       "file": "main:models/video-encoder-tail-544x960.aimodel",
+      "function": "main",
+      "inputs": {
+        "tiles": "tiles"
+      },
+      "outputs": {
+        "condition": "condition"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "videoEncoderTail704x1280": {
+      "file": "main:models/video-encoder-tail-704x1280.aimodel",
+      "function": "main",
+      "inputs": {
+        "tiles": "tiles"
+      },
+      "outputs": {
+        "condition": "condition"
+      },
+      "residency": "perPrompt",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
+    },
+    "videoEncoderTail704x704": {
+      "file": "main:models/video-encoder-tail-704x704.aimodel",
       "function": "main",
       "inputs": {
         "tiles": "tiles"
@@ -248,6 +287,19 @@
       "residency": "perImage",
       "compute": "gpu",
       "expectFrequentReshapes": false
+    },
+    "audioDecoder405": {
+      "file": "main:models/audio-decoder-na405.aimodel",
+      "function": "main",
+      "inputs": {
+        "rows": "rows"
+      },
+      "outputs": {
+        "pcm": "pcm"
+      },
+      "residency": "perImage",
+      "compute": "gpu",
+      "expectFrequentReshapes": false
     }
   },
   "tokenizer": {
@@ -274,7 +326,41 @@
         "keyframeRows": 510,
         "audioLatents": 207,
         "audioDecoder": "audioDecoder207",
-        "keyframeEncoder": "videoEncoderTail960x544"
+        "keyframeEncoder": "videoEncoderTail960x544",
+        "recipes": [
+          "turbo8",
+          "turbo4"
+        ],
+        "memory": {
+          "barBytes": 19327352832,
+          "minimumPhysicalMemoryBytes": 0
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder207": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail960x544": {}
+        }
       },
       {
         "key": "544x960x124",
@@ -286,7 +372,268 @@
         "keyframeRows": 510,
         "audioLatents": 207,
         "audioDecoder": "audioDecoder207",
-        "keyframeEncoder": "videoEncoderTail544x960"
+        "keyframeEncoder": "videoEncoderTail544x960",
+        "recipes": [
+          "turbo8",
+          "turbo4"
+        ],
+        "memory": {
+          "barBytes": 19327352832,
+          "minimumPhysicalMemoryBytes": 0
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder207": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail544x960": {}
+        }
+      },
+      {
+        "key": "960x544x243",
+        "width": 960,
+        "height": 544,
+        "frames": 243,
+        "latentFrames": 72,
+        "videoRows": 36720,
+        "keyframeRows": 510,
+        "audioLatents": 405,
+        "audioDecoder": "audioDecoder405",
+        "keyframeEncoder": "videoEncoderTail960x544",
+        "recipes": [
+          "turbo8",
+          "turbo4"
+        ],
+        "memory": {
+          "barBytes": 25769803776,
+          "minimumPhysicalMemoryBytes": 68719476736
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder405": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail960x544": {}
+        }
+      },
+      {
+        "key": "544x960x243",
+        "width": 544,
+        "height": 960,
+        "frames": 243,
+        "latentFrames": 72,
+        "videoRows": 36720,
+        "keyframeRows": 510,
+        "audioLatents": 405,
+        "audioDecoder": "audioDecoder405",
+        "keyframeEncoder": "videoEncoderTail544x960",
+        "recipes": [
+          "turbo8",
+          "turbo4"
+        ],
+        "memory": {
+          "barBytes": 25769803776,
+          "minimumPhysicalMemoryBytes": 68719476736
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder405": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail544x960": {}
+        }
+      },
+      {
+        "key": "704x704x124",
+        "width": 704,
+        "height": 704,
+        "frames": 124,
+        "latentFrames": 37,
+        "videoRows": 17908,
+        "keyframeRows": 484,
+        "audioLatents": 207,
+        "audioDecoder": "audioDecoder207",
+        "keyframeEncoder": "videoEncoderTail704x704",
+        "recipes": [
+          "turbo8"
+        ],
+        "memory": {
+          "barBytes": 19327352832,
+          "minimumPhysicalMemoryBytes": 0
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder207": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail704x704": {}
+        }
+      },
+      {
+        "key": "1280x704x124",
+        "width": 1280,
+        "height": 704,
+        "frames": 124,
+        "latentFrames": 37,
+        "videoRows": 32560,
+        "keyframeRows": 880,
+        "audioLatents": 207,
+        "audioDecoder": "audioDecoder207",
+        "keyframeEncoder": "videoEncoderTail1280x704",
+        "recipes": [
+          "turbo8"
+        ],
+        "memory": {
+          "barBytes": 25769803776,
+          "minimumPhysicalMemoryBytes": 68719476736
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder207": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail1280x704": {}
+        }
+      },
+      {
+        "key": "704x1280x124",
+        "width": 704,
+        "height": 1280,
+        "frames": 124,
+        "latentFrames": 37,
+        "videoRows": 32560,
+        "keyframeRows": 880,
+        "audioLatents": 207,
+        "audioDecoder": "audioDecoder207",
+        "keyframeEncoder": "videoEncoderTail704x1280",
+        "recipes": [
+          "turbo8"
+        ],
+        "memory": {
+          "barBytes": 25769803776,
+          "minimumPhysicalMemoryBytes": 68719476736
+        },
+        "shapes": {
+          "conditionerLayer": {},
+          "prepareText": {},
+          "preparePack": {},
+          "body": {
+            "table": [
+              [
+                6,
+                3,
+                5376
+              ]
+            ]
+          },
+          "heads": {
+            "temb": [
+              [
+                1,
+                2688
+              ]
+            ]
+          },
+          "videoDecoder": {},
+          "audioDecoder207": {},
+          "videoEncoderTile": {},
+          "videoEncoderTail704x1280": {}
+        }
       }
     ],
     "limits": {

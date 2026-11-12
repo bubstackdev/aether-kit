@@ -19,6 +19,23 @@ with `AETHER_GATE_DUMP=<dir>`, for the device-versus-Mac comparison.
 The six M4 models qualified on this iPhone ship catalog `ios` variants: the same exports, with an iOS manifest. See
 docs/M4.md, "iOS variants".
 
+## 2026-11-11: 0.2.0 release check, the same iPhone Duo (`iPhone19,4`), Core AI `h19p`, iOS 27.2 (24B91020)
+
+0.2.0 ships no new iOS variant (the catalog is unchanged since 0.1.0), so the device gate is 0.1.0's, rerun on the
+release candidate (`765c9dc`): `run-on-device.sh`, all three gates. Raw result:
+`Tools/DeviceGate/results/gate-iPhone19,4.json` (replacing 0.1.0's, which stays in git at the `0.1.0` tag).
+
+- **All 119 checks pass, and all 12 M4 placements are within their bars**, as on 0.1.0.
+- **Every output is bit-identical to 0.1.0's run** on this phone: SD-Turbo's RMSE and PSNR (teapot 0.00293, fox
+  0.01237), each Kokoro utterance's relative L2 and log-mel error, and every M4 parity figure are the same to the last
+  digit. 0.2.0 changed none of these drivers' arithmetic on iOS.
+- **Time and memory are within run-to-run noise:** M4 medians move between −2% and +9% (clip-vit-b32 on the GPU, 5.73
+  to 6.23 ms, the largest); SD-Turbo warm 0.46 s for 1 step and 0.75 s for 4 (0.1.0: the same); Kokoro's peak per
+  step 2,547 MiB (2,565); the process's peak footprint 2,406 MB (2,388). 6.0 GiB available to the app at launch, as
+  before.
+
+The sections below are 0.1.0's qualification on the same phone; they still explain what these figures mean.
+
 ## 2026-11-06: iPhone Duo (`iPhone19,4`), Core AI `h19p`, iOS 27.2
 
 Release build; 6.0 GiB available to the app at launch. Raw result: `Tools/DeviceGate/results/gate-iPhone19,4.json`.

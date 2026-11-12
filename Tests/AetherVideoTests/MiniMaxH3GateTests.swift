@@ -3,7 +3,7 @@ import AetherCore
 import AetherRuntime
 import Foundation
 import Testing
-@testable import AetherVideo
+@_spi(Testing) @testable import AetherVideo
 
 /// The MiniMax H3 gates (DESIGN.md §12), on the real export (`aether/forge-outputs/minimax-h3`, or AETHER_H3_EXPORT;
 /// not publicly hosted: see docs/INTEGRATION.md for the license). Off by default; run with
@@ -45,14 +45,18 @@ struct MiniMaxH3GateTests {
 
     struct Spec: Decodable { var prompt: String; var seed: UInt64; var steps: Int; var ids: [Int32]; var profile: String }
 
-    static func pipeline(ledger: FootprintLedger = FootprintLedger()) async throws -> MiniMaxH3Pipeline {
+    /// The pipeline on the export's bundle. `policy` `.measuring` for what has no measured envelope on this export
+    /// (its keyframed clips, before the H2 memory gate recorded them).
+    static func pipeline(
+        ledger: FootprintLedger = FootprintLedger(), policy: VideoAdmissionPolicy = .measuredOnly
+    ) async throws -> MiniMaxH3Pipeline {
         let url = export.appending(path: "bundle")
         let manifest = try Manifest.load(fromBundle: url)
         let ref = ModelRef(
             catalogID: manifest.id, repo: "local/\(manifest.id)", revision: "local", variant: manifest.variant.platform.rawValue,
             driver: manifest.driver, assets: [.init(name: "main", repo: "local/\(manifest.id)", revision: "local", subtree: "", files: [])])
         return try await MiniMaxH3Pipeline(bundle: InstalledBundle(ref: ref, url: url, isStale: false), manifest: manifest,
-                                           device: mac, options: .init(ledger: ledger))
+                                           device: mac, options: .init(ledger: ledger), admissionPolicy: policy)
     }
 
     static func relativeL2(_ a: [Float], _ b: [Float]) -> Double {
@@ -190,7 +194,7 @@ struct MiniMaxH3GateTests {
 
     @Test(arguments: ["first", "last", "first+last"]) func anchoredClipMatchesItsKeyframes(mode: String) async throws {
         let ledger = FootprintLedger()
-        let pipeline = try await Self.pipeline(ledger: ledger)
+        let pipeline = try await Self.pipeline(ledger: ledger, policy: .measuring)
         let first = try Self.scene(width: 960, height: 544), last = try Self.scene(width: 960, height: 544, shift: 120)
         let keyframes: VideoKeyframes = switch mode {
         case "first": .first(first)
