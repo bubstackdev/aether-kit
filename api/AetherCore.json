@@ -88330,6 +88330,103 @@
             "children": [
              {
               "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherCore8ManifestV5Krea2V10textLengthSiSgvg",
+          "moduleName": "AetherCore",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherCore8ManifestV5Krea2V10textLengthSiSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Int",
+              "printedName": "Swift.Int",
+              "usr": "s:Si"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Int?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherCore8ManifestV5Krea2V10textLengthSiSgvs",
+          "moduleName": "AetherCore",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherCore8ManifestV5Krea2V10textLengthSiSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherCore8ManifestV5Krea2V10textLengthSiSgvp",
+        "moduleName": "AetherCore",
+        "name": "textLength",
+        "printedName": "textLength",
+        "usr": "s:10AetherCore8ManifestV5Krea2V10textLengthSiSgvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
               "name": "String",
               "printedName": "Swift.String",
               "usr": "s:SS"

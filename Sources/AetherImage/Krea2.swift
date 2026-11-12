@@ -46,9 +46,13 @@ public struct Krea2Model: Sendable {
 ///   `keepTrailingTokens` (the suffix's). The text encoder drops the `dropLeadingRows` prefix rows from its output.
 /// - **Text length:** an export whose denoisers take `textMask` runs them at a fixed text length, as Diffusers does:
 ///   the conditioning's real rows first, zero rows after, and the mask (1 real, 0 padding) keeping the padding out of
-///   every attention. The length is the segments' static text axis (1,116 in Forge's exports, the most a reference
-///   prompt has), the same for text-only and reference prompts, so every prompt runs at one shape; rows past it are
-///   refused. An export without the mask runs at each prompt's own row count, as before.
+///   every attention. The length is the segments' static text axis, the same for text-only and reference prompts, so
+///   every prompt runs at one shape. The manifest declares it (`krea2.textLength`; Forge's default is 1,116, the most a
+///   reference prompt has, and a shorter export such as 256 rows runs faster steps); without the field it is the most
+///   rows a prompt of the export may have. A prompt with more conditioning rows is refused before anything loads, by
+///   ``prepare(prompt:)``, the encodes and ``generate(_:)`` alike, with
+///   `AetherError.capacity(what: Krea2Pipeline.textCapacityResource, needed: rows, available: length)`, so a host can
+///   route it to an export with a longer text axis. An export without the mask runs at each prompt's own row count.
 /// - **Memory, ordering, cancellation:** as ``LatentDiffusionPipeline``: residency planned from measured footprints
 ///   before each generation (`capacity` before anything loads), one generation at a time, cancellation between graph
 ///   calls, and any failure releases every graph.
@@ -214,6 +218,7 @@ public actor Krea2Pipeline {
             .encode(try Prompt(rendered: try encodePrompt(request.prompt), rule: krea2.prompt,
                                rows: krea2.conditioning.rowRange ?? 1...1))
         }
+        try requireTextCapacity(rows: source.rows)
         _ = meter.lap()
         try await filter.requireAllowed(prompt: request.prompt)
         meter.lap(into: \.promptReviewSeconds)
@@ -234,6 +239,7 @@ public actor Krea2Pipeline {
     public nonisolated func prepare(prompt: String) throws -> Krea2PreparedPrompt {
         let rendered = try encodePrompt(prompt)
         let prepared = try Prompt(rendered: rendered, rule: krea2.prompt, rows: krea2.conditioning.rowRange ?? 1...1)
+        try requireTextCapacity(rows: prepared.conditioningRows)
         return Krea2PreparedPrompt(
             tokenIDs: prepared.ids, renderedTokenCount: rendered.count, conditioningRows: prepared.conditioningRows,
             truncated: prepared.truncated, maximumTokens: krea2.prompt.maxTokens)
@@ -268,6 +274,7 @@ public actor Krea2Pipeline {
         defer { pending -= 1 }
         try Task.checkCancellation()
         let prompt = try Prompt(rendered: try encodePrompt(text), rule: krea2.prompt, rows: krea2.conditioning.rowRange ?? 1...1)
+        try requireTextCapacity(rows: prompt.conditioningRows)
         try await filter.requireAllowed(prompt: text)
         try Task.checkCancellation()
         let grant = try await options.gpu.admit(job: job)
@@ -709,7 +716,8 @@ public actor Krea2Pipeline {
 
     /// The text length the segments run `rows` conditioning rows at: the rows themselves without the mask, else the
     /// segments' static text axis (a masked export whose text axis is dynamic runs at the rows, the mask all ones).
-    /// Rows past the static length are refused.
+    /// A static axis must be the manifest's `krea2.textLength` when it declares one; rows past it are refused
+    /// (`capacity`, as ``requireTextCapacity(rows:)``).
     private func textLayout(rows: Int, graphs: [any GraphBackend]) throws(AetherError) -> (graphs: [any GraphBackend], length: Int) {
         guard wiring.textMask != nil else { return (graphs, rows) }
         guard let spec = graphs[0].signature.input(wiring.conditioning), spec.rank == 2 else {
@@ -717,10 +725,30 @@ public actor Krea2Pipeline {
         }
         let length = spec.shape[0]
         if length == TensorSpec.dynamic { return (graphs, rows) }
+        if let declared = krea2.textLength, declared != length {
+            throw .manifestMismatch(
+                field: "krea2.textLength", expected: "\(declared) (the denoisers' static text axis)",
+                found: "graphs.\(wiring.segments[0].role).inputs.conditioning [\(length), \(spec.shape[1])]")
+        }
         guard rows <= length else {
-            throw .generation(.invalidParameters("\(rows) conditioning rows exceed this export's denoiser text length \(length)"))
+            throw .capacity(what: Self.textCapacityResource, needed: Int64(rows), available: Int64(length))
         }
         return (graphs, length)
+    }
+
+    /// The `what` of the `capacity` error a prompt with more conditioning rows than a masked export's text length
+    /// (`krea2.textLength`) fails with: `needed` is the prompt's rows, `available` the length.
+    public static let textCapacityResource = "krea2.textLength"
+
+    /// The most conditioning rows a prompt may have on this export's denoisers: the masked text length the manifest
+    /// declares (`krea2.textLength`), nil when it declares none (an exact-length export, or a masked one whose length is
+    /// the most rows its prompts can have).
+    public nonisolated var textCapacity: Int? { wiring.textMask == nil ? nil : krea2.textLength }
+
+    /// Refuses `rows` conditioning rows past ``textCapacity``, before anything loads.
+    nonisolated func requireTextCapacity(rows: Int) throws(AetherError) {
+        guard let length = textCapacity, rows > length else { return }
+        throw .capacity(what: Self.textCapacityResource, needed: Int64(rows), available: Int64(length))
     }
 
     /// The first segment's conditioning input: the text encoder's buffer as it is when it already has the run's
@@ -1041,11 +1069,11 @@ extension Krea2Pipeline {
     }
 
     /// The admission shape of a generation with `rows` conditioning rows: the rows (each count its own denoiser
-    /// specialization) or, with the text mask, one shape for every prompt (the most rows any prompt of the export may
-    /// have: the references range's upper bound, else the conditioning range's).
+    /// specialization) or, with the text mask, one shape for every prompt: the manifest's `krea2.textLength`, else the
+    /// most rows any prompt of the export may have (the references range's upper bound, else the conditioning range's).
     nonisolated func denoiserShape(rows: Int) -> Int {
         guard wiring.textMask != nil else { return rows }
-        return krea2.references?.rowRange?.upperBound ?? krea2.conditioning.rowRange?.upperBound ?? rows
+        return krea2.textLength ?? krea2.references?.rowRange?.upperBound ?? krea2.conditioning.rowRange?.upperBound ?? rows
     }
 
     /// The manifest's tensor names and how each segment input is fed, checked once at load: an input chained with

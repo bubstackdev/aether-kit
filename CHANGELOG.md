@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Added
+
+- **Krea 2: a shorter masked text length (`krea2.textLength`).** `Forge/krea2/export_krea2.py --mask-text-rows N`
+  exports the masked denoisers at a fixed text length of N rows instead of 1,116 (the default, unchanged). Every
+  joint block attends over the image tokens plus the text length, so a 256-row export should step at about the
+  exact-length 256-row speed (2.9–3.0 s at 1024², against 4.1–4.3 s at 1,116). It is for measurement first: the
+  export is benchmarked and gated before anything adopts it.
+  - **Manifest:** masked exports now declare their length as `krea2.textLength` (MANIFEST.md §5.6), optional,
+    validated against the prompt rows and the mask. A masked export without it (the first, 1,116-row ones) keeps its
+    length: the most rows a prompt of the export may have.
+  - **Driver:** `Krea2Pipeline` reads the length from the manifest for admission (`denoiserShape`) and checks that the
+    segments' static text axis matches it (`manifestMismatch` on `krea2.textLength`). A prompt with more conditioning
+    rows is refused before anything loads, by `prepare(prompt:)`, `prepare(prompt:references:)`, both encodes and
+    `generate`, with `AetherError.capacity(what: Krea2Pipeline.textCapacityResource, needed: rows, available:
+    length)`, so a host can route it to the 1,116-row export. New: `Krea2Pipeline.textCapacity` (the declared
+    length, nil without one) and `Krea2Pipeline.textCapacityResource` (`"krea2.textLength"`). Additive; the API
+    baselines record them.
+  - **Behaviour change:** rows past a masked export's static length that the manifest didn't declare (only a
+    malformed export can have them) now fail with that `capacity` error instead of `invalidParameters`.
+  - **Forge:** `krea2_graphs.DenoiserSegment(text_rows=)`, `krea2_graphs.text_length(manifest)`; `check_krea2.py` and
+    the step benchmarks pad to the bundle's declared length; `bench_krea2_segment.py --text-length`.
+
 ### Fixed
 
 - **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after

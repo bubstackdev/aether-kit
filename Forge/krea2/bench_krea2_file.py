@@ -40,7 +40,7 @@ def main() -> None:
     spec = manifest["graphs"][args.role]
     masked = "textMask" in spec["inputs"]
     index = int(args.role.removeprefix("denoiser"))
-    length = kg.MASK_TEXT_ROWS if masked else args.rows
+    length = kg.text_length(manifest) if masked else args.rows
     rng = np.random.default_rng(0)
     n = 4096
     rope = kg.rotary_table(64, 64).numpy()

@@ -398,6 +398,7 @@ extension Krea2Pipeline {
         let prompt = try Krea2ReferencePrompt(
             rendered: rendered, textOnlyCount: try encodePrompt(text).count, images: patches, prompt: krea2.prompt,
             references: rules)
+        try requireTextCapacity(rows: prompt.conditioningRows)
         return (prompt, patches, rules)
     }
 
