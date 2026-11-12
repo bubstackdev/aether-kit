@@ -126,7 +126,12 @@ extension GateTests {
     @Test func chunkedPrefillMatchesTokenByTokenAt3k() async throws {
         let prompt = try Self.labJSON(TokenFile.self, "perf/depthN-exact/long-prompt-qwen3.json").tokens
         let lab = try Self.labJSON(RunFile.self, "perf/depthN-exact/qwen3-long-d3-tokens.json")
-        let engine = try await Self.engine("qwen3-0.6b", Self.pipelinedOptions(capacity: 4096))
+        // The lab's reference continuation was recorded after a 512-token chunked prefill. Since 0.2.0 a reshaping
+        // Core AI decoder defaults to 32-token calls (`DecoderEngine.reshapeSafePrefillWidth`), which round
+        // differently: the continuation then leaves the lab's at token 115. Pin the schedule the reference used.
+        var options = Self.pipelinedOptions(capacity: 4096)
+        options.prefillWidth = 512
+        let engine = try await Self.engine("qwen3-0.6b", options)
         let clock = ContinuousClock()
         var t0 = clock.now
         let chunked = try #require(try await engine.prefill(prompt))
