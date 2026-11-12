@@ -146,6 +146,11 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
 
 ### Fixed
 
+- **Krea 2 tiled VAE stitching uses separable normalized weights and Accelerate row blending.** It removes the
+  full-canvas weight buffer and final normalization pass, saving about 4 MiB at 1024². A release-build CPU benchmark
+  of nine 512-pixel tiles measured about 1.3 ms versus 9.7 ms for the original scalar accumulator; this is stitching
+  time alone. Shifted edges, high overlaps and differing tile pixels match the original within 1e-6.
+
 - **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after
   picture, kept losing warm graphs. Two changes, for `ImageRetention.keepLoaded` (the default):
   - **Canvas-aware encode.** New `Krea2Pipeline.encode(prompt:width:height:job:)` plans memory against the canvas
