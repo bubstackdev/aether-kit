@@ -3,7 +3,7 @@
 On-device models for Apple silicon, built directly on Apple's Core AI framework. Requires macOS 27 / iOS 27, Xcode 27.2
 and Swift 6.4.
 
-**Status: 0.2.0-beta.1, prerelease 2026-11-11** ([CHANGELOG](CHANGELOG.md)); 0.1.0 was released
+**Status: 0.2.0, released 2026-11-12** ([CHANGELOG](CHANGELOG.md)); 0.1.0 was released
 2026-11-07. This is a from-scratch re-architecture of
 AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch (see
 [Migrating from 0.0.x](#migrating-from-00x)). Start with
@@ -56,7 +56,7 @@ before you ship a model.
 ## Quick start
 
 ```swift
-.package(url: "https://github.com/bubstackdev/aether-kit.git", exact: "0.2.0-beta.1")
+.package(url: "https://github.com/bubstackdev/aether-kit.git", from: "0.2.0")
 ```
 
 A one-call `ChatSession(catalog:)` arrives with `ModelHost` in M6. Today, a session is built from an installed bundle:
