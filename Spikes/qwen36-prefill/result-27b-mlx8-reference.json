@@ -1,0 +1,19 @@
+{
+ "model": "/private/tmp/claude-501/-Users-zakkeown-Code-atelier-atelier-lab/41c295d7-38d5-4d59-9e08-85009d1a53bd/scratchpad/mlx27b-8bit",
+ "loadSeconds": 2.6,
+ "generateSeconds": 5.5,
+ "tokens": 48,
+ "positionsMatchTransformers": true,
+ "ropeDelta": {
+  "mlx": [
+   -720
+  ],
+  "transformers": [
+   [
+    -720
+   ]
+  ]
+ },
+ "imageTokens": 768,
+ "text": "Red and black armored bodysuit, knee-length, textured fabric with gold trim, featuring segmented panels and rivets; deep V-neckline with gold accents, long sleeves with black gloves, shoulder pads with gold detailing, high collar with gold"
+}

@@ -1,0 +1,104 @@
+{
+ "layers": 64,
+ "kinds": "lllalllalllalllalllalllalllalllalllalllalllalllalllalllalllallla",
+ "scan": "chunk",
+ "subchunk": 16,
+ "mainScan": "step",
+ "weightBits": 4,
+ "quantizedLinears": 496,
+ "recState": "fp32",
+ "chunk": 64,
+ "capacity": 1024,
+ "bytes": 13708132752,
+ "timings": {
+  "build": 81.4,
+  "quantize": 79.8,
+  "export_main": 26.6,
+  "export_prefill": 59.2,
+  "convert": 109.4
+ },
+ "peakGBAfter": {
+  "build": 0.4,
+  "build+quantize": 50.5,
+  "export_main": 50.5,
+  "export_prefill": 50.5
+ },
+ "peakRSSGB": 50.5,
+ "hostOS": "26B123",
+ "tokens": 320,
+ "reference": "none",
+ "loadSeconds": 59.4,
+ "loadFunction_main": 4.0,
+ "loadFunction_prefill": 0.0,
+ "states": {
+  "keyCache": [
+   [
+    16,
+    1,
+    4,
+    1024,
+    256
+   ],
+   "float16"
+  ],
+  "valueCache": [
+   [
+    16,
+    1,
+    4,
+    1024,
+    256
+   ],
+   "float16"
+  ],
+  "convState": [
+   [
+    48,
+    1,
+    3,
+    10240
+   ],
+   "float16"
+  ],
+  "recState": [
+   [
+    48,
+    1,
+    48,
+    128,
+    128
+   ],
+   "float32"
+  ]
+ },
+ "main": {
+  "msPerTokenMedian": 77.09,
+  "lastRowCosine": NaN,
+  "worstRowCosine": NaN,
+  "nan": false
+ },
+ "prefill": {
+  "msPerChunkMedian": 169.9,
+  "firstChunkMs": 478.6,
+  "tokensPerSecond": 377.0,
+  "chunkEndCosineVsReference": {
+   "63": NaN,
+   "127": NaN,
+   "191": NaN,
+   "255": NaN,
+   "319": NaN
+  },
+  "chunkEndCosineVsMainLoop": {
+   "63": 0.999999,
+   "127": 0.999999,
+   "191": 0.999999,
+   "255": 0.999998,
+   "319": 0.999998
+  },
+  "lastRowCosineVsReference": NaN,
+  "recStateCosineVsMainLoop": 0.9999997931041291,
+  "recStateCosineVsReference": NaN,
+  "nan": false
+ },
+ "guard": "passed"
+}
