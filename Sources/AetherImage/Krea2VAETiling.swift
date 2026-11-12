@@ -1,4 +1,5 @@
 import AetherCore
+import Accelerate
 import Foundation
 
 /// Fixed-shape overlapping decoder tiles. Edge tiles shift back rather than introducing another specialization.
@@ -57,42 +58,67 @@ struct Krea2VAETiling: Sendable, Hashable {
         let x: Axis
         let y: Axis
         private var pixels: [Float]
-        private var weights: [Float]
+        private var rowWeights: [Float]
+        private var added: [Bool]
 
         init(width: Int, height: Int, tiling: Krea2VAETiling) {
             self.width = width
             self.height = height
-            x = tiling.axis(width)
-            y = tiling.axis(height)
+            x = Self.normalized(tiling.axis(width), extent: width)
+            y = Self.normalized(tiling.axis(height), extent: height)
             pixels = [Float](repeating: 0, count: 3 * width * height)
-            weights = [Float](repeating: 0, count: width * height)
+            rowWeights = [Float](repeating: 0, count: x.size)
+            added = [Bool](repeating: false, count: x.starts.count * y.starts.count)
+        }
+
+        /// The 2D weight sum factors into the product of the two axis sums, including shifted edge tiles and
+        /// overlaps spanning more than two tiles. Normalize here to avoid a full weight image and final division.
+        private static func normalized(_ axis: Axis, extent: Int) -> Axis {
+            var sums = [Float](repeating: 0, count: extent)
+            for (i, start) in axis.starts.enumerated() {
+                for j in 0..<axis.size { sums[start + j] += axis.weights[i][j] }
+            }
+            let weights = axis.starts.enumerated().map { i, start in
+                (0..<axis.size).map { axis.weights[i][$0] / sums[start + $0] }
+            }
+            return Axis(size: axis.size, starts: axis.starts, weights: weights)
         }
 
         mutating func add(_ tile: [Float], row: Int, column: Int) throws(AetherError) {
             guard tile.count == 3 * x.size * y.size else {
                 throw .tensor(name: "decoder tile", reason: .shapeMismatch(expected: [3, y.size, x.size], found: [tile.count]))
             }
+            guard y.starts.indices.contains(row), x.starts.indices.contains(column),
+                  !added[row * x.starts.count + column] else {
+                throw .tensor(name: "decoder tile", reason: .unsupported("tile origin is invalid or already added"))
+            }
             let plane = width * height, tilePlane = x.size * y.size
-            for dy in 0..<y.size {
-                let destination = (y.starts[row] + dy) * width + x.starts[column]
-                let source = dy * x.size
-                for dx in 0..<x.size {
-                    let weight = y.weights[row][dy] * x.weights[column][dx]
-                    weights[destination + dx] += weight
-                    for channel in 0..<3 {
-                        pixels[channel * plane + destination + dx] += tile[channel * tilePlane + source + dx] * weight
+            let tileWidth = x.size, tileHeight = y.size, startX = x.starts[column], startY = y.starts[row]
+            let wx = x.weights[column], wy = y.weights[row], width = width
+            tile.withUnsafeBufferPointer { source in
+                pixels.withUnsafeMutableBufferPointer { destination in
+                    rowWeights.withUnsafeMutableBufferPointer { weights in
+                        wx.withUnsafeBufferPointer { horizontal in
+                            for dy in 0..<tileHeight {
+                                var vertical = wy[dy]
+                                vDSP_vsmul(horizontal.baseAddress!, 1, &vertical, weights.baseAddress!, 1, vDSP_Length(tileWidth))
+                                let target = (startY + dy) * width + startX
+                                for channel in 0..<3 {
+                                    let input = source.baseAddress! + channel * tilePlane + dy * tileWidth
+                                    let output = destination.baseAddress! + channel * plane + target
+                                    vDSP_vma(input, 1, weights.baseAddress!, 1, output, 1, output, 1, vDSP_Length(tileWidth))
+                                }
+                            }
+                        }
                     }
                 }
             }
+            added[row * x.starts.count + column] = true
         }
 
         mutating func finish() throws(AetherError) -> [Float] {
-            let plane = width * height
-            for i in 0..<plane {
-                guard weights[i] > 0 else {
-                    throw .tensor(name: "decoder tiles", reason: .unsupported("tiles leave an uncovered pixel"))
-                }
-                for channel in 0..<3 { pixels[channel * plane + i] /= weights[i] }
+            guard added.allSatisfy({ $0 }) else {
+                throw .tensor(name: "decoder tiles", reason: .unsupported("not all decoder tiles were added"))
             }
             return pixels
         }
