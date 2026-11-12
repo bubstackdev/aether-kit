@@ -1,0 +1,28 @@
+{
+ "layers": 8,
+ "kinds": "lllallla",
+ "scan": "chunk",
+ "subchunk": 16,
+ "mainScan": "step",
+ "weightBits": 4,
+ "quantizedLinears": 62,
+ "recState": "fp32",
+ "chunk": 64,
+ "capacity": 1024,
+ "bytes": 1713552031,
+ "timings": {
+  "build": 8.1,
+  "quantize": 6.4,
+  "export_main": 2.9,
+  "export_prefill": 6.3,
+  "convert": 4.3
+ },
+ "peakGBAfter": {
+  "build": 0.4,
+  "build+quantize": 12.2,
+  "export_main": 12.2,
+  "export_prefill": 13.3
+ },
+ "peakRSSGB": 15.8,
+ "hostOS": "26B123"
+}

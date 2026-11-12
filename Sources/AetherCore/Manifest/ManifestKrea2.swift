@@ -213,6 +213,12 @@ extension Manifest {
         public var conditioning: Conditioning
         public var rotary: Rotary
         public var references: References? = nil
+        /// The masked denoisers' static text length (MANIFEST.md §5.5 `textMask`): every prompt's conditioning rows are
+        /// padded to it, and a prompt with more rows than this is refused with `capacity(what: "krea2.textLength")`
+        /// before anything loads, so a host can route it to an export with a longer text axis. Present only when every
+        /// segment takes `textMask`; at most the most rows a prompt of the export may have (`references.rows`' upper
+        /// bound, else `conditioning.rows`'). Absent on a masked export (the first, 1,116-row ones), the length is that upper bound.
+        public var textLength: Int? = nil
         /// The denoiser graph roles, in call order.
         public var segments: [String]
         /// Rows of the modulation tensor the first segment emits.
@@ -256,6 +262,13 @@ extension Manifest {
             }
             try require(condRows >= 1, "krea2.condRows", "must be >= 1")
             try references?.validate(graphs: graphs, conditioning: conditioning)
+            if let textLength {
+                let most = references?.rowRange?.upperBound ?? range.upperBound
+                try require(textLength >= 1 && textLength <= most, "krea2.textLength",
+                            "must be in 1...\(most), the most conditioning rows a prompt of this export may have")
+                try require(segments.allSatisfy { graphs[$0]?.inputs["textMask"] != nil }, "krea2.textLength",
+                            "is the masked denoisers' text length: every segment must take textMask")
+            }
             try require(contentFilter.required, "krea2.contentFilter.required",
                         "must be true: the Krea 2 Community License (§4.2) requires a content filter")
         }

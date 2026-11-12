@@ -209,6 +209,60 @@ struct Krea2Tests {
         return x
     }
 
+    /// Check live storage at the graph boundary, rather than relying on process-wide allocator reclamation.
+    final class MemoryChecked: GraphBackend {
+        let base: any GraphBackend
+        let role: String
+        let checks: Calls
+        init(_ base: any GraphBackend, role: String, checks: Calls) {
+            self.base = base
+            self.role = role
+            self.checks = checks
+        }
+        var signature: GraphSignature { base.signature }
+        func run(_ bindings: inout Bindings) async throws(AetherError) {
+            if role == "denoiser0" {
+                let bound = signature.inputs.reduce(0) { $0 + bindings.input($1.name)!.storageByteCount }
+                    + signature.outputs.reduce(0) { $0 + bindings.output($1.name)!.storageByteCount }
+                // In addition to the bound tensors: the second carry pair and final velocity. The third carry
+                // pair shares the first's storage, and the text encoder's token/position buffers are gone.
+                let extra = bindings.output("image_1")!.storageByteCount + bindings.output("text_1")!.storageByteCount
+                    + bindings.input("latents")!.storageByteCount
+                #expect(bindings.arena.byteCount == bound + extra)
+                checks.append(role)
+            }
+            if role.hasPrefix("denoiser") {
+                for input in signature.inputs {
+                    for output in signature.outputs {
+                        #expect(!bindings.input(input.name)!.isSameStorage(as: bindings.output(output.name)!))
+                    }
+                }
+            }
+            if role == "vaeDecoder" {
+                let bytes = bindings.input("latents")!.storageByteCount + bindings.output("image")!.storageByteCount
+                #expect(bindings.arena.byteCount == bytes, "only the decoder's own tensors survive into decode")
+                checks.append(role)
+            }
+            try await base.run(&bindings)
+        }
+    }
+
+    @Test func reusesDeadCarriesAndReleasesStepStorageBeforeDecode() async throws {
+        let checks = Calls()
+        let (pipeline, _) = try Self.pipeline(calls: Calls(), wrap: { role, graph in
+            MemoryChecked(graph, role: role, checks: checks)
+        })
+        let request = ImageRequest(prompt: "a cat", seed: 7, steps: 2, width: 48, height: 32)
+        let image = try await pipeline.generate(request)
+        let expected = try Self.expected(prompt: request.prompt, seed: 7, steps: 2, tokens: 6)
+        for ch in 0..<3 {
+            #expect(image.planarRGB[ch * 48 * 32] == Float(Float16(expected[ch])))
+        }
+        #expect(try await pipeline.generate(request) == image)
+        #expect(checks.log == ["denoiser0", "denoiser0", "vaeDecoder", "denoiser0", "denoiser0", "vaeDecoder"])
+        await pipeline.unload()
+    }
+
     /// Review finding 6: Krea exports list no fixed sizes, so `maxImageTokens` is required.
     @Test func theTokenBoundIsRequired() throws {
         var unbounded = try Self.manifest()

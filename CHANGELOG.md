@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Added
+
+- **Krea 2: a shorter masked text length (`krea2.textLength`).** `Forge/krea2/export_krea2.py --mask-text-rows N`
+  exports the masked denoisers at a fixed text length of N rows instead of 1,116 (the default, unchanged). Every
+  joint block attends over the image tokens plus the text length, so a 256-row export should step at about the
+  exact-length 256-row speed (2.9–3.0 s at 1024², against 4.1–4.3 s at 1,116). It is for measurement first: the
+  export is benchmarked and gated before anything adopts it.
+  - **Manifest:** masked exports now declare their length as `krea2.textLength` (MANIFEST.md §5.6), optional,
+    validated against the prompt rows and the mask. A masked export without it (the first, 1,116-row ones) keeps its
+    length: the most rows a prompt of the export may have.
+  - **Driver:** `Krea2Pipeline` reads the length from the manifest for admission (`denoiserShape`) and checks that the
+    segments' static text axis matches it (`manifestMismatch` on `krea2.textLength`). A prompt with more conditioning
+    rows is refused before anything loads, by `prepare(prompt:)`, `prepare(prompt:references:)`, both encodes and
+    `generate`, with `AetherError.capacity(what: Krea2Pipeline.textCapacityResource, needed: rows, available:
+    length)`, so a host can route it to the 1,116-row export. New: `Krea2Pipeline.textCapacity` (the declared
+    length, nil without one) and `Krea2Pipeline.textCapacityResource` (`"krea2.textLength"`). Additive; the API
+    baselines record them.
+  - **Behaviour change:** rows past a masked export's static length that the manifest didn't declare (only a
+    malformed export can have them) now fail with that `capacity` error instead of `invalidParameters`.
+  - **Forge:** `krea2_graphs.DenoiserSegment(text_rows=)`, `krea2_graphs.text_length(manifest)`; `check_krea2.py` and
+    the step benchmarks pad to the bundle's declared length; `bench_krea2_segment.py --text-length`.
+
 ### Fixed
 
 - **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after
@@ -47,6 +69,28 @@
 
 ### New
 
+- **Lower-memory Qwen 27B export.** `--embedding-bits 8` packs token embeddings per row and dequantizes after gather:
+  1.27 GB smaller on disk and about 1.2 GiB less Metal memory on the existing two-picture reference gate. The variant
+  passes the accuracy and repeated-request gates; fp16 remains the default pending broader quality checks. KV growth
+  also keeps recurrent buffers in place, avoiding about 147 MiB of temporary allocation/copying on the 27B.
+  Measurements and reproduction details are in `docs/QWEN3_5.md`.
+
+- **Opt-in Krea 2 tiled VAE decode.** `try await pipeline.setDecoderTiling(tileSize: 512, overlap: 256)` decodes
+  overlapping tiles with cosine blending, reusing one input/output buffer pair. Edge tiles shift back to keep one
+  decoder shape; small canvases use a full decode. `tileSize: nil` restores full decoding. Changing the setting waits
+  for the pipeline's turn and releases its graphs to discard older decoder specializations; admission profiles
+  distinguish tile policies. Full decoding is the default; tiling approximates global attention and changes pixels.
+  - On an M5 Max 64 GB, macOS 27.2, masked realism at 1024² / 8 steps, separate native processes under
+    `scripts/gpu-lease` sampled 46.36 GiB peak with full decode and 37.41 GiB with tiles (8.96 GiB less). The mug
+    prompt's tiled image reached SSIM 0.99992 / PSNR 66 dB against full decode; decode time rose from 1.08 to 2.79 s
+    in the debug build. Total cold-render timings are not a speed comparison.
+  - Isolated VAE measurements on the harbor reference: 11.49 → 2.54 GiB retained Metal memory, SSIM 0.995 / PSNR
+    44 dB with 512-pixel tiles. 640- and 768-pixel tiles also passed SSIM 0.99 / PSNR 35 dB against full decode.
+    These are two qualification images, not a guarantee for every prompt.
+  - `Forge/krea2/bench_krea2_vae_tiles.py` records memory, repeats, image/error maps and seam-band error; its CPU
+    selftest checks coverage, edge shifts and normalization. Raw isolated/native results are in
+    `Forge/krea2/vae-tiling-report.json`. The native mask qualification accepts `_TILE`, `_OVERLAP` and, in `revisit`,
+    `_PIXELS` alongside its existing `AETHER_KREA2_MASK…` variables. The API baseline adds only the opt-in setter.
 - **MiniMax H3 clip limits, preflight, streamed frames and the seed.** Additive; the `AetherVideo` API baseline records it.
   - **Clip limits:** `MiniMaxH3Pipeline.clipLimits(profile:keyframeCount:)` returns a `VideoClipLimits`: the export's
     presentation-token and packed-row bounds, the keyframes' presentation tokens, the clip's own packed rows, and the
@@ -333,6 +377,15 @@
     Manifest `Codable` fields (`image.tokens.padId`, …) keep their JSON spelling.
 
 ### Fixed
+
+- **Krea 2 tensor lifetimes.** Step buffers are returned to the arena before VAE decode, text encoder inputs are
+  released after encoding, and reused conditioning's staging rows are released after padding. Segment outputs reuse
+  storage only after its last consumer, with matching shape, scalar type and strides; a call's inputs and outputs
+  never alias. On the masked realism export at 1024², 8 steps (M5 Max, 64 GB, macOS 27.2), fresh-process renders under
+  `scripts/gpu-lease` retained 480 MiB less Metal memory and sampled a peak about 919 MiB lower, with identical output
+  pixels. These are single-run memory measurements, not a timing comparison; raw reports are in
+  `Forge/krea2/memory-report.json`. The fake-graph regression checks live bytes at the step and decoder boundaries,
+  non-aliasing within calls, the host recipe and repeat equality.
 
 - **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
   each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop

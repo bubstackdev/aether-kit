@@ -31,9 +31,11 @@ and computes in float32.
 
 Text rows: the text encoder runs unpadded (the 0.0.x prompt rule: render, keep at most 546 tokens with the final five,
 drop the 34-token system prefix), which gives exactly the real rows of Diffusers' padded `[prefix | prompt | PAD |
-suffix]` block. The denoisers take one fixed text length for every prompt: T = 1116 (`MASK_TEXT_ROWS`, the most rows
-a reference prompt can have; Diffusers pads text-only prompts to 512), static, with the host's real rows first and
-finite padding (zeros) after. One length means one function and one shape for text-only and reference prompts alike:
+suffix]` block. The denoisers take one fixed text length for every prompt: by default T = 1116 (`MASK_TEXT_ROWS`, the
+most rows a reference prompt can have; Diffusers pads text-only prompts to 512), static, with the host's real rows
+first and finite padding (zeros) after. `text_rows` exports a shorter T (for example 256, for faster steps); the
+manifest declares it as `krea2.textLength` and the host refuses a prompt with more rows (a typed capacity error), so
+it can be routed to a 1116-row export. One length means one function and one shape for text-only and reference prompts alike:
 a second function (a 512-row one beside it) slowed the first's steps about 1.7x on macOS 27.2, and Core AI keeps a
 separate weights copy per function it runs (2026-11-09). `text_mask` [T] is 1 for a real row and 0 for padding, and is
 applied exactly as Diffusers applies `encoder_attention_mask`: a key-padding mask in the text-fusion refiner blocks and
@@ -110,8 +112,17 @@ MROPE_SECTION = (24, 20, 20)
 # 512 text rows + 576 image tokens + each image's label and vision start/end (7 ids) = 1116; L = 1116 + 34 ids.
 REFERENCE_MAX_TEXT_ROWS = MAX_TEXT_ROWS + REFERENCE_MAX_IMAGE_TOKENS + 7 * REFERENCE_MAX_IMAGES
 DENOISER_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS                 # the denoisers take text-only and reference rows
-# The masked denoisers' one fixed text length, for text-only and reference prompts alike.
+# The masked denoisers' one fixed text length, for text-only and reference prompts alike (the default; an export may
+# choose a shorter one, declared as the manifest's `krea2.textLength`).
 MASK_TEXT_ROWS = REFERENCE_MAX_TEXT_ROWS
+
+
+def text_length(manifest: dict) -> int | None:
+    """A bundle's masked text length: `krea2.textLength`, else (the first masked exports) `MASK_TEXT_ROWS`; None when
+    the denoisers take no `textMask` (exact length)."""
+    if "textMask" not in manifest["graphs"]["denoiser0"]["inputs"]:
+        return None
+    return manifest["krea2"].get("textLength", MASK_TEXT_ROWS)
 
 # Within a head, new dim i takes interleaved dim 2i and new dim i + 64 takes dim 2i + 1.
 HALF_SPLIT = torch.cat([torch.arange(0, HEAD_DIM, 2), torch.arange(1, HEAD_DIM, 2)])
@@ -685,12 +696,16 @@ class Block(nn.Module):
 class DenoiserSegment(nn.Module):
     """Blocks [first, last) of the 28; segment 0 also embeds, fuses text and conditions; segment 3 projects out.
 
-    `masked` (the default): a `text_mask` input after the text input, a static text length (`example(text=...)`) and the
-    key-padding mask in the refiner and every joint block. `masked=False`: the exact-length graphs (no mask)."""
+    `masked` (the default): a `text_mask` input after the text input, a static text length (`text_rows`, default
+    `MASK_TEXT_ROWS`) and the key-padding mask in the refiner and every joint block. `masked=False`: the exact-length
+    graphs (no mask)."""
 
-    def __init__(self, index: int, compute: torch.dtype = torch.float16, masked: bool = True) -> None:
+    def __init__(self, index: int, compute: torch.dtype = torch.float16, masked: bool = True,
+                 text_rows: int = MASK_TEXT_ROWS) -> None:
         super().__init__()
-        self.index, self.compute, self.masked = index, compute, masked
+        if masked and not 1 <= text_rows <= DENOISER_TEXT_ROWS:
+            raise ValueError(f"the masked text length must be in 1...{DENOISER_TEXT_ROWS}, not {text_rows}")
+        self.index, self.compute, self.masked, self.text_rows = index, compute, masked, text_rows
         self.first, self.last = SEGMENTS[index]
         self.is_first, self.is_last = index == 0, index == len(SEGMENTS) - 1
         self.blocks = nn.ModuleList(Block(torch.float32 if i in FLOAT32_BLOCKS else compute)
@@ -745,10 +760,10 @@ class DenoiserSegment(nn.Module):
 
     @classmethod
     def load(cls, checkpoint: Checkpoint, index: int, adapter: LoKr | None = None, compute=torch.float16,
-             strict: bool = True, masked: bool = True) -> "DenoiserSegment":
+             strict: bool = True, masked: bool = True, text_rows: int = MASK_TEXT_ROWS) -> "DenoiserSegment":
         cfg = checkpoint.config("transformer")
         cls.check_config(cfg, strict)
-        seg = cls(index, compute, masked)
+        seg = cls(index, compute, masked, text_rows)
         seg.heads, seg.kv_heads = cfg["num_attention_heads"], cfg["num_key_value_heads"]
         seg.text_heads, seg.text_kv_heads = cfg["text_num_attention_heads"], cfg["text_num_key_value_heads"]
         seg.text_width = cfg["text_hidden_dim"]
@@ -845,11 +860,11 @@ class DenoiserSegment(nn.Module):
         return img, txt
 
     def example(self, tokens: int = 24, text: int | None = None):
-        """Example inputs and dynamic shapes. Masked: `text` rows (default `MASK_TEXT_ROWS`), static, the last third
-        padding; the image tokens stay dynamic. Unmasked: a dynamic text axis (2...1116)."""
+        """Example inputs and dynamic shapes. Masked: `text` rows (default the segment's `text_rows`), static, the last
+        third padding; the image tokens stay dynamic. Unmasked: a dynamic text axis (2...1116)."""
         g = torch.Generator().manual_seed(self.index)
         n_dim = torch.export.Dim("image_tokens", min=4, max=MAX_IMAGE_TOKENS)
-        text = text or (MASK_TEXT_ROWS if self.masked else 8)
+        text = text or (self.text_rows if self.masked else 8)
         rope = rotary_table(4, tokens // 4)
         if self.is_first:
             a, b = (torch.randn(tokens, LATENT_CHANNELS, generator=g).half(),

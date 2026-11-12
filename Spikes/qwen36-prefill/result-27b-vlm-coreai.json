@@ -1,0 +1,45 @@
+{
+ "promptTokens": 1071,
+ "steps": 48,
+ "visionLoadSeconds": 0.8,
+ "vision": {
+  "seconds": [
+   0.15,
+   0.07
+  ],
+  "cosine": 0.9986686237310398,
+  "worstRowCosine": 0.9563096546552439,
+  "relL2": 0.051586909051539946
+ },
+ "decoderLoadSeconds": 58.1,
+ "promptSeconds": 7.0,
+ "teacherForced": {
+  "reference": "mlx-8bit-logprobs",
+  "argmaxAgree": "39/48",
+  "disagreeAt": [
+   1,
+   3,
+   13,
+   17,
+   18,
+   19,
+   31,
+   36,
+   38
+  ],
+  "klMean": 0.10862,
+  "klMax": 0.64518,
+  "top5OverlapMean": 0.846
+ },
+ "speed": {
+  "prefillMsPerChunk": 150.1,
+  "stepMs": 81.0
+ },
+ "greedy": {
+  "identicalTokens": false,
+  "firstDifference": 1,
+  "text": "Red textured bodysuit, knee-length, form-fitting, with black side panels and gold trim, deep V-neckline, long black sleeves, gold collar, black gloves, black boots with red accents, segmented armor on thighs and calves",
+  "referenceText": "Red and black armored bodysuit, knee-length, textured fabric with gold trim, featuring segmented panels and rivets; deep V-neckline with gold accents, long sleeves with black gloves, shoulder pads with gold detailing, high collar with gold"
+ },
+ "guard": "passed"
+}

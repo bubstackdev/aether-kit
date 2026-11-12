@@ -1,0 +1,416 @@
+{
+  "date": "2026-11-11",
+  "hardware": "Apple M5 Max, 64 GiB",
+  "os": "macOS 27.2",
+  "gpuLock": "scripts/gpu-lease",
+  "isolatedVAE": [
+    {
+      "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+      "reference": "../forge-outputs/references/krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 0,
+      "overlap": 0,
+      "metalBefore": 65536,
+      "runs": 3,
+      "seconds": [
+        0.6774344170698896,
+        0.4959841250674799,
+        0.5206514579476789
+      ],
+      "tileCallSeconds": [
+        0.6774284589337185,
+        0.495977875078097,
+        0.520645665936172
+      ],
+      "originsY": [
+        0
+      ],
+      "originsX": [
+        0
+      ],
+      "tilesPerRun": 1,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 12339281920,
+      "sampledMetalMax": 12339298304,
+      "psnrToReferenceDB": 71.49629467485671,
+      "ssimToReference": 0.9999901512923115
+    },
+    {
+      "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+      "reference": "../forge-outputs/references/krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 128,
+      "metalBefore": 65536,
+      "runs": 3,
+      "seconds": [
+        1.1615637089125812,
+        1.3195468749618158,
+        1.3936669169925153
+      ],
+      "tileCallSeconds": [
+        0.20219279103912413,
+        0.11061199998948723,
+        0.11228079197462648,
+        0.11444995901547372,
+        0.11688216694165021,
+        0.11797637504059821,
+        0.12356754101347178,
+        0.12569166696630418,
+        0.13097879197448492,
+        0.1353476250078529,
+        0.14107137499377131,
+        0.1438913750462234,
+        0.14505862502846867,
+        0.14764300000388175,
+        0.14850424998439848,
+        0.14908929192461073,
+        0.1507962909527123,
+        0.15244704205542803,
+        0.15347145905252546,
+        0.15394562506116927,
+        0.1537057920359075,
+        0.15361079096328467,
+        0.1550414999946952,
+        0.1545216660015285,
+        0.15441170800477266,
+        0.15518129093106836,
+        0.15474420797545463
+      ],
+      "originsY": [
+        0,
+        384,
+        512
+      ],
+      "originsX": [
+        0,
+        384,
+        512
+      ],
+      "tilesPerRun": 9,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725773312,
+      "sampledMetalMax": 2725920768,
+      "psnrToReferenceDB": 43.80272770346404,
+      "ssimToReference": 0.9948383056086874,
+      "psnrToFullDB": 43.80884415121733,
+      "ssimToFull": 0.9948451207585517,
+      "maxAbsToFull": 0.5105561017990112,
+      "meanAbsToFull": 0.003619915572926402,
+      "seamBandMeanAbs": 0.003588245017454028,
+      "outsideSeamMeanAbs": 0.003623107448220253
+    },
+    {
+      "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+      "reference": "../forge-outputs/references/krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 3,
+      "seconds": [
+        1.1923440409591421,
+        1.389495583018288,
+        1.4036585829453543
+      ],
+      "tileCallSeconds": [
+        0.20593075000215322,
+        0.11124054191168398,
+        0.11445058300159872,
+        0.11537933303043246,
+        0.11756712500937283,
+        0.12310245807748288,
+        0.12746874999720603,
+        0.131901582935825,
+        0.13840624992735684,
+        0.14302125002723187,
+        0.14933091693092138,
+        0.15243483404628932,
+        0.15528016700409353,
+        0.15634058299474418,
+        0.15765941701829433,
+        0.15644037502352148,
+        0.15633333392906934,
+        0.15689016703981906,
+        0.15577245806343853,
+        0.15679174999240786,
+        0.15694979205727577,
+        0.15713212499395013,
+        0.1556756249628961,
+        0.1552422500681132,
+        0.1543535420205444,
+        0.15364720800425857,
+        0.15297858300618827
+      ],
+      "originsY": [
+        0,
+        256,
+        512
+      ],
+      "originsX": [
+        0,
+        256,
+        512
+      ],
+      "tilesPerRun": 9,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725904384,
+      "sampledMetalMax": 2725920768,
+      "psnrToReferenceDB": 43.98682828690003,
+      "ssimToReference": 0.9950380421345324,
+      "psnrToFullDB": 43.99448731610471,
+      "ssimToFull": 0.9950470259847574,
+      "maxAbsToFull": 0.5822702050209045,
+      "meanAbsToFull": 0.003516708267852664,
+      "seamBandMeanAbs": 0.0035784542560577393,
+      "outsideSeamMeanAbs": 0.003510485403239727
+    },
+    {
+      "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+      "reference": "../forge-outputs/references/krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 640,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 3,
+      "seconds": [
+        0.9742315410403535,
+        0.9176584579981863,
+        1.0430518329376355
+      ],
+      "tileCallSeconds": [
+        0.4101632919628173,
+        0.18022620806004852,
+        0.18320016690995544,
+        0.19465833401773125,
+        0.2069641670677811,
+        0.22284445795230567,
+        0.23462695896159858,
+        0.2486343749333173,
+        0.25731220794841647,
+        0.26033512502908707,
+        0.2615572090726346,
+        0.26007233292330056
+      ],
+      "originsY": [
+        0,
+        384
+      ],
+      "originsX": [
+        0,
+        384
+      ],
+      "tilesPerRun": 4,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 4226433024,
+      "sampledMetalMax": 4226449408,
+      "psnrToReferenceDB": 45.831602043791406,
+      "ssimToReference": 0.9967646476285844,
+      "psnrToFullDB": 45.83916068520644,
+      "ssimToFull": 0.9967724180966098,
+      "maxAbsToFull": 0.5951398611068726,
+      "meanAbsToFull": 0.002690172055736184,
+      "seamBandMeanAbs": 0.0033764983527362347,
+      "outsideSeamMeanAbs": 0.0026451789308339357
+    },
+    {
+      "asset": "../forge-outputs/krea-2-turbo-realism/krea2_turbo_realism-vae.aimodel",
+      "reference": "../forge-outputs/references/krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 768,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 3,
+      "seconds": [
+        1.2480252919485793,
+        1.5311438329517841,
+        1.462692999979481
+      ],
+      "tileCallSeconds": [
+        0.37145566707476974,
+        0.26214933302253485,
+        0.2868029579985887,
+        0.3205255839275196,
+        0.3711348340148106,
+        0.38478662504348904,
+        0.38709299999754876,
+        0.38247725006658584,
+        0.37141737493220717,
+        0.36338133306708187,
+        0.35584233305417,
+        0.3662710830103606
+      ],
+      "originsY": [
+        0,
+        256
+      ],
+      "originsX": [
+        0,
+        256
+      ],
+      "tilesPerRun": 4,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 6060376064,
+      "sampledMetalMax": 6060392448,
+      "psnrToReferenceDB": 49.77348011473798,
+      "ssimToReference": 0.9987299819969254,
+      "psnrToFullDB": 49.79222907488894,
+      "ssimToFull": 0.998737046421657,
+      "maxAbsToFull": 0.5034765601158142,
+      "meanAbsToFull": 0.0015688776038587093,
+      "seamBandMeanAbs": 0.0018091212259605527,
+      "outsideSeamMeanAbs": 0.0015531281242147088
+    }
+  ],
+  "notes": [
+    "Each configuration ran in a separate process, three decodes each, under one shared GPU lease.",
+    "Reference final latents at 1024x1024 were decoded with the existing float32 VAE; the denoiser was not loaded for these isolated measurements.",
+    "Metal numbers are sampled at graph call boundaries and retained after calls, not a continuously sampled peak.",
+    "Error-band metrics include 16-pixel bands around all internal tile starts and ends.",
+    "Tiling approximates global attention; these quality results cover the harbor reference and the native mug prompt, not all images.",
+    "Timings are development/debug measurements, not release performance guarantees."
+  ],
+  "nativePipeline": {
+    "before": {
+      "architecture": "h17c",
+      "bundle": "krea-2-turbo-realism-masked",
+      "metalBeforeLoad": 65536,
+      "mode": "revisit",
+      "pairs": [],
+      "pid": 21275,
+      "renders": [
+        {
+          "firstStepSeconds": 50.625556417,
+          "label": "A",
+          "laterStepMeanSeconds": 5.149580511857144,
+          "ledger": [
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perImage: peak 11008 held 10612",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perPrompt: peak 7404 held 7399",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024].perStep: peak 30184 held 29365"
+          ],
+          "metalAllocatedAfter": 49778999296,
+          "metrics": {
+            "conditioningRows": 27,
+            "conditioningSeconds": 10.429604458,
+            "decodeSeconds": 1.083921417,
+            "denoiserPreparationSeconds": 30.165118125,
+            "imageReviewSeconds": 5.792e-06,
+            "imageTokens": 4096,
+            "loadedRoles": [
+              "denoiser0",
+              "denoiser1",
+              "denoiser2",
+              "denoiser3",
+              "textEncoder",
+              "vaeDecoder"
+            ],
+            "peakAllocatedBytes": 49779523584,
+            "promptReviewSeconds": 2.6542e-05,
+            "samplingSeconds": 86.67261999999998,
+            "stepSeconds": [
+              50.625556417,
+              5.147347958,
+              5.125677167,
+              4.971622792,
+              5.047313166,
+              5.207690167,
+              5.196043375,
+              5.351368958
+            ],
+            "totalSeconds": 128.353216541,
+            "waitSeconds": 0.000524958
+          },
+          "pixelsSHA256": "0027410c0db1538ad98e088a91e2386ac93dd2eff5ab7b06fa1dc4bce545e561",
+          "prompt": "A",
+          "residentBytesAfter": 49679219800,
+          "rows": 27
+        }
+      ],
+      "seed": 18,
+      "side": 1024,
+      "steps": 8
+    },
+    "after": {
+      "architecture": "h17c",
+      "bundle": "krea-2-turbo-realism-masked",
+      "decoderTileOverlap": 256,
+      "decoderTileSize": 512,
+      "metalBeforeLoad": 65536,
+      "mode": "revisit",
+      "pairs": [],
+      "pid": 23018,
+      "renders": [
+        {
+          "firstStepSeconds": 50.7062485,
+          "label": "A",
+          "laterStepMeanSeconds": 5.801295410714286,
+          "ledger": [
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024.vae-tiles-512-256].perImage: peak 1445 held 1442",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024.vae-tiles-512-256].perPrompt: peak 7406 held 7403",
+            "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#e1516ca03f6dc3ac/macos-h17c[1024x1024.vae-tiles-512-256].perStep: peak 30184 held 29365"
+          ],
+          "metalAllocatedAfter": 40163524608,
+          "metrics": {
+            "conditioningRows": 27,
+            "conditioningSeconds": 9.3671185,
+            "decodeSeconds": 2.790325,
+            "denoiserPreparationSeconds": 21.283661958,
+            "imageReviewSeconds": 1.3166e-05,
+            "imageTokens": 4096,
+            "loadedRoles": [
+              "denoiser0",
+              "denoiser1",
+              "denoiser2",
+              "denoiser3",
+              "textEncoder",
+              "vaeDecoder"
+            ],
+            "peakAllocatedBytes": 40163655680,
+            "promptReviewSeconds": 1.025e-05,
+            "samplingSeconds": 91.315316375,
+            "stepSeconds": [
+              50.7062485,
+              6.727283625,
+              6.149228542,
+              5.64592875,
+              5.773402333,
+              5.31258175,
+              5.520016,
+              5.4806268750000005
+            ],
+            "totalSeconds": 124.758339167,
+            "waitSeconds": 0.000360375
+          },
+          "pixelsSHA256": "ba0b7a807df73793ece1df6da59b4fe24b0f29cb1d04639ebeb2a7f5e6b8b91a",
+          "prompt": "A",
+          "residentBytesAfter": 40067497048,
+          "rows": 27
+        }
+      ],
+      "seed": 18,
+      "side": 1024,
+      "steps": 8
+    },
+    "quality": {
+      "ssimToFull": 0.9999221192518645,
+      "psnrToFullDB": 66.04803351199519,
+      "maxAbsToFull": 0.10260190814733505
+    },
+    "retainedMetalSavingBytes": 9615474688,
+    "sampledPeakSavingBytes": 9615867904
+  },
+  "sourceSHA256": {
+    "Sources/AetherImage/Krea2.swift": "172124a579baade99879f27b69358244058e14eed9c79e13fb5664b7da584017",
+    "Sources/AetherImage/Krea2VAETiling.swift": "721f32982ce33b72a484833e47562d6fc7137fe4eaf5c52ec661c3ef642a1e82"
+  }
+}

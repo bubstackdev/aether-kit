@@ -1,0 +1,15 @@
+{
+ "layers": 64,
+ "weightBits": 4,
+ "quantizedLinears": 497,
+ "capacity": 2048,
+ "chunk": 64,
+ "bytes": 14423317247,
+ "timings": {
+  "build": 142.2,
+  "main": 33.5,
+  "prefill": 70.3,
+  "convert": 145.6
+ },
+ "peakRSSGB": 49.6
+}

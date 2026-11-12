@@ -281,12 +281,18 @@ final class DecoderCore {
         }
         let next = try KVSizing.grow(current: capacity, needed: needed, limit: maxCapacity)
         let old = states
-        let grown = try Self.makeStates(step.graph, sequence: sequenceStates, recurrent: recurrentNames, capacity: next, arena: arena)
-        for (name, buffer) in grown.entries {
+        // Only the sequence axis grows. Keep the recurrent buffers in place: on the 27B those
+        // fixed states hold ~147 MiB, which would otherwise be allocated and copied on every growth.
+        let grownSequence = try Self.makeStates(step.graph, sequence: sequenceStates, recurrent: [], capacity: next, arena: arena)
+        for (name, buffer) in grownSequence.entries {
             guard let source = old[name] else { continue }
             if source.shape == buffer.shape { try buffer.copy(from: source) } else { try buffer.copyRegion(from: source) }
         }
-        for (_, buffer) in old.entries { try arena.release(buffer) }
+        let sequenceNames = Set(sequenceStates.map(\.name))
+        let grown = try StateSet(arena: arena, entries: old.entries.map { entry in
+            (name: entry.name, buffer: grownSequence[entry.name] ?? entry.buffer)
+        })
+        for (name, buffer) in old.entries where sequenceNames.contains(name) { try arena.release(buffer) }
         states = grown
         capacity = next
     }

@@ -6113,6 +6113,45 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC16setDecoderTiling8tileSize7overlapySiSg_SitYaKF",
+      "moduleName": "AetherImage",
+      "name": "setDecoderTiling",
+      "printedName": "setDecoderTiling(tileSize:overlap:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC16setDecoderTiling8tileSize7overlapySiSg_SitYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Bool",
         "printedName": "Swift.Bool",
         "usr": "s:Sb"
@@ -6129,6 +6168,113 @@
       "name": "releaseIfIdle",
       "printedName": "releaseIfIdle()",
       "usr": "s:11AetherImage13Krea2PipelineC13releaseIfIdleSbyF"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declAttributes": [
+         "Final",
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13Krea2PipelineC20textCapacityResourceSSvgZ",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "static": true,
+        "usr": "s:11AetherImage13Krea2PipelineC20textCapacityResourceSSvgZ"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declAttributes": [
+       "Final",
+       "HasInitialValue",
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13Krea2PipelineC20textCapacityResourceSSvpZ",
+      "moduleName": "AetherImage",
+      "name": "textCapacityResource",
+      "printedName": "textCapacityResource",
+      "static": true,
+      "usr": "s:11AetherImage13Krea2PipelineC20textCapacityResourceSSvpZ"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Int",
+            "printedName": "Swift.Int",
+            "usr": "s:Si"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Int?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage13Krea2PipelineC12textCapacitySiSgvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage13Krea2PipelineC12textCapacitySiSgvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Int?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s11AetherImage13Krea2PipelineC12textCapacitySiSgvp",
+      "moduleName": "AetherImage",
+      "name": "textCapacity",
+      "printedName": "textCapacity",
+      "usr": "s:11AetherImage13Krea2PipelineC12textCapacitySiSgvp"
      },
      {
       "accessors": [
