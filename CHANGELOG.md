@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0-beta.1 — 2026-11-11
+## 0.2.0 — 2026-11-12
 
 0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
 preparation, conditioning reuse, residency control with planned and live resident bytes, reference images, refine and
