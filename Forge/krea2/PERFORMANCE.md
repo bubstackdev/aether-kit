@@ -8,7 +8,10 @@ This is a decoder result, not a claim of 30% faster whole renders.
 
 The fp16 tiled output reached SSIM 0.999974 / PSNR 67.93 dB against the current tiled decoder on the harbor
 reference. Full fp16 decodes passed the saved Diffusers references at 512² (SSIM 0.999978 / PSNR 69.71 dB)
-and 1024² (SSIM 0.999959 / PSNR 65.46 dB). Repeats were identical and all values finite. These are two images,
+and 1024² (SSIM 0.999959 / PSNR 65.46 dB). Repeats were identical and all values finite. A real Swift pipeline
+render of the 1024² mug prompt (8 steps, 512/256 tiles, with accelerated stitching) reached SSIM 0.999995 /
+PSNR 79.33 dB against the saved fp32 tiled render. Its sampled allocation peak was about 37.31 GiB versus
+37.41 GiB for that earlier render. The cold timings are not a controlled speed comparison. These are three images,
 so fp16 remains opt-in and fp32 remains the default. The structural self-test also checks fp16 compute,
 float32 output, and the unchanged float32 encoder path.
 
@@ -36,7 +39,8 @@ Other candidates were tried without changing their production behavior:
   per warm segment-zero call at 256 rows (0.838 to 0.782 s). Fusion itself took about 41 ms warm / 372 ms first-call,
   plus a separate graph load. The segment's first call took 12.37 versus 10.19 s in these processes; compiler/cache
   effects make this a report, not a controlled cold-speed comparison. There is no measured whole-render benefit
-  sufficient to introduce another conditioning representation and graph lifecycle into the runtime. The reproducible
+  sufficient to introduce another conditioning representation and graph lifecycle into the runtime. A repeat with the
+  checked-in probe was slower (0.978 versus 1.237 s warm medians), reinforcing the decision not to promote it. The reproducible
   `bench_krea2_fusion.py` probe is kept for further measurement; its assets are not kit bundles.
 - **Zero overlap:** four decoder calls instead of nine took about 0.46 s at the same allocation, but SSIM fell to
   0.98638 against full decode, below the 0.99 tiled comparison target. Mean seam-band error rose to 0.0563 on the

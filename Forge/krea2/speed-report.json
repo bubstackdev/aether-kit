@@ -8,7 +8,7 @@
     "Metal figures are allocations sampled at graph/step boundaries, not continuously sampled peaks.",
     "Warm decoder medians exclude the first decode. Segment fusion medians exclude the first two calls.",
     "Other CPU development/test work ran on this machine. Timings are development measurements, not release guarantees.",
-    "Quality coverage is the 512-square clock and 1024-square harbor reference, not every possible image."
+    "Quality coverage is the 512-square clock and 1024-square harbor reference plus a native 1024-square mug render, not every possible image."
   ],
   "fp16VAE": {
     "decision": "Add opt-in --vae-compute float16; retain float32 as default. No installed bundles changed.",
@@ -195,6 +195,84 @@
       "passed": true,
       "fp16ComputeCosine": 0.99999797,
       "outputType": "float32"
+    },
+    "nativePipeline": {
+      "candidate": {
+        "architecture": "h17c",
+        "bundle": "vae-fp16-bundle",
+        "decoderTileOverlap": 256,
+        "decoderTileSize": 512,
+        "metalBeforeLoad": 65536,
+        "mode": "revisit",
+        "pairs": [],
+        "pid": 82291,
+        "renders": [
+          {
+            "firstStepSeconds": 58.969646125,
+            "label": "A",
+            "laterStepMeanSeconds": 5.066782565571429,
+            "ledger": [
+              "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#dc2dd9dc3ee1c188/macos-h17c[1024x1024.vae-tiles-512-256].perImage: peak 1351 held 1348",
+              "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#dc2dd9dc3ee1c188/macos-h17c[1024x1024.vae-tiles-512-256].perPrompt: peak 7408 held 7400",
+              "krea-2-turbo-realism@98e0fe118d17c9e3547fbb2e25acdbae2cadf7c7#dc2dd9dc3ee1c188/macos-h17c[1024x1024.vae-tiles-512-256].perStep: peak 30184 held 29365"
+            ],
+            "liveResidentBytesAfter": 39949302920,
+            "metalAllocatedAfter": 40065171456,
+            "metrics": {
+              "conditioningRows": 27,
+              "conditioningSeconds": 34.19335875,
+              "decodeSeconds": 1.9069815829999999,
+              "denoiserPreparationSeconds": 39.256262791,
+              "imageReviewSeconds": 9e-06,
+              "imageTokens": 4096,
+              "loadedRoles": [
+                "denoiser0",
+                "denoiser1",
+                "denoiser2",
+                "denoiser3",
+                "textEncoder",
+                "vaeDecoder"
+              ],
+              "peakAllocatedBytes": 40065302528,
+              "promptReviewSeconds": 1.1083e-05,
+              "samplingSeconds": 94.437124084,
+              "stepSeconds": [
+                58.969646125,
+                5.8884175,
+                5.732339834,
+                4.860494,
+                4.764432666,
+                4.734057917,
+                4.847567583,
+                4.640168459
+              ],
+              "totalSeconds": 169.795844833,
+              "waitSeconds": 0.000304917
+            },
+            "pixelsSHA256": "d2345b9e4e6cfd43cfd98a59edfdb8ab4fbc49b4902d89745d240def30e333ee",
+            "prompt": "A",
+            "residentBytesAfter": 39966211208,
+            "rows": 27
+          }
+        ],
+        "seed": 18,
+        "side": 1024,
+        "steps": 8
+      },
+      "comparison": {
+        "baseline": "2026-11-11 native mug prompt, seed 18, 1024 square, 8 steps, fp32 VAE, 512/256 tiles",
+        "candidate": "same request with opt-in fp16 VAE and accelerated stitching",
+        "ssim": 0.9999951235916313,
+        "psnrDB": 79.32864315788292,
+        "maxAbs": 0.024083435535430908,
+        "finite": true
+      },
+      "runtimeCommit": "a6a74cc",
+      "notes": [
+        "Native run includes accelerated stitching from PR #196.",
+        "About 37.31 GiB sampled allocation peak versus about 37.41 GiB in the saved fp32 tiled run.",
+        "Cold timings span different processes/days and concurrent CPU work; not a controlled speed comparison."
+      ]
     }
   },
   "shorterText": {
@@ -320,7 +398,7 @@
     "qualified": false
   },
   "fusion": {
-    "decision": "Prototype only: about 56 ms less per warm segment-zero call at T=256; additional fusion graph load/first-call work. No measured whole-render benefit to justify a new runtime conditioning contract.",
+    "decision": "Not promoted: about 56 ms less per warm segment-zero call in the first comparison, but the repeat was slower. Additional fusion graph load/first-call work; no demonstrated whole-render benefit.",
     "baseline": {
       "mode": "baseline",
       "metalBefore": 65536,
@@ -369,6 +447,62 @@
         "image_1": 0.0,
         "text_1": 0.0,
         "cond": 0.0
+      }
+    },
+    "repeatBaseline": {
+      "mode": "baseline",
+      "metalBefore": 65536,
+      "textRows": 256,
+      "rows": 27,
+      "size": 1024,
+      "loadSeconds": 2.7,
+      "seconds": [
+        9.299217249965295,
+        0.9818899169331416,
+        0.9788713339949027,
+        0.978789999964647,
+        0.960875750053674,
+        0.9720876670908183,
+        0.9777472909772769
+      ],
+      "warmMedianSeconds": 0.9777472909772769,
+      "metalAfter": 10577231872,
+      "finite": true
+    },
+    "repeatSplit": {
+      "mode": "split",
+      "metalBefore": 65536,
+      "textRows": 256,
+      "rows": 27,
+      "size": 1024,
+      "fusionSeconds": [
+        0.07996962498873472,
+        0.050804083002731204,
+        0.04917604092042893
+      ],
+      "metalWithFusion": 1454194688,
+      "loadSeconds": 5.4,
+      "seconds": [
+        10.37144216708839,
+        1.0378435420570895,
+        1.1301381670637056,
+        1.22514733299613,
+        1.2374045420438051,
+        1.3377382080070674,
+        1.4069257500814274
+      ],
+      "warmMedianSeconds": 1.2374045420438051,
+      "metalAfter": 10406789120,
+      "finite": true,
+      "cosines": {
+        "cond": 1.0000000000000002,
+        "image_1": 1.0,
+        "text_1": 1.0
+      },
+      "maxAbs": {
+        "cond": 0.0,
+        "image_1": 0.0,
+        "text_1": 0.0
       }
     },
     "textRows": 256,
