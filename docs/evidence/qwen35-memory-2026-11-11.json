@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-11",
+  "hardware": "M5 Max, 64 GB",
+  "osBuild": "26B123",
+  "gpuLease": "scripts/gpu-lease, /tmp/atelier-gpu.lock; every GPU invocation serialized",
+  "gate": {
+    "suite": "Qwen35GateTests",
+    "capacity": 2048,
+    "promptTokens": 1071,
+    "pictures": 2,
+    "teacherForcedSteps": 48,
+    "reference": "mlx-vlm 8-bit, group 64, same pinned checkpoint",
+    "limitations": "One accuracy fixture; single timing sample per invocation. Metal bytes are currentAllocatedSize, not process RSS."
+  },
+  "baseline": {
+    "path": "/Users/zakkeown/.cache/huggingface/atelier-converted/qwen3.6-27b-abliterated",
+    "bundleBytes": 18466061600,
+    "precision": {
+      "weights": "decoder int4 block 32 (symmetric), head int8 per channel (symmetric), embedding and vision fp16",
+      "activations": "vision float32, decoder float16",
+      "kv": "fp16",
+      "logits": "fp32",
+      "components": {
+        "vision": "fp16 weights, fp32 compute; LayerNorm statistics, rotary and position resampling fp32; outputs fp16",
+        "decoder": "int4 block 32 (symmetric) Linears, fp16 embedding, residual stream and KV, float32 attention; RMSNorm statistics, M-RoPE angles, the Gated DeltaNet scan and its state fp32; head int8 per channel (symmetric)",
+        "io": "patches f32, grid i32; image embeds fp16; tokens, positions, image_positions and rope shifts i32; logits f32"
+      }
+    },
+    "source": {
+      "repository": "huihui-ai/Huihui-Qwen3.6-27B-abliterated",
+      "revision": "27502c8717fd5a2f8c0c77188c10c243fd4f672e"
+    },
+    "accuracyAndTiming": [
+      "GATE qwen35 load: 76.9 s, decode encode + GPU argmax, depth 3, model (gpu: 106479616, disk: 18443139585), Metal 17603 MiB",
+      "GATE qwen35 teacher-forced against mlx-vlm 8-bit (group 64) conversion of the pinned checkpoint, greedy: argmax 40/48 (disagree at [1, 3, 17, 19, 21, 31, 36, 38]), reference token in our top 5 48/48, KL mean 0.0813 max 0.4636",
+      "GATE qwen35 timing: bind 0.96 s (2 pictures), prompt 1071 tokens 2.57 s, step median 49.3 ms; Metal 19970 MiB",
+      "GATE qwen35 greedy: 48 tokens in 5.5 s, the reference's first 1"
+    ],
+    "repeatedRequests": [
+      "GATE qwen35 retention: after load 17603 MiB, reload budget none",
+      "GATE qwen35 retention: request 1 (two pictures, 1071 prompt tokens, reused 0): 7.7 s, Metal 20338 MiB, reloads 0",
+      "GATE qwen35 retention: request 2 (two pictures again, 1071 prompt tokens, reused 0): 4.5 s, Metal 20342 MiB, reloads 0",
+      "GATE qwen35 retention: request 3 (one picture, 589 prompt tokens, reused 0): 3.9 s, Metal 20334 MiB, reloads 0",
+      "GATE qwen35 retention: request 4 (text only, 25 prompt tokens, reused 0): 1.5 s, Metal 20334 MiB, reloads 0",
+      "GATE qwen35 retention: request 5 (two pictures, 1071 prompt tokens, reused 0): 4.5 s, Metal 20346 MiB, reloads 0",
+      "GATE qwen35 retention: request 6 (one picture, 589 prompt tokens, reused 0): 3.0 s, Metal 20342 MiB, reloads 0",
+      "GATE qwen35 retention: request 7 (two pictures, 1071 prompt tokens, reused 0): 4.7 s, Metal 20342 MiB, reloads 0",
+      "GATE qwen35 retention: growth after the first request 4 MiB"
+    ],
+    "warmRepeat": [
+      "GATE qwen35 load: 22.3 s, decode encode + GPU argmax, depth 3, model (gpu: 106479616, disk: 18443139585), Metal 17603 MiB",
+      "GATE qwen35 teacher-forced against mlx-vlm 8-bit (group 64) conversion of the pinned checkpoint, greedy: argmax 40/48 (disagree at [1, 3, 17, 19, 21, 31, 36, 38]), reference token in our top 5 48/48, KL mean 0.0813 max 0.4636",
+      "GATE qwen35 timing: bind 0.97 s (2 pictures), prompt 1071 tokens 4.87 s, step median 50.7 ms; Metal 19970 MiB",
+      "GATE qwen35 greedy: 48 tokens in 9.1 s, the reference's first 1"
+    ]
+  },
+  "candidate": {
+    "path": "/private/tmp/qwen35-memory-int8-bundle",
+    "bundleBytes": 17195657178,
+    "precision": {
+      "weights": "decoder int4 block 32 (symmetric), head int8 per channel (symmetric), int8 per-row embedding, vision fp16",
+      "activations": "vision float32, decoder float16",
+      "kv": "fp16",
+      "logits": "fp32",
+      "components": {
+        "vision": "fp16 weights, fp32 compute; LayerNorm statistics, rotary and position resampling fp32; outputs fp16",
+        "decoder": "int4 block 32 (symmetric) Linears, int8 per-row embedding, fp16 residual stream and KV, float32 attention; RMSNorm statistics, M-RoPE angles, the Gated DeltaNet scan and its state fp32; head int8 per channel (symmetric)",
+        "io": "patches f32, grid i32; image embeds fp16; tokens, positions, image_positions and rope shifts i32; logits f32"
+      }
+    },
+    "source": {
+      "repository": "huihui-ai/Huihui-Qwen3.6-27B-abliterated",
+      "revision": "27502c8717fd5a2f8c0c77188c10c243fd4f672e"
+    },
+    "accuracyAndTimingAndRepeatedRequests": [
+      "GATE qwen35 load: 75.4 s, decode encode + GPU argmax, depth 3, model (gpu: 106479616, disk: 17172735004), Metal 16392 MiB",
+      "GATE qwen35 teacher-forced against mlx-vlm 8-bit (group 64) conversion of the pinned checkpoint, greedy: argmax 41/48 (disagree at [3, 17, 19, 21, 31, 36, 38]), reference token in our top 5 48/48, KL mean 0.0818 max 0.4665",
+      "GATE qwen35 timing: bind 0.96 s (2 pictures), prompt 1071 tokens 3.37 s, step median 49.7 ms; Metal 18757 MiB",
+      "GATE qwen35 greedy: 48 tokens in 6.3 s, the reference's first 3",
+      "GATE qwen35 retention: after load 16392 MiB, reload budget none",
+      "GATE qwen35 retention: request 1 (two pictures, 1071 prompt tokens, reused 0): 7.8 s, Metal 19117 MiB, reloads 0",
+      "GATE qwen35 retention: request 2 (two pictures again, 1071 prompt tokens, reused 0): 6.5 s, Metal 18853 MiB, reloads 0",
+      "GATE qwen35 retention: request 3 (one picture, 589 prompt tokens, reused 0): 4.8 s, Metal 19113 MiB, reloads 0",
+      "GATE qwen35 retention: request 4 (text only, 25 prompt tokens, reused 0): 1.7 s, Metal 18853 MiB, reloads 0",
+      "GATE qwen35 retention: request 5 (two pictures, 1071 prompt tokens, reused 0): 6.4 s, Metal 18853 MiB, reloads 0",
+      "GATE qwen35 retention: request 6 (one picture, 589 prompt tokens, reused 0): 4.3 s, Metal 19113 MiB, reloads 0",
+      "GATE qwen35 retention: request 7 (two pictures, 1071 prompt tokens, reused 0): 7.3 s, Metal 18849 MiB, reloads 0",
+      "GATE qwen35 retention: growth after the first request -268 MiB",
+      "GATE qwen35 logits: call of 1 (position 1): NaN 0, max 13.129356, argmax 25",
+      "GATE qwen35 logits: call of 3 (position 4): NaN 0, max 14.906282, argmax 279",
+      "GATE qwen35 logits: call of 32 (position 36): NaN 0, max 17.293205, argmax 7022",
+      "GATE qwen35 logits: call of 12 (position 48): NaN 0, max 21.810493, argmax 1070",
+      "GATE qwen35 logits: call of 1 (position 49): NaN 0, max 22.125751, argmax 321",
+      "GATE qwen35 logits: call of 1 (position 50): NaN 0, max 19.305222, argmax 9973",
+      "GATE qwen35 logits: call of 1 (position 51): NaN 0, max 22.249014, argmax 264"
+    ],
+    "warmRepeat": [
+      "GATE qwen35 load: 18.9 s, decode encode + GPU argmax, depth 3, model (gpu: 106496000, disk: 17172735004), Metal 16392 MiB",
+      "GATE qwen35 teacher-forced against mlx-vlm 8-bit (group 64) conversion of the pinned checkpoint, greedy: argmax 41/48 (disagree at [3, 17, 19, 21, 31, 36, 38]), reference token in our top 5 48/48, KL mean 0.0818 max 0.4665",
+      "GATE qwen35 timing: bind 0.98 s (2 pictures), prompt 1071 tokens 4.08 s, step median 50.7 ms; Metal 18753 MiB",
+      "GATE qwen35 greedy: 48 tokens in 9.1 s, the reference's first 3"
+    ]
+  },
+  "bundleSavingsBytes": 1270404422,
+  "runtimeGrowth": {
+    "change": "Retain recurrent buffers while growing sequence buffers",
+    "avoidedTemporaryBytes27B": 153944064,
+    "validation": "kvGrowthKeepsRecurrentStorageAndValues; all 16 DecoderEngineTests passed"
+  },
+  "validation": [
+    "CPU graph parity and embedding quantization checks passed",
+    "GPU float16 selftest with --embedding-bits 8 passed",
+    "scripts/ci.sh passed: debug/release builds, public API, hermetic tests",
+    "27B candidate: teacher-forced/greedy, seven-request memory and call-size NaN gates passed"
+  ]
+}

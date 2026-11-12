@@ -289,6 +289,21 @@ struct DecoderEngineTests {
         await #expect(throws: AetherError.self) { try await engine.rewind(to: 99) }
     }
 
+    @Test func kvGrowthKeepsRecurrentStorageAndValues() async throws {
+        let (engine, _, _) = try await Self.engine(FakeLM.Config(recurrent: true), options: Self.options(initial: 4))
+        func verify(_ engine: isolated DecoderEngine) async throws {
+            let recurrent = try #require(engine.core.states["rec"])
+            let keys = try #require(engine.core.states["keys"])
+            let prompt = Self.prompt(20)
+            let logits = try #require(try await engine.prefill(prompt))
+            #expect(engine.capacity == 32)
+            #expect(try #require(engine.core.states["rec"]).isSameStorage(as: recurrent))
+            #expect(!(try #require(engine.core.states["keys"])).isSameStorage(as: keys))
+            #expect(try Logits.argmax(logits.last) == Self.expectedGreedy(prompt, count: 1)[0])
+        }
+        try await verify(engine)
+    }
+
     @Test func recurrentModelsRefusePartialRewindAndRestoreSnapshots() async throws {
         let (engine, _, _) = try await Self.engine(FakeLM.Config(staticStep: true, recurrent: true), options: Self.options(initial: 8))
         #expect(engine.description.hasRecurrentState)

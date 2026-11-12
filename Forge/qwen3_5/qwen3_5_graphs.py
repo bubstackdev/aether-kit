@@ -462,6 +462,7 @@ class Decoder(nn.Module):
         lm = model.model.language_model
         self.kinds = list(cfg.layer_types)[:len(lm.layers)]
         self.register_buffer("embed", lm.embed_tokens.weight.detach().to(storage).clone())
+        self.register_buffer("embed_scale", None)
         mixers, mlps, in_norms, post_norms = [], [], [], []
         for i, (layer, kind) in enumerate(zip(lm.layers, self.kinds)):
             if before_layer is not None:
@@ -485,6 +486,25 @@ class Decoder(nn.Module):
         self.full_layers = sum(k == "full_attention" for k in self.kinds)
         self.linear_layers = len(self.kinds) - self.full_layers
 
+    @torch.no_grad()
+    def quantize_embedding(self) -> None:
+        """Symmetric int8 per vocabulary row; only gathered rows are dequantized at inference.
+
+        Quantize in pieces to avoid a full float32 copy of the 27B's 2.5 GB table.
+        Float32 scales also preserve zero and very small rows without fp16 underflow.
+        """
+        if self.embed.dtype == torch.int8:
+            return
+        packed = torch.empty_like(self.embed, dtype=torch.int8)
+        scales = torch.empty(self.vocab, 1, dtype=torch.float32)
+        for start in range(0, self.vocab, 1024):
+            rows = self.embed[start:start + 1024].float()
+            scale = rows.abs().amax(dim=1, keepdim=True) / 127
+            scale = torch.where(scale > 0, scale, torch.ones_like(scale))
+            packed[start:start + 1024] = (rows / scale).round().clamp(-127, 127).to(torch.int8)
+            scales[start:start + 1024] = scale
+        self.embed, self.embed_scale = packed, scales
+
     def rope(self, pt, ph, pw):
         """cos, sin [1, 1, S, rotary dim] float32 from the three position rows [S] (int32)."""
         f, a = self.inv_freq, self.axes
@@ -501,7 +521,11 @@ class Decoder(nn.Module):
         ids = input_ids[0]
         v, n = self.vocab, self.slots
         is_img = ids >= v
-        text = F.embedding(torch.clamp(ids, 0, v - 1), self.embed).to(self.dtype)
+        text_ids = torch.clamp(ids, 0, v - 1)
+        text = F.embedding(text_ids, self.embed)
+        if self.embed_scale is not None:
+            text = text.float() * F.embedding(text_ids, self.embed_scale)
+        text = text.to(self.dtype)
         image = F.embedding(torch.clamp(ids - v, 0, n - 1), image_embeds).to(self.dtype)
         x = torch.where(is_img[:, None], image, text)[None]
         pt, ph, pw = mrope_positions(ids, p, image_positions, rope_shift_start, rope_shift_amount, v, n)
