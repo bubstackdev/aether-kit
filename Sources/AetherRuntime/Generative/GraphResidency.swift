@@ -596,6 +596,10 @@ public final class GraphResidency {
                 held = min(held, max(prior, level - unloadedLevel - others))
                 peak = min(peak, max(held, current.meter.peak - unloadedLevel - others))
             }
+            if getenv("AETHER_ADMISSION_TRACE") != nil {
+                let others = heldSoFar.filter { $0.key != phase }.values.reduce(0, +)
+                fputs("residency: endPhase \(phase) mode=\(mode) profile=\(profile) baseline=\(current.baseline) observed=\(current.observed) level=\(level) meterPeak=\(current.meter.peak) prior=\(prior) rawHeld=\(prior + (level - current.baseline)) rawPeak=\(prior + (current.meter.peak - current.baseline)) unloaded=\(unloadedLevel.map(String.init) ?? "-") others=\(others) held=\(held) peak=\(peak) loaded=\(residentRoles)\n", stderr)
+            }
             measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
             ledger.record(.init(model: model, profile: profile, phase: phase, specializations: recordedSpecializations),
