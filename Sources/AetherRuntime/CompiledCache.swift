@@ -6,11 +6,13 @@ import Foundation
 /// the graphs still to compile come to: what a host needs before a first load, which writes the compiled copies to
 /// disk (on the order of the source graphs' size; measure the ratio for a given model).
 public struct CompiledCacheStatus: Sendable, Hashable {
+    /// One graph file's lookup.
     public struct Entry: Sendable, Hashable {
         /// The manifest graph role, e.g. `textEncoder`.
         public var role: String
         /// The graph file as this device resolves it (a bucket's own file is a separate entry).
         public var file: AssetPath
+        /// Core AI's compile cache already holds a compiled copy for this device and these options.
         public var compiled: Bool
         /// The declared bytes of the graph's source files (the reference's files under `file`).
         public var sourceBytes: Int64
@@ -37,12 +39,13 @@ public struct CompiledCacheStatus: Sendable, Hashable {
     }
 }
 
+/// Lookups in Core AI's compile cache (``status(of:manifest:device:roles:cache:)``). Nothing here compiles or deletes.
 public enum CompiledCache {
     /// Looks each graph of `manifest` (only `roles`, when given) up in Core AI's compile cache, with the specialization
     /// options a load from this manifest uses (`compute`, `expectFrequentReshapes`) and `cache`. Nothing is compiled.
-    /// Core AI's lookup (`AIModelCache.model(for:options:)`) returns the cached model, which is released at once; what
-    /// the lookup itself reads for a large model is not yet measured, so call it off the main actor and before taking
-    /// the GPU, not on a generation's path. A graph whose reshape hint is absent and depends on its signature throws
+    /// Core AI's lookup (`AIModelCache.model(for:options:)`) returns the cached model, which is released at once. On the
+    /// Krea 2 realism export the whole lookup took 5 ms and allocated no Metal; still call it off the main actor and
+    /// before taking the GPU, not on a generation's path. A graph whose reshape hint is absent and depends on its signature throws
     /// ``AetherError/manifestInvalid(field:reason:)``, as loading it without the signature would.
     public static func status(
         of bundle: InstalledBundle, manifest: Manifest, device: Device, roles: Set<String>? = nil,

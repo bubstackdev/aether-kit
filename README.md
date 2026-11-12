@@ -3,7 +3,8 @@
 On-device models for Apple silicon, built directly on Apple's Core AI framework. Requires macOS 27 / iOS 27, Xcode 27.2
 and Swift 6.4.
 
-**Status: 0.1.0, released 2026-11-07** ([CHANGELOG](CHANGELOG.md)). This is a from-scratch re-architecture of
+**Status: 0.2.0-beta.1, prerelease 2026-11-11** ([CHANGELOG](CHANGELOG.md)); 0.1.0 was released
+2026-11-07. This is a from-scratch re-architecture of
 AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch (see
 [Migrating from 0.0.x](#migrating-from-00x)). Start with
 [`docs/DESIGN.md`](docs/DESIGN.md) (the architecture) and [`docs/MANIFEST.md`](docs/MANIFEST.md) (the model bundle contract).
@@ -14,14 +15,14 @@ AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch
 | Module | What it provides |
 | --- | --- |
 | `AetherCore` | Model identity and the pinned catalog, with per-file SHA-256 and no runtime catalog fetch. Also the model store: atomic staged installs, resume, joined downloads, reader leases, stage recovery and iOS background downloads. And the `aether.json` manifest schema with the zoo-bundle adapter and its override table. No Core AI dependency. |
-| `AetherRuntime` | Core AI graphs with manifest-driven specialization, a tensor arena, bindings and snapshot/restore state, plus a driver registry. `DecoderEngine` runs causal LMs with memory-sized KV, the manifest's prefill schedule, O(1) rewind or hybrid snapshots, and token-exact pipelined greedy decode guarded by a load-time canary. |
-| `AetherText` | Tokenizer adapter (template-owned BOS, pinned sources), the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured output, Hermes tool calls) and `ChatSession`. |
+| `AetherRuntime` | Core AI graphs with manifest-driven specialization, a tensor arena, bindings and snapshot/restore state, plus a driver registry. `DecoderEngine` runs causal LMs with memory-sized KV charged against the model's measured (or kit-qualified) memory, the manifest's prefill schedule (in calls of at most 32 tokens on reshaping Core AI graphs, with a reload budget for what Core AI retains), O(1) rewind or hybrid snapshots, and token-exact pipelined greedy decode guarded by a load-time canary. The `vlm-static-inject@1` driver loads a decoder and a grid-static vision tower into one `DecoderEngine` (an `ImageConditionedEngine`) for vision-language models, Qwen3-VL first. |
+| `AetherText` | Tokenizer adapter (template-owned BOS, pinned sources), the Generator (prefix reuse, stop and tag parsing, a seeded sampler, JSON-schema structured output, Hermes tool calls) and `ChatSession`, whose user turns can carry images on a `vlm-static-inject@1` bundle (`ChatMessage.user(_:images:)`, `respond(to:images:)`). |
 | `AetherFoundationModels` | `AetherLanguageModel`: any supported catalog model behind Apple's `LanguageModelSession`, with guided generation (`@Generable`) and tool calling. |
 | `AetherHost` | The shared GPU lease (wire-compatible with Atelier's lock), GPU admission (enforced by default, with per-job priorities), `ResourceCoordinator` (an explicitly shared memory budget), the generative pipelines' `PipelineOptions`, and `ModelHost`'s model lifecycle: idle unload and memory-pressure release for models loaded through it. |
-| `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only). SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
+| `AetherImage` | Image generation from a seed, with measured residency planning: `LatentDiffusionPipeline` runs SD-Turbo (`latent-diffusion@1`), `Flux2KleinPipeline` runs FLUX.2 [klein] 4B (`flux2-klein@1`, macOS only), `Krea2Pipeline` runs Krea 2 Turbo, vanilla and realism (`krea2@1`, macOS only), with progress and metrics, CPU prompt preparation, reusable conditioning, reference images, refine and residency control. SD-Turbo is under the Stability AI Community License; check its terms before shipping it. FLUX.2 [klein] is Apache-2.0. Krea 2 is under the Krea 2 Community License, which requires a content filter: a Krea pipeline is only built with your `ContentFilter`, and what it allows is your responsibility. |
 | `AetherSpeech` | Speech from phonemes: `KokoroSpeechSession` runs Kokoro-82M (`kokoro@1`, 54 voices, 24 kHz), on macOS and iOS. Text-to-phoneme is the app's (`SpeechPhonemizer`): no GPL G2P ships. Apache-2.0. |
-| `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 960×544×124 at 24 fps with 32 kHz stereo audio), from text or anchored to a first frame, a last frame or both (FL2VA keyframes), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
-| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image) and RF-DETR nano and seg-nano (`detector-detr@1`, COCO, seg-nano with instance masks at the source's resolution); `ImageTextEncoder` runs OpenAI CLIP ViT-B/32 (`clip-joint@1`: image and text embeddings, zero-shot classification), on macOS and iOS. Super-resolution and VLM drivers come after 0.1.0. |
+| `AetherVideo` | Video with audio: `MiniMaxH3Pipeline` runs MiniMax H3 (`minimax-h3@1`, 5 s and 10 s clips from 704×704 to 1280×704 at 24 fps with 32 kHz stereo audio, each profile admitted under its measured memory envelope), from text or anchored to a first frame, a last frame or both (FL2VA keyframes), macOS only. MiniMax H3 Community License: its territory excludes the EU, UK, South Korea and USA, and the bundle is not publicly hosted: it runs from a bundle you export yourself (`Forge/h3/`). |
+| `AetherVision` | Vision models on static graphs (M4): `DepthEstimator` runs Depth Anything 3 small (`depth-estimator@1`, relative depth and confidence, resized back to the source image); `ObjectDetector` runs YOLOX-S (`detector-dense@1`, the 80 COCO classes, boxes in the source image) and RF-DETR nano and seg-nano (`detector-detr@1`, COCO, seg-nano with instance masks at the source's resolution); `ImageTextEncoder` runs OpenAI CLIP ViT-B/32 (`clip-joint@1`: image and text embeddings, zero-shot classification), on macOS and iOS. Super-resolution comes later; vision-language models run through `AetherText` (`vlm-static-inject@1`). |
 | `AetherEmbeddings` | Embeddings on static graphs (M4): `TextEmbedder` runs EmbeddingGemma 300M (`text-embedder@1`, 768-dimensional unit vectors, query and document prompts, 256 tokens), on macOS and iOS. The reranker, classifiers and page retrieval come after 0.1.0. Gemma is provided under and subject to the Gemma Terms of Use found at [ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms). |
 | `Aether` | The umbrella: re-exports AetherText, AetherVision, AetherImage, AetherSpeech, AetherVideo, AetherEmbeddings and the AetherDecide placeholder. |
 | `AetherDecide` | Planned (milestones M5–M6). |
@@ -42,6 +43,7 @@ AetherKit 0.0.x, which lives on at the `0.0.7` tag and the `legacy/0.0.x` branch
 | `clip-vit-b32` | `clip-joint@1` | ✓ | ✓ | MIT. OpenAI's model card scopes CLIP to research use: deployed use untested, surveillance and face recognition out of scope (guidance, not a license term) |
 | `embeddinggemma-300m` | `text-embedder@1` | ✓ | ✓ | Gemma Terms of Use and the Gemma Prohibited Use Policy, passed on to your users. A gated Hugging Face repo with automatic approval (accept the terms, then install with a token) |
 | the language models: `qwen3-0.6b`, `qwen3.5-0.8b`, `gemma-3-4b-it`, `gemma-4-e2b`, `minicpm5-1b`, `lfm2.5-1.2b`, `granite-4.0-h-1b`, `nemotron-3-nano-4b`, `nanbeige4.1-3b`, `youtu-llm-2b`, `mistral-7b-v0.3` | `decoder-lm@1` | ✓ | ✓ except `gemma-3-4b-it` and `mistral-7b-v0.3` (`nemotron-3-nano-4b` and `gemma-4-e2b` only on `h18p` iPhones: per-architecture AOT bundles) | per model (Apache-2.0, Gemma terms, or the publisher's own); see its catalog entry |
+| none: Qwen3 dense decoders (`Forge/qwen3`), Qwen3-VL (`Forge/qwen3vl`) and Qwen3.5 / Qwen3.6 (`Forge/qwen3_5`), locally exported bundles | `decoder-lm@1`, `vlm-static-inject@1` | ✓ (qualified model bytes for the pinned 4B writer and describer exports on `h17c`) | not device-gated | the checkpoint's own (Apache-2.0 for Qwen3, Qwen3-VL, Qwen3.5 and Qwen3.6); a local export carries it |
 | none: MiniMax H3, a locally exported bundle | `minimax-h3@1` | ✓ | refused | MiniMax H3 Community License: **no rights in the EU, UK, South Korea or USA**; "MiniMax H3" shown in commercial products. Not in the catalog and not publicly hosted |
 
 Every row but MiniMax H3 is in the built-in catalog, pinned to a Hugging Face revision with per-file SHA-256. The image,
@@ -54,7 +56,7 @@ before you ship a model.
 ## Quick start
 
 ```swift
-.package(url: "https://github.com/bubstackdev/aether-kit.git", from: "0.1.0")
+.package(url: "https://github.com/bubstackdev/aether-kit.git", exact: "0.2.0-beta.1")
 ```
 
 A one-call `ChatSession(catalog:)` arrives with `ModelHost` in M6. Today, a session is built from an installed bundle:
@@ -183,7 +185,8 @@ in the iOS Simulator: run on a device or a Mac.
 ## Migrating from 0.0.x
 
 0.1.0 is a **breaking** release: new modules, new APIs and a macOS 27 / iOS 27 floor (0.0.x linked down to macOS 14 /
-iOS 17).
+iOS 17). Moving straight to 0.2.0? Its CHANGELOG entry adds what changes for a 0.0.x host on top of this list: every
+model re-exported, new model identities, and where 0.0.7's Krea, video and vision-language APIs went.
 
 - **To stay on 0.0.x,** depend on `exact: "0.0.7"` or `.upToNextMinor(from: "0.0.7")`. **`from: "0.0.7"` will resolve to
   0.1.0 and break,** so pin it. Fixes for 0.0.x go to the `legacy/0.0.x` branch.

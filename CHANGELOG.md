@@ -1,6 +1,107 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-beta.1 — 2026-11-11
+
+0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
+preparation, conditioning reuse, residency control with planned and live resident bytes, reference images, refine and
+one fixed text length; MiniMax H3 keyframes, every video profile with measured admission, clip limits and streamed
+frames; our own Qwen3 language-model exports; the `vlm-static-inject@1` vision-language driver, with Qwen3-VL and
+Qwen3.5 / Qwen3.6 exports and images on decoders with recurrent state; measured and
+qualified model memory for the decoder engine, with a narrow prefill and a reload budget that keep the describer's
+memory flat; and location-free bundle identity, status and verification, compiled-cache status and GPU waiters. It is
+additive over 0.1.0 except for the entries under "Breaking". The prereleases `0.2.0-alpha.1` to `0.2.0-alpha.6`
+carried it; the API freeze review renamed or hid a few of alpha.3's declarations in alpha.4 and alpha.5 (see
+"Breaking" and "Changed"). Beta.1 also adds configurable masked text capacity and opt-in tiled VAE decoding for Krea 2.
+
+**Release notes, in short:**
+
+- **The describer trades prefill speed for flat memory.** On Core AI decoders specialized for frequent reshapes,
+  prefill now runs in calls of at most 32 tokens, about twice as slow (one picture 0.51 s instead of 0.24 s; the owner
+  accepted the trade on 2026-11-10). What the narrow calls still retain is released by reloading the decoder's graphs
+  past a 2 GiB budget (docs/VLM.md V6): about once every 21 requests of the G5 mix, 2.7 s each, at the end of the
+  request that crossed the budget. The G5 retention gate now checks the reload budget and peak retained memory (see "Fixed"). Both apply to `decoder-lm@1` exports too. See "Fixed".
+- **Qualified model bytes ship for the two local 4B exports** on `h17c` (M5), each the native gate's measurement plus
+  the owner's 256 MiB margin: the writer (Qwen3 `decoder-lm@1`, Qwen3 export gate) at 9,957 + 256 MiB, and the
+  describer (Qwen3-VL `vlm-static-inject@1`, G5 with the 32-token prefill and the reload budget) at 12,379 + 256 MiB.
+  A bundle load charges them by default (`ModelCharge.qualified`); any other export or chip charges what load
+  measures. See "New".
+- **MiniMax H3 admits only what was measured.** Every profile (5 s and 10 s, 704×704 to 1280×704) runs under a
+  memory envelope the H2 gate measured on that export and chip, and refuses anything else before loading, with a
+  typed `VideoRefusal`. Recording envelopes doesn't change an export's identity. See "Breaking" and "New".
+
+### Breaking
+
+- **`Manifest.ImagePreprocess.Resize.Mode` gains `smartResize`** (for `vlm-static-inject@1`), so an exhaustive
+  `switch` over it no longer compiles. Add a case or a `default`. This is the only source break `swift-api-digester`
+  reports against the 0.1.0 baseline.
+- **MiniMax H3 refuses a profile it has no measured envelope for.** `MiniMaxH3Pipeline` admits a
+  request only under an envelope for its admission key (`VideoAdmissionKey`) and recipe, measured on this export and
+  this chip, on a device with the profile's minimum physical memory (`VideoAdmissionPolicy.measuredOnly`, the default,
+  also for the 0.1.0 initializer). Anything else throws before anything loads, typed as a `VideoRefusal`
+  (`.unmeasured`, `.recipeNotOffered` as `unsupportedOperation`; `.insufficientPhysicalMemory` as `capacity`), read
+  back with `VideoRefusal(_:)`. A 0.1.0 export without `h3.envelopes` keeps only what its qualified footprints cover.
+  Re-run `scripts/h3-memory-gate` on the export and record its envelopes (the gate measures with the `@_spi(Testing)` policy `.measuring`).
+- **MiniMax H3 prompt-length refusals change error.** A prompt too long for the clip, or a clip no
+  prompt fits, now throws `AetherError.capacity(what:needed:available:)` (read back with `VideoRefusal(_:)` as
+  `.promptTooLong` or `.tooLargeAtSize`) where 0.1.0 threw `GenerationFailure.invalidParameters`. A prompt shorter than the clip's minimum is still
+  `invalidParameters`.
+- **For hosts on `0.2.0-alpha.1` to `0.2.0-alpha.3`: renamed or hidden by the API freeze review** (in alpha.4 and
+  alpha.5). None of these was in 0.1.0, so a 0.1.0 host is unaffected (details under "Changed"):
+
+  | 0.2.0-alpha.3 | 0.2.0 |
+  | --- | --- |
+  | `Krea2Pipeline.residentBytes` (the plan) | `plannedResidentBytes`; the live reading is the new `liveResidentBytes` |
+  | `SharedGPULease.legacyWrapperLock` | internal: `hasWaiters(directory:)` checks the lab wrapper's lock itself |
+  | `PhasedGraphBackend`, `GraphFunctionSet`, the 9-argument `DecoderEngine.init(step:prefill:graph:…)`, `ImagePromptPlan`'s planning, `ImageInputSpec.prepare(_:)`, `PreparedPromptImage`'s `init`/`values`/`rowLength`/`merge`/`geometry` | `package` |
+  | `DecoderEngine.imageEncodes` | `@_spi(Diagnostics)` |
+  | `gridH` / `gridW` (`PreparedPromptImage`, `ImagePromptPlan.Image`) | `gridHeight` / `gridWidth` |
+  | `padId` / `openId` / `closeId` (`ImageInputSpec`, `ImagePromptPlan.padId`) | `padID` / `openID` / `closeID` (manifest JSON unchanged) |
+
+### Migrating from 0.0.x
+
+For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's "Breaking" below and the README's
+[migration notes](README.md#migrating-from-00x) first (modules, the macOS 27 floor, `aether.json`).
+
+- **Re-export every model.** 0.2.0 doesn't read 0.0.x bundles (prototype `aether.json`, `language-model.json`, video
+  packs assembled from a source checkpoint). Export with `Forge/` and open each export from its folder with
+  `InstalledBundle(ref:url:isStale:)`:
+  - Krea 2 with `Forge/krea2`: the masked fixed-length denoisers (the default), plus the `vision` graph and the text
+    encoder's `references` function for reference images, and `vaeEncoder` for refine.
+  - MiniMax H3 with `Forge/h3`, carrying every profile you offer, then its measured envelopes from
+    `scripts/h3-memory-gate`.
+  - A Qwen3 decoder with `Forge/qwen3` as `decoder-lm@1`; Qwen3-VL with `Forge/qwen3vl` and Qwen3.5 / Qwen3.6 with
+    `Forge/qwen3_5`, both as `vlm-static-inject@1`.
+- **New identities, by design.** `InstalledBundle.contentIdentity()` is a location-free digest of the driver, the
+  variant, every declared file and the manifest. It has no relation to a 0.0.x fingerprint, and nothing maps one to
+  the other. Mint identities in a new version family and never carry a 0.0.x one over. For example, prefix the content
+  identity with a role and a new major version: `krea2.text-only/2:<content identity>`,
+  `minimax-h3.fl2va-turbo/2:<content identity>`, `writer.decoder-lm/2:<content identity>` and
+  `describer.vlm-static-inject/2:<content identity>`. Use `contentIdentity(capability:)` where a reference-capable
+  identity must differ from the text-only one.
+- **Recipes and approvals made on 0.0.x are invalidated.** Every 0.2.0 export is a new export (Krea 2's at a fixed,
+  masked text length), so a saved seed doesn't reproduce a 0.0.x picture or clip exactly, even where the noise stream
+  is the same. Mark saved recipes as historical rather than rebinding them, and redo any approval bound to a 0.0.x
+  identity on the new model.
+- **Where 0.0.7's APIs went:**
+
+  | 0.0.7 | 0.2.0 |
+  | --- | --- |
+  | `KreaGenerationSession`'s `KreaGenerationEvent` progress | `Krea2Pipeline.generate(_:observing:)`: `ImageProgress`, and `ImageGeneration.metrics` (`ImageGenerationMetrics`) |
+  | prompt preflight and readiness | `Krea2Pipeline.prepare(prompt:)` → `Krea2PreparedPrompt` (`truncated`, `conditioningRows`); the host refuses a cut prompt |
+  | `KreaGenerationSession.prepare(prompt:)` → `KreaPreparedPrompt` (the encoded conditioning) | `encode(prompt:job:)` → `Krea2Conditioning`, then `generate(_:reusing:observing:)`. Note the rename: 0.2.0's `prepare(prompt:)` is the CPU-only tokenization, `encode` runs the text encoder |
+  | `KreaReferencePrompt`, `KreaReferencePixels` (AetherKrea) | `Krea2ReferenceImage`, `prepare(prompt:references:)`, `encode(prompt:references:job:)` |
+  | `encodeImage(_:encoder:)`, `refine(configuration:preparedPrompt:start:noise:progress:)`, `KreaRefineStart` | `encode(image:job:)`, `generate(_:refining:reusing:noise:observing:)`, `Krea2RefineStart` |
+  | keeping a model warm, `AetherError.memoryPressure` | `setRetention(_:)`, `releaseIfIdle()`, `plannedResidentBytes` (the plan's held bytes; 0.1.0's `ResidentAdmission.residentBytes`) and `liveResidentBytes` (the live reading); `PipelineOptions.pressure` → `AetherError.memoryPressure` |
+  | the decoder's KV budget charged with the model's memory | `DecoderEngine.Options.modelCharge` (`ModelCharge`: `.qualified`, the default, `.measured`, `.declared(bytes:)`), `DecoderEngine.qualifiedModelBytes(for:device:)`, `DecoderEngine.memory` (`measuredModelBytes`, `liveResidentBytes`), `declaredModelBytes` |
+  | the language engine's reload past a 2 GiB retention budget | `DecoderEngine.Options.reloadBudgetBytes` (default `defaultReloadBudgetBytes`, on by default for bundle-loaded reshaping Core AI decoders), `reloadIfRetainedPastBudget()`, `reloads`; the narrow prefill is `Options.prefillWidth` |
+  | video prompt-length and admission refusals (message text) | `VideoRefusal` (`.unmeasured`, `.recipeNotOffered`, `.insufficientPhysicalMemory`, `.promptTooLong`, `.tooLargeAtSize`) and `VideoRefusal(_:)` |
+  | clip limits and preflight | `clipLimits(profile:keyframeCount:)` → `VideoClipLimits`, `preflight(_:)` → `VideoPreflight` (`frameCount`, `admissionKey: VideoAdmissionKey`); measured admission per profile: `envelopes`, `envelope(for:)` → `VideoMemoryEnvelope` |
+  | a clip's frames held until the end | `generate(_:onProgress:frames:)` → `VideoFrame` to an async sink; `GeneratedVideo.frameCount`, `.seed` |
+  | first- and last-frame video | `VideoRequest(prompt:keyframes:…)` with `VideoKeyframes` |
+  | pack status and verification | `InstalledBundle.status(supportedDrivers:)`, `verifiedStatus(…)`, `verify(progress:)` |
+  | probing the compile cache's folders | `CompiledCache.status(of:manifest:device:roles:cache:)` |
+  | waiting tools on the GPU lock | `SharedGPULease.hasWaiters(directory:)` (or `hasWaiters(directory:legacyWrapper:)` for another lock), `othersWaiting` |
+  | `VisionLanguageSession` (AetherLanguageCoreAI) | `ChatSession` on a `vlm-static-inject@1` bundle: `ChatMessage.user(_:images:)`, `respond(to:images:)` |
 
 ### Added
 

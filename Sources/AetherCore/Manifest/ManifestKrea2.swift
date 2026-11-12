@@ -118,6 +118,8 @@ extension Manifest {
         /// text-encoder rows: each reference is embedded by the `vision` graph and the text encoder's `references`
         /// function takes them at the prompt's image-pad positions. Absent: text only.
         public struct References: Sendable, Hashable, Codable {
+            /// The text encoder's token ids around a reference image: the image pad, and the vision start and end
+            /// markers.
             public struct Tokens: Sendable, Hashable, Codable {
                 public var pad: Int32
                 public var start: Int32
