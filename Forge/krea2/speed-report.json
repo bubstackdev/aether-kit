@@ -1,0 +1,434 @@
+{
+  "date": "2026-11-12",
+  "hardware": "Apple M5 Max, 64 GiB",
+  "os": "macOS 27.2",
+  "gpuLease": "scripts/gpu-lease, separate process per measurement",
+  "notes": [
+    "Isolated decoder measurements use saved reference final latents, with no denoiser resident.",
+    "Metal figures are allocations sampled at graph/step boundaries, not continuously sampled peaks.",
+    "Warm decoder medians exclude the first decode. Segment fusion medians exclude the first two calls.",
+    "Other CPU development/test work ran on this machine. Timings are development measurements, not release guarantees.",
+    "Quality coverage is the 512-square clock and 1024-square harbor reference, not every possible image."
+  ],
+  "fp16VAE": {
+    "decision": "Add opt-in --vae-compute float16; retain float32 as default. No installed bundles changed.",
+    "fp32Tiled": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        1.1445802500238642,
+        1.0286685000173748,
+        1.000561916967854,
+        0.9949285840848461,
+        0.9930192079627886
+      ],
+      "originsY": [
+        0,
+        256,
+        512
+      ],
+      "originsX": [
+        0,
+        256,
+        512
+      ],
+      "tilesPerRun": 9,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725904384,
+      "sampledMetalMax": 2725920768,
+      "psnrToReferenceDB": 43.98682828690003,
+      "ssimToReference": 0.9950380421345324,
+      "warmMedianSeconds": 0.99774525052635
+    },
+    "fp16Tiled": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        0.8506337909493595,
+        0.7056844999315217,
+        0.7048644999740645,
+        0.7064135830150917,
+        0.7081687919562683
+      ],
+      "originsY": [
+        0,
+        256,
+        512
+      ],
+      "originsX": [
+        0,
+        256,
+        512
+      ],
+      "tilesPerRun": 9,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725068800,
+      "sampledMetalMax": 2725085184,
+      "psnrToReferenceDB": 43.988882141245604,
+      "ssimToReference": 0.9950369936208467,
+      "psnrToFullDB": 67.93170688810665,
+      "ssimToFull": 0.9999744496155478,
+      "maxAbsToFull": 0.0530148446559906,
+      "meanAbsToFull": 0.00029657399863936007,
+      "seamBandMeanAbs": 0.00029629661003127694,
+      "outsideSeamMeanAbs": 0.000296601967420429,
+      "warmMedianSeconds": 0.7060490414733067
+    },
+    "fp32TiledRepeat": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 256,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        1.2639108339790255,
+        1.137176249991171,
+        1.030102499993518,
+        1.0009054170222953,
+        1.0084392500575632
+      ],
+      "originsY": [
+        0,
+        256,
+        512
+      ],
+      "originsX": [
+        0,
+        256,
+        512
+      ],
+      "tilesPerRun": 9,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725904384,
+      "sampledMetalMax": 2725920768,
+      "psnrToReferenceDB": 43.98682828690003,
+      "ssimToReference": 0.9950380421345324,
+      "psnrToFullDB": 67.93170688810665,
+      "ssimToFull": 0.9999744496155478,
+      "maxAbsToFull": 0.0530148446559906,
+      "meanAbsToFull": 0.00029657399863936007,
+      "seamBandMeanAbs": 0.00029629661003127694,
+      "outsideSeamMeanAbs": 0.000296601967420429,
+      "warmMedianSeconds": 1.0192708750255406
+    },
+    "fp16Full512": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism",
+      "height": 512,
+      "width": 512,
+      "tile": 0,
+      "overlap": 0,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        0.2637518330011517,
+        0.08739487500861287,
+        0.08365891699213535,
+        0.0849750000052154,
+        0.08511716709472239
+      ],
+      "originsY": [
+        0
+      ],
+      "originsX": [
+        0
+      ],
+      "tilesPerRun": 1,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725085184,
+      "sampledMetalMax": 2725085184,
+      "psnrToReferenceDB": 69.71272249911469,
+      "ssimToReference": 0.9999778197200131,
+      "warmMedianSeconds": 0.0850460835499689
+    },
+    "fp16Full1024": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 0,
+      "overlap": 0,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        0.5914062079973519,
+        0.32098262500949204,
+        0.32085487502627075,
+        0.3215822920901701,
+        0.3172697089612484
+      ],
+      "originsY": [
+        0
+      ],
+      "originsX": [
+        0
+      ],
+      "tilesPerRun": 1,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 12338561024,
+      "sampledMetalMax": 12338577408,
+      "psnrToReferenceDB": 65.45799439908923,
+      "ssimToReference": 0.9999591971969215,
+      "warmMedianSeconds": 0.3209187500178814
+    },
+    "structuralSelftest": {
+      "passed": true,
+      "fp16ComputeCosine": 0.99999797,
+      "outputType": "float32"
+    }
+  },
+  "shorterText": {
+    "decision": "Not promoted: timing advantage was not reproducible across the two comparisons. Existing opt-in export remains available.",
+    "first1116": {
+      "bundle": "krea-2-turbo-realism-masked",
+      "masked": true,
+      "function": "segment",
+      "rows": 27,
+      "textLength": 1116,
+      "size": 1024,
+      "swapBefore": "total = 13312.00M  used = 12179.75M  free = 1132.25M  (encrypted)",
+      "loadSeconds": 30.4,
+      "stepSeconds": [
+        59.936,
+        4.352,
+        5.684,
+        5.374,
+        5.04,
+        5.006
+      ],
+      "firstStepSeconds": 59.936,
+      "laterStepMeanSeconds": 5.091,
+      "swapAfter": "total = 13312.00M  used = 12318.75M  free = 993.25M  (encrypted)"
+    },
+    "first256": {
+      "bundle": "masked-256",
+      "masked": true,
+      "function": "segment",
+      "rows": 27,
+      "textLength": 256,
+      "size": 1024,
+      "swapBefore": "total = 13312.00M  used = 12310.75M  free = 1001.25M  (encrypted)",
+      "loadSeconds": 25.3,
+      "stepSeconds": [
+        64.275,
+        3.552,
+        3.654,
+        3.746,
+        4.04,
+        4.306
+      ],
+      "firstStepSeconds": 64.275,
+      "laterStepMeanSeconds": 3.86,
+      "swapAfter": "total = 13312.00M  used = 12302.75M  free = 1009.25M  (encrypted)"
+    },
+    "repeat1116": {
+      "bundle": "krea-2-turbo-realism-masked",
+      "masked": true,
+      "function": "segment",
+      "rows": 27,
+      "metalBefore": 65536,
+      "textLength": 1116,
+      "size": 1024,
+      "swapBefore": "total = 13312.00M  used = 12302.75M  free = 1009.25M  (encrypted)",
+      "loadSeconds": 18.3,
+      "metalAfterLoad": 458752,
+      "metalAfterRun": 30797086720,
+      "sampledMetalMax": 30797086720,
+      "metalAfterSteps": [
+        29484662784,
+        30793809920,
+        30794465280,
+        30794989568,
+        30795513856,
+        30795907072,
+        30796562432,
+        30797086720
+      ],
+      "stepSeconds": [
+        44.13,
+        4.032,
+        4.498,
+        4.55,
+        4.629,
+        4.645,
+        4.726,
+        4.704
+      ],
+      "firstStepSeconds": 44.13,
+      "laterStepMedianSeconds": 4.629,
+      "laterStepMeanSeconds": 4.541,
+      "swapAfter": "total = 13312.00M  used = 12302.75M  free = 1009.25M  (encrypted)"
+    },
+    "repeat256": {
+      "bundle": "masked-256",
+      "masked": true,
+      "function": "segment",
+      "rows": 27,
+      "metalBefore": 65536,
+      "textLength": 256,
+      "size": 1024,
+      "swapBefore": "total = 13312.00M  used = 12302.75M  free = 1009.25M  (encrypted)",
+      "loadSeconds": 13.6,
+      "metalAfterLoad": 458752,
+      "metalAfterRun": 30279335936,
+      "sampledMetalMax": 30418927616,
+      "metalAfterSteps": [
+        28958654464,
+        30418927616,
+        30276845568,
+        30277369856,
+        30277763072,
+        30278287360,
+        30278942720,
+        30279335936
+      ],
+      "stepSeconds": [
+        41.964,
+        3.355,
+        5.102,
+        5.117,
+        4.978,
+        4.682,
+        5.047,
+        5.019
+      ],
+      "firstStepSeconds": 41.964,
+      "laterStepMedianSeconds": 5.019,
+      "laterStepMeanSeconds": 4.757,
+      "swapAfter": "total = 13312.00M  used = 12294.75M  free = 1017.25M  (encrypted)"
+    },
+    "qualified": false
+  },
+  "fusion": {
+    "decision": "Prototype only: about 56 ms less per warm segment-zero call at T=256; additional fusion graph load/first-call work. No measured whole-render benefit to justify a new runtime conditioning contract.",
+    "baseline": {
+      "mode": "baseline",
+      "metalBefore": 65536,
+      "loadSeconds": 5.4,
+      "seconds": [
+        10.190690709045157,
+        0.8237958749523386,
+        0.8223511250689626,
+        0.8281387500464916,
+        0.8375780829228461,
+        0.8473534999648109,
+        0.9265840830048546
+      ],
+      "warmMedianSeconds": 0.8375780829228461,
+      "metalAfter": 10577231872,
+      "finite": true
+    },
+    "split": {
+      "mode": "split",
+      "metalBefore": 65536,
+      "fusionSeconds": [
+        0.37187441694550216,
+        0.04166512505616993,
+        0.0408794580725953
+      ],
+      "metalWithFusion": 1454243840,
+      "loadSeconds": 6.0,
+      "seconds": [
+        12.368722500046715,
+        0.7905557920457795,
+        0.7819963750662282,
+        0.7807974580209702,
+        0.7880222500534728,
+        0.7798090419964865,
+        0.8016511671012267
+      ],
+      "warmMedianSeconds": 0.7819963750662282,
+      "metalAfter": 10406838272,
+      "finite": true,
+      "cosines": {
+        "image_1": 1.0,
+        "text_1": 1.0,
+        "cond": 1.0000000000000002
+      },
+      "maxAbs": {
+        "image_1": 0.0,
+        "text_1": 0.0,
+        "cond": 0.0
+      }
+    },
+    "textRows": 256,
+    "realRows": 27,
+    "size": 1024
+  },
+  "zeroOverlap": {
+    "decision": "Not promoted: faster at unchanged decoder allocation, but below the 0.99 tiled comparison target with much stronger seam-band error.",
+    "measurement": {
+      "asset": "krea2_turbo_realism-vae.aimodel",
+      "reference": "krea-2-turbo-realism-long-1024",
+      "height": 1024,
+      "width": 1024,
+      "tile": 512,
+      "overlap": 0,
+      "metalBefore": 65536,
+      "runs": 5,
+      "seconds": [
+        0.5746595419477671,
+        0.4457901669666171,
+        0.46079904201906174,
+        0.4506444160360843,
+        0.472171040950343
+      ],
+      "originsY": [
+        0,
+        512
+      ],
+      "originsX": [
+        0,
+        512
+      ],
+      "tilesPerRun": 4,
+      "repeatIdentical": true,
+      "finite": true,
+      "metalAfterRun": 2725904384,
+      "sampledMetalMax": 2725920768,
+      "psnrToReferenceDB": 39.03972856407921,
+      "ssimToReference": 0.9863778292578003,
+      "psnrToFullDB": 39.040255171702476,
+      "ssimToFull": 0.9863822217059243,
+      "maxAbsToFull": 1.0050928592681885,
+      "meanAbsToFull": 0.006542734801769257,
+      "seamBandMeanAbs": 0.0562688373029232,
+      "outsideSeamMeanAbs": 0.004951599054038525,
+      "warmMedianSeconds": 0.455721729027573
+    }
+  },
+  "sourceSHA256": {
+    "Forge/krea2/bench_krea2_attention.py": "1579f14bc62eb3b412e3c8e2751dceb0456e589c490aaaac89e1b09600d2b8ce",
+    "Forge/krea2/bench_krea2_file.py": "b08a83f7005c7fd916aebcf4203503fb52ab24388ac026241f8657c46d1af543",
+    "Forge/krea2/bench_krea2_fusion.py": "3c241ad53e31ed979424bb458df597126d5a0c57593185fab5123fc2d6d20bd1",
+    "Forge/krea2/bench_krea2_segment.py": "8e40d1c12e4f0787bce7648ae7ea283456df1d3142e869353be8e46a64d27f35",
+    "Forge/krea2/bench_krea2_steps.py": "5e22eb392e4520344598d9bafda8574d0c79887a297ef5efb52608ea9c5875df",
+    "Forge/krea2/bench_krea2_vae_tiles.py": "7c22579f455571097098f3af3f1246c0f8a1bdf90b21b0486004e386c006748a",
+    "Forge/krea2/check_krea2.py": "719b54e58fd8b7518202fa0cd643fba419071fac19fc1b800c581f0785329403",
+    "Forge/krea2/export_krea2.py": "d771c3b1349db568150201c19284cd7b3cf0d24e8ce69fcfc138dfe12b4b4149",
+    "Forge/krea2/krea2_graphs.py": "ec359fdfde0d7606ddf1605e4606d8805f081db36cbefff14af9a7b96ddca50c",
+    "Forge/krea2/reference_krea2.py": "317b0516a46f9b919afef27a766646aeabd1cd171edebe8f6bfc1fc9c560c7f3",
+    "Forge/krea2/selftest_krea2_graphs.py": "f7ef1e9851e1beddc9bbfe6c6b3393deb53b7f751a44aaf2da01f5cd50f5814b",
+    "Forge/krea2/test_export_krea2.py": "4d6ff1ad0bae10a41fbcb04c626b1aca704b11b2c43d236c8aa03089007b522d"
+  }
+}

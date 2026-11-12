@@ -105,6 +105,12 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
 
 ### Added
 
+- **Opt-in fp16 Krea 2 VAE computation.** Forge's `--vae-compute float16` exports a decoder with fp16 convolutions
+  and float32 RGB output, leaving fp32 as the default and the encoder unchanged. At 1024² with 512/256 tiles on an
+  M5 Max, warm isolated decoding measured about 0.71 s versus 1.00–1.02 s at the same 2.54 GiB retained Metal
+  allocation. Full 512²/1024² reference checks and tiled comparison passed; see `Forge/krea2/PERFORMANCE.md` and
+  `speed-report.json` for quality coverage, timings, the shorter-text/fusion/overlap experiments, and reproduction.
+
 - **Krea 2: a shorter masked text length (`krea2.textLength`).** `Forge/krea2/export_krea2.py --mask-text-rows N`
   exports the masked denoisers at a fixed text length of N rows instead of 1,116 (the default, unchanged). Every
   joint block attends over the image tokens plus the text length, so a 256-row export should step at about the

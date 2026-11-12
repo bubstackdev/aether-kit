@@ -44,6 +44,10 @@ the named graphs, and writes a new manifest, NOTICE and SHA256SUMS over the unio
 as `base-export-report.json`. The base is only read, and the result is a new export with its own manifest digest.
 
 Conversion runs on the CPU; parity is the separate gate `check_krea2.py` (GPU) against `reference_krea2.py`.
+
+`--vae-compute float16` opts into fp16 decoder convolutions and norms (float32 remains the default). Latent
+denormalization and output RGB remain float32. Re-export only `vaeDecoder` with `--replace --base-bundle` to
+keep the other graphs unchanged. Qualify both full and tiled images; this is a speed option, not a memory claim.
 """
 
 from __future__ import annotations
@@ -202,6 +206,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
     v = VARIANTS[variant]
     masked = report.get("textMask", False)
     text_rows = report.get("textRows", kg.MASK_TEXT_ROWS)
+    vae_precision = "fp16 weights, fp16 compute" if report.get("vaeCompute") == "float16" else "fp16 weights, fp32 compute"
     graph_file = lambda role: f"main:{asset_names[role]}"  # noqa: E731
     from_ = lambda ref: {"name": ref.split(".")[1], "source": {"from": ref}}  # noqa: E731
     segment_inputs = lambda i: {  # noqa: E731
@@ -288,7 +293,7 @@ def manifest(variant: str, files: dict[str, dict], asset_names: dict[str, str], 
         },
         "precision": {"weights": "fp16", "activations": "fp16 matmul/attention, fp32 residual/norm/modulation",
                       "components": {"denoiser0": "transformer block 0 computes in fp32 from its fp16 weights",
-                                     "vaeDecoder": "fp16 weights, fp32 compute",
+                                     "vaeDecoder": vae_precision,
                                      **({"denoisers": f"text rows padded with zeros to {text_rows} under a "
                                                       "key-padding mask (textMask)"}
                                         if masked else {}),
@@ -332,7 +337,8 @@ def reference_block() -> dict:
     }
 
 
-def sample_manifest(variant: str, masked: bool = True, text_rows: int = kg.MASK_TEXT_ROWS) -> dict:
+def sample_manifest(variant: str, masked: bool = True, text_rows: int = kg.MASK_TEXT_ROWS,
+                    vae_compute: str = "float32") -> dict:
     """`manifest()` for placeholder files and report values: the emitted shape, without an export. Regenerate the Swift
     fixtures with `--sample-manifest --variant <v> [--no-text-mask | --mask-text-rows N] >
     Tests/AetherCoreTests/Fixtures/krea2/<file>.json` (`vanilla.json` and `realism.json` are the exact-length exports,
@@ -341,7 +347,7 @@ def sample_manifest(variant: str, masked: bool = True, text_rows: int = kg.MASK_
     asset_names = {role: f"{v['name']}-{ASSET_SUFFIX[role]}.aimodel" for role in ROLES}
     files = {f"{name}/weights.bin": {"bytes": 1, "sha256": "0" * 64} for name in asset_names.values()}
     report = {"scriptSHA256": {"export_krea2.py": "0" * 64}, "forgeLockSHA256": "0" * 64,
-              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked,
+              "adapter": {"multiplier": 1.0, "scale": 1.0}, "textMask": masked, "vaeCompute": vae_compute,
               **({"textRows": text_rows} if masked else {})}
     return manifest(variant, files, asset_names, report)
 
@@ -406,6 +412,9 @@ def main() -> None:
                         help=f"the masked denoisers' fixed text length (default {kg.MASK_TEXT_ROWS}, the most a reference "
                              "prompt has); the manifest declares it (krea2.textLength) and the host refuses a prompt "
                              "with more conditioning rows")
+    parser.add_argument("--vae-compute", choices=["float32", "float16"], default="float32",
+                        help="VAE decoder convolution compute; float16 is opt-in and needs image qualification; "
+                             "the decoder still returns float32 RGB and the encoder is unchanged")
     parser.add_argument("--allow-unpinned", action="store_true", help="random-weight test snapshots only")
     args = parser.parse_args()
     if not args.text_mask and args.mask_text_rows != kg.MASK_TEXT_ROWS:
@@ -413,13 +422,16 @@ def main() -> None:
     if not 1 <= args.mask_text_rows <= kg.DENOISER_TEXT_ROWS:
         parser.error(f"--mask-text-rows must be in 1...{kg.DENOISER_TEXT_ROWS}")
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.variant, args.text_mask, args.mask_text_rows), indent=2, ensure_ascii=False))
+        print(json.dumps(sample_manifest(args.variant, args.text_mask, args.mask_text_rows, args.vae_compute),
+                         indent=2, ensure_ascii=False))
         return
     if args.output is None:
         parser.error("--output is required")
     if args.output.exists():
         raise SystemExit("output directory already exists; choose a new directory")
     roles = args.only or list(ROLES)
+    if args.vae_compute != "float32" and "vaeDecoder" not in roles:
+        parser.error("--vae-compute needs vaeDecoder in --only (or a full export)")
     base = None
     if args.base_bundle is not None:
         if not args.only:
@@ -438,6 +450,10 @@ def main() -> None:
                 and kg.text_length(base) != args.mask_text_rows):
             raise SystemExit(f"the base's denoisers take {kg.text_length(base)} text rows: re-export all four")
     denoisers = [role for role in roles if role.startswith("denoiser")]
+    vae_compute = args.vae_compute
+    if base is not None and "vaeDecoder" not in roles:
+        precision = base.get("precision", {}).get("components", {}).get("vaeDecoder", "")
+        vae_compute = "float16" if precision == "fp16 weights, fp16 compute" else "float32"
     started = time.monotonic()
     args.output.mkdir(parents=True)
     log = Log(args.output / "forge-log.jsonl")
@@ -461,7 +477,8 @@ def main() -> None:
         "scriptSHA256": {p.name: sha256(p) for p in sorted(HERE.glob("*.py"))},
         "source": {"repository": REPO, "revision": REVISION, "snapshot": str(checkpoint.root), "verified": {}},
         "precision": "fp16 weights; fp16 matmul/attention with fp32 residual, norms, modulation and edge projections; "
-                     "denoiser block 0 computes in fp32; VAE fp16 storage with fp32 compute; no quantization",
+                     f"denoiser block 0 computes in fp32; VAE decoder fp16 storage with {vae_compute} compute; no quantization",
+        "vaeCompute": vae_compute,
         "conversion": {}, "stages": {},
         # Whether the bundle's denoisers take the text mask: this export's when it converts them, else the base's.
         "textMask": (args.text_mask if denoisers or base is None
@@ -561,7 +578,7 @@ def main() -> None:
 
     if "vaeDecoder" in roles:
         log.start("export-vaeDecoder")
-        module = kg.VAEDecoderGraph(kg.load_vae(checkpoint)).eval()
+        module = kg.VAEDecoderGraph(kg.load_vae(checkpoint), compute=getattr(torch, args.vae_compute)).eval()
         example, dynamic = module.example()
         report["conversion"]["vaeDecoder"] = convert(module, example, dynamic, ["latents"], ["image"], "decode",
                                                      args.output / asset_names["vaeDecoder"])
