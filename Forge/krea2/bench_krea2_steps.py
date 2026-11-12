@@ -9,13 +9,15 @@ steps (the four segments, carries fed forward, the host Euler update) at the can
 conditioning rows. Masked bundles take the rows padded to the function's fixed length with `text_mask`; exact-length
 bundles run at `--rows` itself, so `--rows 512` on an exact-length bundle measures a 512-row text axis without a mask.
 Inputs are small random values (timing is data-independent). Records each step's seconds and `vm.swapusage` before
-and after: the first step includes Core AI's preparation of the shape.
+and after: the first step includes Core AI's preparation of the shape. Also records retained Metal allocations
+after load and each step (boundary samples, not a continuously measured peak), and the later-step median.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import statistics
 import subprocess
 import sys
 import time
@@ -27,6 +29,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import krea2_graphs as kg  # noqa: E402
 from check_krea2 import Graph  # noqa: E402
+from bench_krea2_vae_tiles import metal_counter  # noqa: E402
 
 
 def swap() -> str:
@@ -50,11 +53,14 @@ def main() -> None:
     length = kg.text_length(manifest) if masked else args.rows
     if args.rows > length:
         raise SystemExit(f"{args.rows} rows don't fit {length}")
+    memory = metal_counter()
     record = {"bundle": str(args.bundle), "masked": masked, "function": args.function, "rows": args.rows,
+              "metalBefore": memory(),
               "textLength": length, "size": args.size, "swapBefore": swap()}
     t0 = time.monotonic()
     segments = [Graph(files[f"denoiser{i}"], args.function) for i in range(4)]
     record["loadSeconds"] = round(time.monotonic() - t0, 1)
+    record["metalAfterLoad"] = memory()
     side = args.size // kg.PIXELS_PER_TOKEN
     n = side * side
     rng = np.random.default_rng(0)
@@ -64,7 +70,7 @@ def main() -> None:
     rope = kg.rotary_table(side, side).numpy()
     latents = rng.standard_normal((n, kg.LATENT_CHANNELS)).astype(np.float32)
     sigmas, timesteps = kg.schedule(kg.STEPS)
-    seconds = []
+    seconds, allocations = [], []
     for s in range(args.steps):
         t = time.monotonic()
         k = s % kg.STEPS
@@ -76,11 +82,14 @@ def main() -> None:
         v = o3["velocity"].astype(np.float32)
         latents = latents + (np.float32(sigmas[k + 1]) - np.float32(sigmas[k])) * v
         seconds.append(round(time.monotonic() - t, 3))
+        allocations.append(memory())
         print(f"[bench] step {s}: {seconds[-1]} s finite {bool(np.isfinite(v).all())}", file=sys.stderr, flush=True)
+    record.update(metalAfterRun=memory(), sampledMetalMax=max(allocations), metalAfterSteps=allocations)
     for g in segments:
         g.close()
     later = seconds[1:]
     record.update({"stepSeconds": seconds, "firstStepSeconds": seconds[0],
+                   "laterStepMedianSeconds": statistics.median(later) if later else None,
                    "laterStepMeanSeconds": round(sum(later) / max(1, len(later)), 3), "swapAfter": swap()})
     args.report.write_text(json.dumps(record, indent=2) + "\n")
     print(json.dumps(record, indent=1))
