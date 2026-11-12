@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A canvas-aware Krea 2 encode under decoder tiling keeps the graphs resident** (#193). `encode(prompt:width:height:)`
+  and `encode(prompt:references:width:height:)` planned admission under the bare canvas (`768x1344`), while a
+  generation with `setDecoderTiling(tileSize:overlap:)` set plans under the canvas plus the tile policy
+  (`768x1344.vae-tiles-512-256`). Admission releases every graph when the profile changes, so a host that encodes for
+  the canvas and then generates reloaded the denoisers and decoder on every tiled picture (Atelier, warm, 768×1344, 8
+  steps: about 92–96 s instead of about 36 s). The canvas-aware encodes, and `encode(image:)` before any generation,
+  now plan under the generation's profile, worked out in the pipeline's turn so a `setDecoderTiling` queued before the
+  encode is reflected. No public API changes.
+
 ## 0.2.0 — 2026-11-12
 
 0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
