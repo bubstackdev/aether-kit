@@ -1,5 +1,6 @@
 public import AetherCore
 public import AetherRuntime
+internal import Darwin
 
 /// A generative pipeline's graphs and the memory they are admitted against, across generations (DESIGN.md §6.4).
 ///
@@ -12,7 +13,8 @@ public import AetherRuntime
 ///    graphs stay loaded, nothing when they were released per phase), so a second pipeline on the same coordinator
 ///    can't take memory these graphs still use.
 /// 3. ``release()`` after a failure and on ``begin(profile:shape:)``'s refusal: every graph is released and so is the
-///    reservation. ``unload()`` does the same and also drops the bundle's reader lease.
+///    reservation. ``unload()`` does the same and also drops the bundle's reader lease. After a cancellation a pipeline
+///    may call ``keepAfterCancellation()`` instead, which keeps the graphs already measured.
 ///
 /// **Reader lease.** Given a bundle from a ``ModelStore``, the admission holds its reader lease
 /// (``InstalledBundle/readLease()``) from creation until ``unload()`` or deinit, so the store refuses to remove files
@@ -181,6 +183,7 @@ public final class ResidentAdmission {
             throw error
         }
         if let shape { shapes.insert(shape) }
+        Self.trace("begin profile=\(profile) shape=\(shape.map(String.init) ?? "-") shapes=\(shapes.sorted()) count=\(count) budget=\(budget()) memoryBytes=\(settings.memory.bytes(on: device)) residentBytes=\(residentBytes) plan=\(plan.mode) peak=\(plan.peakBytes) measured=\(plan.isMeasured) allPeak=\(ResidencyPlan.peak(.allResident, inputs(profile: profile, specializations: count).phases)) phases=\(inputs(profile: profile, specializations: count).phases.map { "\($0.key):\($0.value.peakBytes)/\($0.value.heldBytes)" }.sorted()) currentMode=\(residency.map { "\($0.mode)/\($0.profile)" } ?? "none")")
         let overlap = ResidencyPlan.overlap(inputs(profile: profile, specializations: count).phases)
         if let residency, residency.mode == plan.mode, residency.profile == profile {
             residency.overlapAllowance = overlap
@@ -246,8 +249,14 @@ public final class ResidentAdmission {
     /// result is still the caller's to return (the work already ran, within the peak reserved for it); only the
     /// residency is given up, so the next generation plans and loads from scratch rather than keep graphs the
     /// coordinator doesn't account for.
+    static func trace(_ text: String) {
+        guard getenv("AETHER_ADMISSION_TRACE") != nil else { return }
+        fputs("admission: \(text)\n", stderr)
+    }
+
     @discardableResult
     public func finish() -> Bool {
+        defer { Self.trace("finish mode=\(residency.map { "\($0.mode)" } ?? "none") residentBytes=\(residentBytes) roles=\(residentRoles)") }
         guard let residency else {
             release()
             return false
@@ -282,8 +291,31 @@ public final class ResidentAdmission {
         }
     }
 
+    /// After a generation that was cancelled: keeps the resident graphs and resizes the reservation to what they hold,
+    /// as ``finish()`` does, but measures nothing (a generation cut short says nothing of a whole one's peak). Kept only
+    /// when the residency is all resident and its open phase loaded no graph, so every graph kept was measured; otherwise,
+    /// or when the coordinator can't hold the resized reservation, everything is released as ``release()`` does. Returns
+    /// whether the graphs stayed.
+    @discardableResult
+    package func keepAfterCancellation() -> Bool {
+        guard let residency, residency.abandonOpenPhase(), !residency.residentRoles.isEmpty else {
+            release()
+            return false
+        }
+        residentBytes = inputs(profile: residency.profile, specializations: residency.specializations).phases.values
+            .reduce(0) { $0 + $1.heldBytes }
+        do {
+            try reserve(residentBytes)
+            return true
+        } catch {
+            release()
+            return false
+        }
+    }
+
     /// Releases every graph and the reservation (after a failure, or to unload).
     public func release() {
+        Self.trace("release residentBytes=\(residentBytes) roles=\(residentRoles)")
         if let residency { note(residency.floor) }
         residency?.releaseAll()
         residency = nil

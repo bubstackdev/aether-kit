@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""Run the H3 memory gate over every profile an export offers, one render at a time (the H2 gate).
+
+    scripts/h3-memory-gate --export <dir> --records <dir> [--profiles K,...] [--recipes R,...] [--tasks T,...]
+                           [--minimum-free-gib 100] [--scratch .build-ci] [--skip-build] [--rerun] [--keep-cache]
+                           [--dry-run]
+
+The matrix comes from the export's manifest: per profile (in manifest order), each recipe it offers (`recipes`), and
+the tasks `t2va`, plus `fl2va1` (a first keyframe) and `fl2va2` (first and last) when the profile has a keyframe
+encoder. The filters narrow it. Each render runs in a fresh `swift test` process (so no render inherits another's
+specializations) holding the machine's GPU lease (`scripts/gpu-lease`):
+
+    AETHER_GATES=1 AETHER_H3_EXPORT=<export> AETHER_H3_GATE_RENDER=<profile>:<recipe>:<task>
+    AETHER_H3_GATE_RECORD=<records>/<profile>-<recipe>-<task>.json swift test --skip-build --no-parallel
+    --filter MiniMaxH3ProfileGateTests
+
+and writes its JSON record (each phase's peak and held bytes, the timings, pass or fail) and a log beside it.
+`matrix.json` in the records folder is rewritten after every render (what ran, exit status, wall time). A render whose
+record already passed is skipped unless --rerun, so a stopped gate resumes. Before each render the gate stops when the
+records' volume has less than --minimum-free-gib free (Core AI writes a compiled copy of every graph it specializes).
+
+At the end, whether the renders passed or not, it prunes the test runner's Core AI compile-cache bucket
+(`swiftpm-testing-helper`, under the GPU lease) unless --keep-cache, and prints the command that records the
+envelopes (`Forge/h3/record_envelopes_h3.py`). Exit status: 0 when every render passed, 1 when one failed, 2 when it
+stopped for disk. Standard library only.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+GIB = 1 << 30
+SUITE = "MiniMaxH3ProfileGateTests"
+BUCKET = "swiftpm-testing-helper"
+TASKS = ("t2va", "fl2va1", "fl2va2")
+
+
+def plan_matrix(manifest: dict, profiles=None, recipes=None, tasks=None) -> list[dict]:
+    """The renders, in order: profile, then recipe, then task."""
+    h3 = manifest["h3"]
+    t2va = sorted({k.split("/")[0] for k in h3["recipes"] if k.endswith("/t2va")})
+    renders = []
+    for p in h3["profiles"]:
+        if profiles and p["key"] not in profiles:
+            continue
+        for recipe in p.get("recipes") or t2va:
+            if recipes and recipe not in recipes:
+                continue
+            for task in TASKS:
+                if tasks and task not in tasks:
+                    continue
+                if task != "t2va" and ("keyframeEncoder" not in p or f"{recipe}/fl2va" not in h3["recipes"]):
+                    continue
+                renders.append({"profile": p["key"], "recipe": recipe, "task": task,
+                                "name": f"{p['key']}-{recipe}-{task}", "memory": p.get("memory")})
+    unknown = set(profiles or []) - {p["key"] for p in h3["profiles"]}
+    if unknown:
+        raise SystemExit(f"--profiles names profiles the export lacks: {', '.join(sorted(unknown))}")
+    return renders
+
+
+def render_command(export: Path, record: Path, render: dict, scratch: str) -> list[str]:
+    return [str(REPO / "scripts/gpu-lease"), "--", "env", "AETHER_GATES=1", f"AETHER_H3_EXPORT={export}",
+            f"AETHER_H3_GATE_RENDER={render['profile']}:{render['recipe']}:{render['task']}",
+            f"AETHER_H3_GATE_RECORD={record}", "swift", "test", "--scratch-path", scratch, "--skip-build",
+            "--no-parallel", "--filter", SUITE]
+
+
+def prune_command() -> list[str]:
+    return [str(REPO / "scripts/gpu-lease"), "--", str(REPO / "scripts/coreai-cache"), "prune", "--bucket", BUCKET, "--yes"]
+
+
+def passed(record: Path) -> bool:
+    try:
+        return json.loads(record.read_text()).get("passed") is True
+    except (OSError, ValueError):
+        return False
+
+
+def run_matrix(renders: list[dict], export: Path, records: Path, *, scratch: str, minimum_free_gib: float,
+               rerun: bool = False, keep_cache: bool = False, runner=None, free_bytes=None, log=print) -> int:
+    """Runs the renders in order; returns the exit status (see the module doc)."""
+    runner = runner or (lambda command, out: subprocess.run(command, cwd=REPO, stdout=out, stderr=subprocess.STDOUT).returncode)
+    free_bytes = free_bytes or (lambda: shutil.disk_usage(records).free)
+    records.mkdir(parents=True, exist_ok=True)
+    summary = {"schema": "aether-h3-memory-gate/1", "export": str(export), "renders": [], "stopped": None}
+    status = 0
+    try:
+        for index, render in enumerate(renders, 1):
+            record, logfile = records / f"{render['name']}.json", records / f"{render['name']}.log"
+            entry = {"name": render["name"], "record": record.name}
+            if not rerun and passed(record):
+                entry["result"] = "skipped (already passed)"
+                summary["renders"].append(entry)
+                log(f"[{index}/{len(renders)}] {render['name']}: already passed")
+                continue
+            free = free_bytes()
+            if free < minimum_free_gib * GIB:
+                summary["stopped"] = f"{free / GIB:.1f} GiB free, below {minimum_free_gib} GiB, before {render['name']}"
+                log(f"stopping: {summary['stopped']}")
+                status = 2
+                break
+            log(f"[{index}/{len(renders)}] {render['name']} ({free / GIB:.0f} GiB free)")
+            started = time.monotonic()
+            with open(logfile, "w") as out:
+                code = runner(render_command(export, record, render, scratch), out)
+            entry.update({"exitStatus": code, "wallSeconds": round(time.monotonic() - started, 1),
+                          "passed": code == 0 and passed(record)})
+            if not entry["passed"]:
+                status = max(status, 1)
+            summary["renders"].append(entry)
+            log(f"    {'passed' if entry['passed'] else 'FAILED'} in {entry['wallSeconds']} s (exit {code})")
+            (records / "matrix.json").write_text(json.dumps(summary, indent=1))
+            pause = float(os.environ.get("H3_GATE_PAUSE_SECONDS", "30"))
+            if pause > 0 and index < len(renders):
+                # Paced copy (owner, 2026-11-10): the render's process has released the GPU lease; wait outside it so
+                # other work can take the GPU, then queue for the lease again with the next render.
+                log(f"    lease released; pausing {pause:.0f} s before queueing for the next render")
+                time.sleep(pause)
+    finally:
+        if not keep_cache:
+            log(f"pruning the Core AI compile cache bucket {BUCKET} (under the GPU lease)")
+            with open(records / "prune.log", "w") as out:
+                if runner(prune_command(), out) != 0:
+                    log("warning: the cache prune failed; see prune.log")
+        (records / "matrix.json").write_text(json.dumps(summary, indent=1))
+    return status
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--export", type=Path, required=True, help="the export folder (bundle/ inside it)")
+    parser.add_argument("--records", type=Path, required=True, help="where the per-render records go")
+    parser.add_argument("--profiles", help="comma-separated profile keys (default: every profile)")
+    parser.add_argument("--recipes", help="comma-separated recipes (default: each profile's own)")
+    parser.add_argument("--tasks", help="comma-separated tasks of t2va, fl2va1, fl2va2 (default: all the profile has)")
+    parser.add_argument("--minimum-free-gib", type=float, default=100.0)
+    parser.add_argument("--scratch", default=".build-ci", help="the SwiftPM scratch path (relative to the repo)")
+    parser.add_argument("--skip-build", action="store_true", help="the tests are already built in --scratch")
+    parser.add_argument("--rerun", action="store_true", help="run renders whose record already passed")
+    parser.add_argument("--keep-cache", action="store_true", help="don't prune the compile-cache bucket at the end")
+    parser.add_argument("--dry-run", action="store_true", help="print the matrix and the commands, run nothing")
+    args = parser.parse_args(argv)
+    export, records = args.export.resolve(), args.records.resolve()
+    manifest = json.loads((export / "bundle/.aether/aether.json").read_text())
+    split = lambda value: [v for v in value.split(",") if v] if value else None  # noqa: E731
+    tasks = split(args.tasks)
+    if tasks and not set(tasks) <= set(TASKS):
+        raise SystemExit(f"--tasks takes {', '.join(TASKS)}")
+    renders = plan_matrix(manifest, split(args.profiles), split(args.recipes), tasks)
+    if not renders:
+        raise SystemExit("the filters leave no render")
+    print(f"{len(renders)} renders on {export}")
+    if args.dry_run:
+        for render in renders:
+            print(" ".join(render_command(export, records / f"{render['name']}.json", render, args.scratch)))
+        print(" ".join(prune_command()))
+        return 0
+    os.environ.setdefault("DEVELOPER_DIR", "/Applications/Xcode.app/Contents/Developer")
+    if not args.skip_build:
+        # The build doesn't touch the GPU; it runs before the lease and the first render.
+        subprocess.run(["swift", "build", "--jobs", "2", "--scratch-path", args.scratch, "--build-tests"], cwd=REPO, check=True)
+    status = run_matrix(renders, export, records, scratch=args.scratch, minimum_free_gib=args.minimum_free_gib,
+                        rerun=args.rerun, keep_cache=args.keep_cache)
+    print("record the envelopes (into this export's fresh manifest):\n  python3 -I "
+          f"{REPO / 'Forge/h3/record_envelopes_h3.py'} --bundle {export / 'bundle'} --renders {records}")
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -6,7 +6,7 @@ Reads every per-render record the H2 memory gate wrote (`scripts/h3-memory-gate`
 `aether-h3-memory-render/1`), groups them by admission key (`<profile>` for text to video, `<profile>/fl2va1` for one
 keyframe, `<profile>/fl2va2` for first + last) and writes one envelope per key into `h3.envelopes` (MANIFEST.md
 §5.10): each phase's largest peak and held bytes over the key's renders, the recipes measured, the Core AI
-architecture, the export the renders measured (`Manifest.measurementDigest`: the manifest without its envelopes, so
+architecture, the export the renders measured (`Manifest.contentDigest`, which leaves out `h3.envelopes`, so
 recording them doesn't change it) and the sampling margin. The bar and the physical memory a profile needs stay in its
 `memory` block.
 

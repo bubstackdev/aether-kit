@@ -54,6 +54,7 @@ def convert(functions: dict, path: Path, states: list[str], inputs: list[str], o
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--compute", choices=["float32", "float16"], default="float32")
+    ap.add_argument("--embedding-bits", type=int, choices=[8, 16], default=16)
     args = ap.parse_args()
     import coreai.runtime as rt
     torch.set_grad_enabled(False)
@@ -73,6 +74,9 @@ def main() -> None:
                          storage=dt).eval()
     eager = qg.Decoder(model, slots=tt.SLOTS, images=tt.IMAGES, dtype=dt, attention=torch.float32,
                        storage=dt).eval()
+    if args.embedding_bits == 8:
+        decoder.quantize_embedding()
+        eager.quantize_embedding()
     work = Path(tempfile.mkdtemp(prefix="qwen3_5-selftest-"))
     temp = Path(subprocess.run(["getconf", "DARWIN_USER_TEMP_DIR"], capture_output=True, text=True).stdout.strip())
     mps = temp / "com.apple.MetalPerformanceShadersGraph"

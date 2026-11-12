@@ -20,10 +20,18 @@ struct Krea2TextMaskTests {
     static let textRows = 38, bucket = 60
 
     /// Krea2ReferenceTests' manifest (text rows 1...38, reference rows 1...60), its segments taking `textMask`.
-    static func manifest(references: Bool = true) throws -> Manifest {
+    /// `textLength`: the manifest declares the masked denoisers' text length (`krea2.textLength`).
+    static func manifest(references: Bool = true, textLength: Int? = nil) throws -> Manifest {
         var manifest = try Krea2ReferenceTests.manifest(references: references)
         for i in 0..<4 { manifest.graphs["denoiser\(i)"]?.inputs["textMask"] = "text_mask" }
+        manifest.krea2?.textLength = textLength
         return try Manifest.decode(manifest.encoded())
+    }
+
+    /// Whether `error` is the typed refusal of `rows` conditioning rows on a `length`-row masked export.
+    static func isTextCapacity(_ error: any Error, rows: Int, length: Int) -> Bool {
+        guard case .capacity(let what, let needed, let available)? = error as? AetherError else { return false }
+        return what == Krea2Pipeline.textCapacityResource && needed == rows && available == length
     }
 
     /// A segment computing the same thing at exact length (`length` nil: a dynamic text axis, no mask) or at a static
@@ -234,19 +242,17 @@ struct Krea2TextMaskTests {
         #expect(long.truncated && long.conditioningRows == Self.textRows)
     }
 
-    /// Rows past every function's text length (here a `step` shorter than the manifest's rows, with no `references`)
-    /// fail with `invalidParameters` and release the graphs; manifests that mask some segments only, or pair the
-    /// references function and the mask wrongly, are refused when the pipeline opens.
+    /// Rows past the segments' text length on a manifest that doesn't declare it (here a `step` shorter than the
+    /// manifest's rows, with no `references`) fail with the `capacity` refusal once the segments load, and release
+    /// the graphs; manifests that mask some segments only, or pair the references function and the mask wrongly, are
+    /// refused when the pipeline opens.
     @Test func whatDoesNotFitIsRefused() async throws {
         let manifest = try Self.manifest(references: false)
         let (short, _) = try Self.pipeline(masked: true, calls: Calls(), manifest: manifest, length: 10)
         _ = try await short.generate(ImageRequest(prompt: "abc", seed: 1, steps: 1, width: 32, height: 32))
         await #expect {
             try await short.generate(ImageRequest(prompt: String(repeating: "x", count: 20), seed: 1, steps: 1, width: 32, height: 32))
-        } throws: { error in
-            guard case .generation(.invalidParameters(let reason))? = error as? AetherError else { return false }
-            return reason.contains("21 conditioning rows exceed this export's denoiser text length 10")
-        }
+        } throws: { Self.isTextCapacity($0, rows: 21, length: 10) }
         #expect(await short.residentRoles.isEmpty)
 
         func refuses(_ manifest: Manifest) {
@@ -280,6 +286,108 @@ struct Krea2TextMaskTests {
         _ = try Krea2Pipeline(manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
                               options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,
                               load: { _ throws(AetherError) in Krea2Tests.FakeVAE(Calls()) }, fileBytes: { _ in 0 })
+    }
+
+    // MARK: a declared, shorter text length (`krea2.textLength`)
+
+    /// A manifest declaring a text length shorter than its prompts' rows (20 of text-only 1...38, references 1...60):
+    /// prompts that fit render the exact-length export's image at that one shape, admission keys on it, and a prompt
+    /// past it is refused with the typed `capacity` error before anything loads, by `prepare`, both encodes and
+    /// `generate` alike (a host routes it to an export with a longer text axis).
+    @Test func aDeclaredTextLengthRunsAndRefusesWhatDoesNotFit() async throws {
+        let length = 20
+        let calls = Calls()
+        let (short, loads) = try Self.pipeline(
+            masked: true, calls: calls, manifest: try Self.manifest(textLength: length), length: length)
+        let (exact, _) = try Self.pipeline(masked: false, calls: Calls())
+        #expect(short.textCapacity == length)
+        #expect(short.denoiserShape(rows: 1) == length && short.denoiserShape(rows: 20) == length)
+
+        // 33 rows: past the length, though within the manifest's prompt rows. Refused before any graph loads.
+        let long = Self.prompts[2]
+        #expect { try short.prepare(prompt: long) } throws: { Self.isTextCapacity($0, rows: 33, length: length) }
+        await #expect {
+            try await short.generate(ImageRequest(prompt: long, seed: 1, steps: 1, width: 32, height: 32))
+        } throws: { Self.isTextCapacity($0, rows: 33, length: length) }
+        await #expect { try await short.encode(prompt: long) } throws: { Self.isTextCapacity($0, rows: 33, length: length) }
+        let references = [Krea2ReferenceTests.square], wide = String(repeating: "w", count: 30)
+        let referenceRows = try exact.prepare(prompt: wide, references: references).conditioningRows
+        #expect(referenceRows > length)
+        #expect { try short.prepare(prompt: wide, references: references) } throws: {
+            Self.isTextCapacity($0, rows: referenceRows, length: length)
+        }
+        await #expect { try await short.encode(prompt: wide, references: references) } throws: {
+            Self.isTextCapacity($0, rows: referenceRows, length: length)
+        }
+        #expect(loads.log.isEmpty, "a refused prompt loads nothing: \(loads.log)")
+        #expect(calls.log.isEmpty, "a refused prompt runs nothing: \(calls.log)")
+
+        // What fits renders the exact-length image at the declared length, with one load.
+        for prompt in Self.prompts.prefix(2) {
+            let request = ImageRequest(prompt: prompt, seed: 3, steps: 2, width: 48, height: 32)
+            #expect(try await short.generate(request) == exact.generate(request))
+        }
+        for count in [3, 13] { #expect(calls.log.contains("segment3 segment text \(length) kept \(count)")) }
+        #expect(Set(calls.log.filter { $0.hasPrefix("segment") }.map { $0.split(separator: " ")[3] }) == ["\(length)"])
+        #expect(loads.log.filter { $0 == "denoiser0" }.count == 1)
+        #expect(try short.prepare(prompt: String(repeating: "x", count: 19)).conditioningRows == length, "exactly the length fits")
+
+        // An export without the field keeps its earlier length and capacity: the most rows its prompts may have.
+        let (legacy, _) = try Self.pipeline(masked: true, calls: Calls())
+        #expect(legacy.textCapacity == nil && legacy.denoiserShape(rows: 3) == Self.bucket)
+        #expect(exact.textCapacity == nil)
+    }
+
+    /// The declared length must be the segments' static text axis: a manifest saying 20 over 60-row segments fails
+    /// with `manifestMismatch` on `krea2.textLength` and releases the graphs.
+    @Test func aDeclaredTextLengthMustMatchTheSegments() async throws {
+        let (pipeline, _) = try Self.pipeline(
+            masked: true, calls: Calls(), manifest: try Self.manifest(textLength: 20), length: Self.bucket)
+        await #expect {
+            try await pipeline.generate(ImageRequest(prompt: "ab", seed: 1, steps: 1, width: 32, height: 32))
+        } throws: { error in
+            guard case .manifestMismatch(let field, _, _)? = error as? AetherError else { return false }
+            return field == "krea2.textLength"
+        }
+        #expect(await pipeline.residentRoles.isEmpty)
+    }
+
+    /// `krea2.textLength` decodes only on a masked manifest and within 1 ... the most rows a prompt may have (the
+    /// references' upper bound, else the text-only rows').
+    @Test func aDeclaredTextLengthIsValidated() throws {
+        func refused(_ make: () throws -> Manifest) -> Bool {
+            do { _ = try make(); return false } catch let error as AetherError {
+                if case .manifestInvalid(let field, _) = error { return field == "krea2.textLength" }
+                return false
+            } catch { return false }
+        }
+        #expect(try Self.manifest(textLength: 1).krea2?.textLength == 1)
+        #expect(try Self.manifest(textLength: Self.bucket).krea2?.textLength == Self.bucket)
+        #expect(try Self.manifest(references: false, textLength: Self.textRows).krea2?.textLength == Self.textRows)
+        #expect(refused { try Self.manifest(textLength: 0) })
+        #expect(refused { try Self.manifest(textLength: Self.bucket + 1) })
+        #expect(refused { try Self.manifest(references: false, textLength: Self.textRows + 1) })
+        #expect(refused {
+            var exact = try Krea2ReferenceTests.manifest()
+            exact.krea2?.textLength = 20
+            return try Manifest.decode(exact.encoded())
+        }, "an exact-length manifest has no text length")
+    }
+
+    /// The exporter's 256-row masked fixture (`--mask-text-rows 256`) decodes, passes the contract, declares the length
+    /// and opens a pipeline with that capacity; the 1,116-row fixture declares 1,116.
+    @Test func theShortMaskedFixtureDeclaresItsLength() throws {
+        let directory = Krea2Tests.manifestURL.deletingLastPathComponent()
+        for (file, length) in [("realism-masked-256.json", 256), ("realism-masked.json", 1116)] {
+            let manifest = try Manifest.decode(Data(contentsOf: directory.appending(path: file)))
+            try DriverContract.krea2.validate(manifest)
+            #expect(manifest.krea2?.textLength == length, "\(file)")
+            let pipeline = try Krea2Pipeline(
+                manifest: manifest, device: Krea2Tests.mac, filter: Krea2Tests.RecordingFilter(),
+                options: .init(gpu: .unadmitted), encodePrompt: Krea2Tests.encode,
+                load: { _ throws(AetherError) in Krea2Tests.FakeVAE(Calls()) }, fileBytes: { _ in 0 })
+            #expect(pipeline.textCapacity == length && pipeline.denoiserShape(rows: 8) == length, "\(file)")
+        }
     }
 
     // MARK: reference conditioning beside resident denoisers

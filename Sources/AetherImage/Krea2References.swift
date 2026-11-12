@@ -398,6 +398,7 @@ extension Krea2Pipeline {
         let prompt = try Krea2ReferencePrompt(
             rendered: rendered, textOnlyCount: try encodePrompt(text).count, images: patches, prompt: krea2.prompt,
             references: rules)
+        try requireTextCapacity(rows: prompt.conditioningRows)
         return (prompt, patches, rules)
     }
 
@@ -407,6 +408,23 @@ extension Krea2Pipeline {
     /// The conditioning carries the images' digests in order (``Krea2Conditioning/referenceDigests``), so a host can
     /// key its cache by them. GPU, turn, admission, retention, pressure and cancellation are ``encode(prompt:job:)``'s.
     public func encode(prompt text: String, references: [Krea2ReferenceImage], job: GPUJob? = nil) async throws -> Krea2Conditioning {
+        try await encode(prompt: text, references: references, profile: lastProfileForEncode, job: job)
+    }
+
+    /// ``encode(prompt:references:job:)`` for the generation that follows at `width` × `height`, as
+    /// ``encode(prompt:width:height:job:)`` is for a text-only prompt: the encode plans against that canvas, so the
+    /// denoisers and decoder the generation keeps are never released by its change of canvas (the first encode on a new
+    /// pipeline, or one for another size). The canvas is checked as a generation's would be (`invalidParameters`).
+    public func encode(
+        prompt text: String, references: [Krea2ReferenceImage], width: Int, height: Int, job: GPUJob? = nil
+    ) async throws -> Krea2Conditioning {
+        _ = try latent.tokenGrid(width: width, height: height)
+        return try await encode(prompt: text, references: references, profile: Self.profile(width: width, height: height), job: job)
+    }
+
+    private func encode(
+        prompt text: String, references: [Krea2ReferenceImage], profile: String, job: GPUJob?
+    ) async throws -> Krea2Conditioning {
         pending += 1
         defer { pending -= 1 }
         try Task.checkCancellation()
@@ -416,7 +434,7 @@ extension Krea2Pipeline {
         let grant = try await options.gpu.admit(job: job)
         defer { grant.release() }
         return try await gate.withTurn {
-            let residency = try admission.begin(profile: lastProfileForEncode, shape: denoiserShape(rows: prompt.conditioningRows))
+            let residency = try admission.begin(profile: profile, shape: denoiserShape(rows: prompt.conditioningRows))
             if let pressure = options.pressure,
                !Set([wiring.text.role, rules.vision]).isSubset(of: Set(admission.residentRoles)),
                await pressure.level == .critical {
@@ -445,7 +463,7 @@ extension Krea2Pipeline {
                 if retention == .releaseAfterEachGeneration { admission.release() }
                 return conditioning
             } catch {
-                admission.release()
+                settle(after: error)
                 throw error
             }
         }

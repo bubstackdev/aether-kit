@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — unreleased (dated at the tag)
+## 0.2.0-beta.1 — 2026-11-11
 
 0.2.0 builds out 0.1.0's drivers for hosts that ran the same features on 0.0.x: Krea 2 observation, prompt
 preparation, conditioning reuse, residency control with planned and live resident bytes, reference images, refine and
@@ -9,9 +9,9 @@ frames; our own Qwen3 language-model exports; the `vlm-static-inject@1` vision-l
 Qwen3.5 / Qwen3.6 exports and images on decoders with recurrent state; measured and
 qualified model memory for the decoder engine, with a narrow prefill and a reload budget that keep the describer's
 memory flat; and location-free bundle identity, status and verification, compiled-cache status and GPU waiters. It is
-additive over 0.1.0 except for the entries under "Breaking". The prereleases `0.2.0-alpha.1` to `0.2.0-alpha.5`
+additive over 0.1.0 except for the entries under "Breaking". The prereleases `0.2.0-alpha.1` to `0.2.0-alpha.6`
 carried it; the API freeze review renamed or hid a few of alpha.3's declarations in alpha.4 and alpha.5 (see
-"Breaking" and "Changed"). Nothing in the public API changed between `0.2.0-alpha.5` and the release.
+"Breaking" and "Changed"). Beta.1 also adds configurable masked text capacity and opt-in tiled VAE decoding for Krea 2.
 
 **Release notes, in short:**
 
@@ -19,8 +19,7 @@ carried it; the API freeze review renamed or hid a few of alpha.3's declarations
   prefill now runs in calls of at most 32 tokens, about twice as slow (one picture 0.51 s instead of 0.24 s; the owner
   accepted the trade on 2026-11-10). What the narrow calls still retain is released by reloading the decoder's graphs
   past a 2 GiB budget (docs/VLM.md V6): about once every 21 requests of the G5 mix, 2.7 s each, at the end of the
-  request that crossed the budget. The G5 retention gate passes at 880 MiB of growth against a 1,024 MiB bar (5.6 GiB
-  before). Both apply to `decoder-lm@1` exports too. See "Fixed".
+  request that crossed the budget. The G5 retention gate now checks the reload budget and peak retained memory (see "Fixed"). Both apply to `decoder-lm@1` exports too. See "Fixed".
 - **Qualified model bytes ship for the two local 4B exports** on `h17c` (M5), each the native gate's measurement plus
   the owner's 256 MiB margin: the writer (Qwen3 `decoder-lm@1`, Qwen3 export gate) at 9,957 + 256 MiB, and the
   describer (Qwen3-VL `vlm-static-inject@1`, G5 with the 32-token prefill and the reload budget) at 12,379 + 256 MiB.
@@ -104,8 +103,95 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
   | waiting tools on the GPU lock | `SharedGPULease.hasWaiters(directory:)` (or `hasWaiters(directory:legacyWrapper:)` for another lock), `othersWaiting` |
   | `VisionLanguageSession` (AetherLanguageCoreAI) | `ChatSession` on a `vlm-static-inject@1` bundle: `ChatMessage.user(_:images:)`, `respond(to:images:)` |
 
+### Added
+
+- **Krea 2: a shorter masked text length (`krea2.textLength`).** `Forge/krea2/export_krea2.py --mask-text-rows N`
+  exports the masked denoisers at a fixed text length of N rows instead of 1,116 (the default, unchanged). Every
+  joint block attends over the image tokens plus the text length, so a 256-row export should step at about the
+  exact-length 256-row speed (2.9–3.0 s at 1024², against 4.1–4.3 s at 1,116). It is for measurement first: the
+  export is benchmarked and gated before anything adopts it.
+  - **Manifest:** masked exports now declare their length as `krea2.textLength` (MANIFEST.md §5.6), optional,
+    validated against the prompt rows and the mask. A masked export without it (the first, 1,116-row ones) keeps its
+    length: the most rows a prompt of the export may have.
+  - **Driver:** `Krea2Pipeline` reads the length from the manifest for admission (`denoiserShape`) and checks that the
+    segments' static text axis matches it (`manifestMismatch` on `krea2.textLength`). A prompt with more conditioning
+    rows is refused before anything loads, by `prepare(prompt:)`, `prepare(prompt:references:)`, both encodes and
+    `generate`, with `AetherError.capacity(what: Krea2Pipeline.textCapacityResource, needed: rows, available:
+    length)`, so a host can route it to the 1,116-row export. New: `Krea2Pipeline.textCapacity` (the declared
+    length, nil without one) and `Krea2Pipeline.textCapacityResource` (`"krea2.textLength"`). Additive; the API
+    baselines record them.
+  - **Behaviour change:** rows past a masked export's static length that the manifest didn't declare (only a
+    malformed export can have them) now fail with that `capacity` error instead of `invalidParameters`.
+  - **Forge:** `krea2_graphs.DenoiserSegment(text_rows=)`, `krea2_graphs.text_length(manifest)`; `check_krea2.py` and
+    the step benchmarks pad to the bundle's declared length; `bench_krea2_segment.py --text-length`.
+
+### Fixed
+
+- **Krea 2 warm sessions (Atelier issue #35).** A host that encodes, then generates from the conditioning, picture after
+  picture, kept losing warm graphs. Two changes, for `ImageRetention.keepLoaded` (the default):
+  - **Canvas-aware encode.** New `Krea2Pipeline.encode(prompt:width:height:job:)` plans memory against the canvas
+    the generation that follows will use. Before, the first `encode(prompt:job:)` on a pipeline planned under its own
+    conditioning-only profile, so the generation's canvas, another profile, released the text encoder. The next
+    picture's encode then loaded it again. Now the text encoder stays resident beside that canvas's denoisers and
+    decoder. The canvas is checked as a generation's would be (`invalidParameters`). `encode(prompt:job:)` is
+    unchanged. `encode(prompt:references:width:height:job:)` does the same for reference prompts, so the
+    denoisers the last generation kept are never released by the generation's change of canvas. Additive; the
+    `AetherImage` API baseline records both.
+  - **Cancellation keeps measured graphs.** A generation or encode that throws `CancellationError` (bare or as
+    `AetherError.runtime(underlying:)`) now keeps its resident graphs, so the next request starts warm. Its
+    reservation shrinks to what they hold, and nothing of the cut-short run is measured
+    (`ResidentAdmission.keepAfterCancellation()`, package access). Graphs the interrupted phase loaded were never
+    measured, so a cancelled cold load still releases everything. So does any other failure, and any cancellation
+    under `releaseAfterEachGeneration`.
+  - **Behaviour change:** a cancellation that lands after every phase ended (during the decoder's call, say) used to
+    release the graphs; they now stay.
+
+- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
+  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
+  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
+  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
+    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
+    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
+    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
+  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
+    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
+    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
+    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
+    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
+    KV state, position and images survive a reload, so prefix reuse continues. G5 passes (see below). Over
+    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
+    stayed under 12.9 GiB.
+  - **G5's memory bar.** With a reload budget, `DescriberRetentionGateTests` now checks the budget's bound, not growth
+    after warm-up under 1 GiB. The old figure depended on how much the warm-up happened to retain (880 MiB passed
+    because the warm-up had retained 1,209 MiB), and read only after requests, missing the 1,139 MiB peak a reload
+    released. Now: after every request the model holds at most the budget past its level after the first request, and
+    the peak stays under that plus one warm-up request and the engine's buffers. Both growth figures are recorded; an
+    engine without a budget keeps the 1 GiB bar, on the peak. Each row records `reloads`. Test-only.
+
 ### New
 
+- **Lower-memory Qwen 27B export.** `--embedding-bits 8` packs token embeddings per row and dequantizes after gather:
+  1.27 GB smaller on disk and about 1.2 GiB less Metal memory on the existing two-picture reference gate. The variant
+  passes the accuracy and repeated-request gates; fp16 remains the default pending broader quality checks. KV growth
+  also keeps recurrent buffers in place, avoiding about 147 MiB of temporary allocation/copying on the 27B.
+  Measurements and reproduction details are in `docs/QWEN3_5.md`.
+
+- **Opt-in Krea 2 tiled VAE decode.** `try await pipeline.setDecoderTiling(tileSize: 512, overlap: 256)` decodes
+  overlapping tiles with cosine blending, reusing one input/output buffer pair. Edge tiles shift back to keep one
+  decoder shape; small canvases use a full decode. `tileSize: nil` restores full decoding. Changing the setting waits
+  for the pipeline's turn and releases its graphs to discard older decoder specializations; admission profiles
+  distinguish tile policies. Full decoding is the default; tiling approximates global attention and changes pixels.
+  - On an M5 Max 64 GB, macOS 27.2, masked realism at 1024² / 8 steps, separate native processes under
+    `scripts/gpu-lease` sampled 46.36 GiB peak with full decode and 37.41 GiB with tiles (8.96 GiB less). The mug
+    prompt's tiled image reached SSIM 0.99992 / PSNR 66 dB against full decode; decode time rose from 1.08 to 2.79 s
+    in the debug build. Total cold-render timings are not a speed comparison.
+  - Isolated VAE measurements on the harbor reference: 11.49 → 2.54 GiB retained Metal memory, SSIM 0.995 / PSNR
+    44 dB with 512-pixel tiles. 640- and 768-pixel tiles also passed SSIM 0.99 / PSNR 35 dB against full decode.
+    These are two qualification images, not a guarantee for every prompt.
+  - `Forge/krea2/bench_krea2_vae_tiles.py` records memory, repeats, image/error maps and seam-band error; its CPU
+    selftest checks coverage, edge shifts and normalization. Raw isolated/native results are in
+    `Forge/krea2/vae-tiling-report.json`. The native mask qualification accepts `_TILE`, `_OVERLAP` and, in `revisit`,
+    `_PIXELS` alongside its existing `AETHER_KREA2_MASK…` variables. The API baseline adds only the opt-in setter.
 - **MiniMax H3 clip limits, preflight, streamed frames and the seed.** Additive; the `AetherVideo` API baseline records it.
   - **Clip limits:** `MiniMaxH3Pipeline.clipLimits(profile:keyframeCount:)` returns a `VideoClipLimits`: the export's
     presentation-token and packed-row bounds, the keyframes' presentation tokens, the clip's own packed rows, and the
@@ -155,10 +241,11 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
     the gate matrix: one render per process under `scripts/gpu-lease`, per-render JSON records, a stop below
     100 GiB free, and a prune of its compile-cache bucket at the end. The suite is `MiniMaxH3ProfileGateTests`.
   - **Behaviour change:** an H3 request without a measured envelope is refused (`VideoRefusal.unmeasured`, thrown as
-    `unsupportedOperation`). On the G4 export only 960×544×124 turbo8 text-to-video is covered (its seeded
-    footprints). Keyframed clips, turbo4 and
+    `unsupportedOperation`). On the G4
+    export only 960×544×124 turbo8 text-to-video is covered (its seeded footprints). Keyframed clips, turbo4 and
     544×960 there need the H2 gate's envelopes.
-  - **Not yet measured:** the envelopes come from the H2 gate on the GPU.
+  - **Measured:** the H2 gate's 33 renders recorded 21 envelopes (one per admission key measured) into the 0.2.0 H3
+    export on the M5 Max (`h17c`, 2026-11-11).
 - **Qwen3.5 / Qwen3.6 vision-language export (`Forge/qwen3_5/`, docs/QWEN3_5.md).** Any Qwen3_5ForConditionalGeneration
   checkpoint as a `vlm-static-inject@1` bundle: Qwen3-VL's grid-static tower without DeepStack, and the hybrid decoder
   (Gated DeltaNet and gated full attention, interleaved M-RoPE, untied head) as one function of up to 32 tokens a call
@@ -189,20 +276,16 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
     the KV no longer fits.
   - Without a declaration, the charge is as before. Additive; the API baselines record it.
   - The G5 retention gate (`DescriberRetentionGateTests`, opt-in): 20 mixed requests, the level after warm-up must
-    grow by less than 1 GiB; then a second load charges the measurement. It passes at 880 MiB (see "Fixed").
+    grow by less than 1 GiB; then a second load charges the measurement. Not run yet.
 - **Qualified model bytes for known decoder exports.** The kit keeps a table of measured model memory (package
   only), keyed by the export's `Manifest.contentDigest` and the chip's Core AI architecture, as H3's qualified
   footprints are; `DecoderEngine.qualifiedModelBytes(for:device:)` looks one up. A `decoder-lm@1` or
   `vlm-static-inject@1` bundle load with `Options.modelCharge` `.qualified` (the default) declares its export's entry,
   so the first load charges the measured memory without the host persisting `measuredModelBytes`; `.measured` or
   `.declared(bytes:)` wins, and an export or chip without an entry charges what load measures, as before.
-  `DecoderEngine.declaredModelBytes` reports the figure load was given. The G5 retention gate and the Qwen3 export
-  gate print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still covers what they
-  measure. The table holds two entries on `h17c`, each the gate's measurement plus the owner's 256 MiB margin
-  (`(measured + 256) << 20`): the writer's Qwen3 `decoder-lm@1` export, 9,957 MiB measured by the Qwen3 export gate,
-  and the describer's Qwen3-VL `vlm-static-inject@1` export, 12,379 MiB measured by G5 with the 32-token prefill and
-  the reload budget (a 48-request run read 12,526 MiB; the 19,066 MiB of the failed pre-fix run is not used).
-  Additive; the API baselines record it.
+  `DecoderEngine.declaredModelBytes` reports the figure load was given. The table ships empty: the G5 retention gate and the
+  Qwen3 export gate now print the entry to add (`GATE qualified model bytes entry:`) and check an existing entry still
+  covers what they measure. Additive; the API baselines record it.
 
 - **Qwen3-VL references on synthetic pictures:** `Forge/qwen3vl/reference_qwen3vl.py --pictures <dir>` takes
   `synthetic_pictures.py`'s one-picture and text-only cases in place of the photographs, so pins that carry none (the
@@ -267,8 +350,9 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
   as an install does, then decodes the manifest. Additive; the `AetherCore` API baseline records it.
 - **Compiled-cache status:** `CompiledCache.status(of:manifest:device:roles:cache:)` asks Core AI's compile cache
   (`AIModelCache.model(for:options:)`) whether each graph already has a compiled copy for this device, using the
-  specialization options a load from the manifest uses. It compiles nothing (on the Krea 2 realism export the lookup
-  took 5 ms and allocated no Metal, `Krea2ShapeQualificationTests`), and returns each graph's declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
+  specialization options a load from the manifest uses. It compiles nothing (the lookup's own cost on a large model is
+  not yet measured), and returns each graph's
+  declared source bytes, so a host can reserve disk before a first load (`uncompiledSourceBytes`). Additive; the
   `AetherRuntime` API baseline records it.
 - **Bundle status** a host can show, for every driver's bundles: `InstalledBundle.status(supportedDrivers:)` returns
   `BundleStatus` `.notPrepared` (the folder is absent or empty), `.ready`, or `.blocked` with a `BundleBlockReason`:
@@ -395,21 +479,14 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
 
 ### Fixed
 
-- **Describer memory growth (G5).** The 4B Qwen3-VL describer grew 5.6 GiB of Metal over 12 requests after warm-up.
-  It was not the image path: Core AI retains memory on every decoder call wider than about 32 tokens, and on every
-  decode step after one, even when the shapes repeat (text prompts of the same length grew alike). Two changes:
-  - **Prefill width.** A Core AI decoder specialized with `expectFrequentReshapes` is now fed in calls of at most 32
-    tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
-    chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
-    instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
-  - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
-    graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
-    `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
-    `Generator` checks at the end of every request, inside its turn and GPU grant, before the request's stream ends;
-    `DecoderEngine.reloadIfRetainedPastBudget()` does it for other callers, and `DecoderEngine.reloads` counts them.
-    KV state, position and images survive a reload, so prefix reuse continues. G5 passes: 880 MiB after warm-up. Over
-    48 requests the engine reloaded twice (after requests 16 and 37), 2.7 s each (one run measured 9.9 s), and Metal
-    stayed under 12.9 GiB.
+- **Krea 2 tensor lifetimes.** Step buffers are returned to the arena before VAE decode, text encoder inputs are
+  released after encoding, and reused conditioning's staging rows are released after padding. Segment outputs reuse
+  storage only after its last consumer, with matching shape, scalar type and strides; a call's inputs and outputs
+  never alias. On the masked realism export at 1024², 8 steps (M5 Max, 64 GB, macOS 27.2), fresh-process renders under
+  `scripts/gpu-lease` retained 480 MiB less Metal memory and sampled a peak about 919 MiB lower, with identical output
+  pixels. These are single-run memory measurements, not a timing comparison; raw reports are in
+  `Forge/krea2/memory-report.json`. The fake-graph regression checks live bytes at the step and decoder boundaries,
+  non-aliasing within calls, the host recipe and repeat equality.
 
 - **Bundle verification in bounded memory.** `InstalledBundle.verify(progress:)` and the verified bundle status read
   each file in 8 MiB chunks, but on Apple platforms every `FileHandle` read is an autoreleased buffer, and the loop

@@ -1,0 +1,94 @@
+{
+ "layers": 8,
+ "kinds": "lllallla",
+ "scan": "chunk",
+ "subchunk": 16,
+ "mainScan": "step",
+ "weightBits": 4,
+ "quantizedLinears": 62,
+ "recState": "fp32",
+ "chunk": 64,
+ "capacity": 1024,
+ "bytes": 1713552038,
+ "timings": {
+  "build": 23.5,
+  "quantize": 6.4,
+  "export_main": 3.0,
+  "export_prefill": 8.7,
+  "convert": 9.8
+ },
+ "peakRSSGB": 24.5,
+ "hostOS": "26B123",
+ "tokens": 192,
+ "referenceSeconds": 333.8,
+ "loadSeconds": 4.9,
+ "loadFunction_main": 0.3,
+ "loadFunction_prefill": 0.0,
+ "states": {
+  "keyCache": [
+   [
+    2,
+    1,
+    4,
+    1024,
+    256
+   ],
+   "float16"
+  ],
+  "valueCache": [
+   [
+    2,
+    1,
+    4,
+    1024,
+    256
+   ],
+   "float16"
+  ],
+  "convState": [
+   [
+    6,
+    1,
+    3,
+    10240
+   ],
+   "float16"
+  ],
+  "recState": [
+   [
+    6,
+    1,
+    48,
+    128,
+    128
+   ],
+   "float32"
+  ]
+ },
+ "main": {
+  "msPerTokenMedian": 6.26,
+  "lastRowCosine": 0.9989942605390675,
+  "worstRowCosine": 0.9963605127225645,
+  "nan": false
+ },
+ "prefill": {
+  "msPerChunkMedian": 26.1,
+  "firstChunkMs": 273.4,
+  "tokensPerSecond": 2454.0,
+  "chunkEndCosineVsReference": {
+   "63": 0.999083,
+   "127": 0.999024,
+   "191": 0.998995
+  },
+  "chunkEndCosineVsMainLoop": {
+   "63": 1.0,
+   "127": 1.0,
+   "191": 1.0
+  },
+  "lastRowCosineVsReference": 0.9989954238970589,
+  "recStateCosineVsMainLoop": 0.9999999583175895,
+  "recStateCosineVsReference": 0.9989742017193072,
+  "nan": false
+ },
+ "guard": "passed"
+}

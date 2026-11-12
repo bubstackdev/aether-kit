@@ -8,4 +8,7 @@ DerivedData/
 
 # Git worktrees for parallel branches (git worktree add .worktrees/<name> -b <branch>)
 .worktrees/
+
+# Python bytecode is generated locally.
 __pycache__/
+*.py[cod]

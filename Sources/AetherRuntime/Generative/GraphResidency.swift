@@ -596,6 +596,10 @@ public final class GraphResidency {
                 held = min(held, max(prior, level - unloadedLevel - others))
                 peak = min(peak, max(held, current.meter.peak - unloadedLevel - others))
             }
+            if getenv("AETHER_ADMISSION_TRACE") != nil {
+                let others = heldSoFar.filter { $0.key != phase }.values.reduce(0, +)
+                fputs("residency: endPhase \(phase) mode=\(mode) profile=\(profile) baseline=\(current.baseline) observed=\(current.observed) level=\(level) meterPeak=\(current.meter.peak) prior=\(prior) rawHeld=\(prior + (level - current.baseline)) rawPeak=\(prior + (current.meter.peak - current.baseline)) unloaded=\(unloadedLevel.map(String.init) ?? "-") others=\(others) held=\(held) peak=\(peak) loaded=\(residentRoles)\n", stderr)
+            }
             measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
             ledger.record(.init(model: model, profile: profile, phase: phase, specializations: recordedSpecializations),
@@ -612,6 +616,17 @@ public final class GraphResidency {
             // The next phase measures from where this one started, not from a level that may still hold these graphs.
             if !released.isEmpty, let start = started ?? floor { releasedBaseline = min(releasedBaseline ?? start, start) }
         }
+    }
+
+    /// Ends the open phase unrecorded and keeps every graph (a cancelled generation: a phase cut short measures
+    /// nothing). Returns whether every loaded graph has been measured, so its held bytes are known: false when the
+    /// open phase loaded one, or when graphs are released per phase (the open phase's would outlive it); the caller
+    /// then releases them instead. With no phase open, true.
+    package func abandonOpenPhase() -> Bool {
+        guard let current = open else { return mode == .allResident }
+        current.meter.stop()
+        open = nil
+        return mode == .allResident && !loadedInPhase
     }
 
     /// Releases every graph (the driver unloads). An open phase is discarded unrecorded. What the graphs held goes in

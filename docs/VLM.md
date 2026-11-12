@@ -240,7 +240,7 @@ states), not a runtime one.
 | G2 | **Engine on fake graphs** (hermetic): a fake tower and a fake decoder that reads its statics: chunked prefill (the image straddling chunks) equals one-shot; pipelined greedy equals host steps; a second turn on the same images reuses past them with no encode; a same-grid different image reuses nothing past its start; text-only after images equals a fresh text-only run | exact |
 | G3 | **Export check** (Python, GPU): every graph against CPU float32 transformers on synthetic cases, single and multi-image | embeddings cosine ≥ 0.999; greedy 48/48 or the near-tie rule |
 | **G4** | **The describer gate:** our 4B export through `Generator` vs the 0.0.7 describer (`VisionLanguageSession` on its 0.0.x export of the same weights), greedy, on fixed synthetic non-graphic pictures sized to 0.0.7's grids (704×704, 576×768, 768×576, 512×896, 896×512: the smart resize is the identity there, so both see the same pixels) and on multi-image turns | rendered ids exact; **every generated token equal**, except that at a divergence the 0.0.7 reference's top-1 − top-2 probability is < 0.1 and our token is in its top five (the reference's own teacher-forced logits); such a flip is reported, and the case ends there |
-| G5 | **Retention and speed** | Metal by phase over 20 requests mixing grids, image counts and text-only: growth after warm-up < 1 GiB; decode ms/token and time to first token recorded against 0.0.7's |
+| G5 | **Retention and speed** | Metal by phase over 20 requests mixing grids, image counts and text-only. With a reload budget (V6): after every request the model holds at most the budget past its level after the first request, and the peak stays under that plus one warm-up request; growth after warm-up recorded. Without one: growth after warm-up, at the peak, < 1 GiB. Decode ms/token and time to first token recorded against 0.0.7's |
 
 0.0.7 fed its tower fp16 pixels and its decoder host-computed positions; ours feeds f32 patches and synthesizes the
 positions in the graph. The pictures are chosen so the preprocessing is the identity in both, which leaves only the
@@ -284,11 +284,22 @@ compile cache and runs one warming step (`DecoderEngine.reloadIfRetainedPastBudg
 and statics stay, the tower stays loaded). The `Generator` checks at the end of every request, inside its turn and GPU
 grant, before the stream ends, so the next request waits for a reload rather than racing it. Retained is the device's
 Metal allocation less the engine's buffers, so other allocations in the process count too. Only bundle-loaded Core AI
-decoders with `expectFrequentReshapes` and no recurrent state reload by default. G5 passes at 880 MiB after warm-up
-(one reload, after request 16). Over 48 requests it reloaded after requests 16 and 37: 0.18 s to drop the graphs
+decoders with `expectFrequentReshapes` and no recurrent state reload by default. G5 first passed at 880 MiB after
+warm-up (one reload, after request 16). Over 48 requests it reloaded after requests 16 and 37: 0.18 s to drop the graphs
 (Metal 12.8 to 1.9 GiB), 1.2 s to load them, 1.3 s for the warming step (back to 10.0–10.3 GiB), 2.7 s in all (one
 earlier run measured 9.9 s). The next request's prefill was as fast as before. The level stays under the first
 request's level plus the budget plus one request (12.9 GiB here); that is what the qualified figure has to cover.
+
+**G5's bar with a reload budget (2026-11-11).** The 1 GiB growth bar no longer measures retention once the engine
+reloads. The reload counts from the first request, so the growth past the warm-up's last level can reach the budget
+less what the warm-up retained: 880 MiB here, because the warm-up had retained 1,209 MiB, and a warm-up that retained
+less would fail the same engine. The gate also read only after each request, so it missed the peak inside request 16
+(12,784 MiB, 1,139 MiB past the warm-up) that its reload released. G5 now checks the reload's guarantee instead
+(`RetentionBars`, hermetic tests in `RetentionBarsTests`): after every request the level less the engine's buffers
+is at most the floor (the same reading after the first request) plus the budget, which fails when a reload is missed or
+doesn't release; and the peak, read inside requests too, is at most the floor plus the budget plus the most one
+warm-up request raised the level plus the engine's buffers (13,642 MiB on that run, peak 12,784). Both growth figures
+are still recorded. An engine without a budget keeps the 1 GiB bar, on the peak.
 
 ## 7. From 0.0.7: port, and what changes
 

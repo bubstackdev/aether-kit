@@ -80,6 +80,29 @@ def main() -> None:
         if not ok:
             failures.append(name)
 
+    # The packed table must remain int8 through gather, including zeros and outlier rows.
+    # Use a small stand-in: quantize_embedding depends only on the vocabulary and table.
+    embedding = qg.Decoder.__new__(qg.Decoder)
+    torch.nn.Module.__init__(embedding)
+    embedding.vocab = 7
+    torch.manual_seed(5)
+    source = torch.randn(7, 64)
+    source[0] = 0
+    source[1] *= 100
+    source[2] *= 1e-8
+    embedding.register_buffer("embed", source.clone())
+    embedding.register_buffer("embed_scale", None)
+    embedding.quantize_embedding()
+    ids = torch.tensor([2, 0, 6, 1, 2])
+    restored = torch.nn.functional.embedding(ids, embedding.embed).float() * torch.nn.functional.embedding(ids, embedding.embed_scale)
+    error = (restored - source[ids]).abs()
+    check("int8.embedding", embedding.embed.dtype == torch.int8 and
+          bool((error <= embedding.embed_scale[ids] * 0.501).all()) and bool(torch.isfinite(restored).all()))
+    check("int8.embedding.zero", not bool(restored[1].any()))
+    packed = embedding.embed
+    embedding.quantize_embedding()
+    check("int8.embedding.idempotent", embedding.embed is packed)
+
     # The block scan against the recurrence, on values like Qwen3.6-27B's layer 0 (|v| ~ 35, slow decay).
     torch.manual_seed(1)
     hv, dk, dv, n = 4, 16, 16, 4 * qg.SCAN_PIECE + 5

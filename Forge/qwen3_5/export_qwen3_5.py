@@ -395,21 +395,23 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
     }
 
 
-def precision(weight_bits: int, head_bits: int) -> dict:
+def precision(weight_bits: int, head_bits: int, embedding_bits: int = 16) -> dict:
     w = {4: "int4 block 32 (symmetric)", 8: "int8 per channel (symmetric)", 16: "fp16"}
-    return {"weights": f"decoder {w[weight_bits]}, head {w[head_bits]}, embedding and vision fp16",
+    embedding = "int8 per-row embedding" if embedding_bits == 8 else "fp16 embedding"
+    return {"weights": f"decoder {w[weight_bits]}, head {w[head_bits]}, {embedding}, vision fp16",
             "activations": f"vision {VISION_COMPUTE}, decoder {DECODER_COMPUTE}", "kv": "fp16", "logits": "fp32",
             "components": {
                 "vision": "fp16 weights, fp32 compute; LayerNorm statistics, rotary and position resampling fp32; "
                           "outputs fp16",
-                "decoder": (f"{w[weight_bits]} Linears, fp16 embedding, residual stream and KV, {DECODER_ATTENTION} "
+                "decoder": (f"{w[weight_bits]} Linears, {embedding}, fp16 residual stream and KV, {DECODER_ATTENTION} "
                             "attention; RMSNorm statistics, M-RoPE angles, the Gated DeltaNet scan and its state fp32; "
                             f"head {w[head_bits]}"),
                 "io": "patches f32, grid i32; image embeds fp16; tokens, positions, image_positions and rope shifts "
                       "i32; logits f32"}}
 
 
-def sample_manifest(platform_name: str, cfg: dict) -> dict:
+def sample_manifest(platform_name: str, cfg: dict, weight_bits: int = WEIGHT_BITS, head_bits: int = HEAD_BITS,
+                    embedding_bits: int = 16) -> dict:
     names = Bundle(qg.PINS)
     files = {f"{a}/{n}": {"bytes": 1, "sha256": "0" * 64} for a in (names.vision, names.decoder)
              for n in ("main.hash", "main.mlirb", "metadata.json")}
@@ -417,10 +419,10 @@ def sample_manifest(platform_name: str, cfg: dict) -> dict:
                   for n in (*TOKENIZER_FILES, "chat_template.jinja")})
     files.update({n: {"bytes": 1, "sha256": "0" * 64} for n in ("LICENSE", "NOTICE", "README.md")})
     report = {"scriptSHA256": {"export_qwen3_5.py": "0" * 64}, "forgeLockSHA256": "0" * 64}
-    return manifest(files, report, platform_name, precision(WEIGHT_BITS, HEAD_BITS), cfg)
+    return manifest(files, report, platform_name, precision(weight_bits, head_bits, embedding_bits), cfg)
 
 
-def notice(weight_bits: int) -> str:
+def notice(weight_bits: int, embedding_bits: int = 16) -> str:
     base = qg.PINS.get("baseModel", qg.REPO)
     origin = ("by the Qwen team, Alibaba Cloud," if base == qg.REPO
               else f"a fine-tune of {base} (by the Qwen team, Alibaba Cloud),")
@@ -437,12 +439,14 @@ def notice(weight_bits: int) -> str:
         + (f"the decoder's linear weights were quantized to {weight_bits} bits and the remaining weights rounded from "
            "bfloat16 to float16." if weight_bits < 16 else "the weights were rounded from bfloat16 to float16."),
         "The tokenizer files are upstream's, unmodified; chat_template.jinja is upstream's chat template.",
+        ("The token embedding was quantized to symmetric int8 per row, dequantized after gather."
+         if embedding_bits == 8 else "The token embedding is float16."),
         "It is not an official release of the Qwen team or Alibaba Cloud.",
         "",
     ])
 
 
-def readme(cfg: dict, weight_bits: int) -> str:
+def readme(cfg: dict, weight_bits: int, embedding_bits: int = 16) -> str:
     names = Bundle(qg.PINS)
     text, vision = cfg["text_config"], cfg["vision_config"]
     return "\n".join([
@@ -470,6 +474,8 @@ def readme(cfg: dict, weight_bits: int) -> str:
         + "float16 compute with float32 attention, norms, rotary and recurrence. Load it with Aether-Kit "
         "(`vlm-static-inject@1`, macOS); the manifest is `.aether/aether.json`.",
         "",
+        f"Token embedding: {embedding_bits} bits" + (" (symmetric per row; dequantized after gather)." if embedding_bits == 8 else "."),
+        "",
         "Licensed under the Apache License 2.0 (`LICENSE`); a modified version, not an official Qwen release (see",
         "`NOTICE`).",
         "",
@@ -487,6 +493,8 @@ def main() -> None:
     parser.add_argument("--graphs", default="vision,decoder", help="comma-separated subset (measurement exports)")
     parser.add_argument("--weight-bits", type=int, choices=[4, 8, 16], default=WEIGHT_BITS)
     parser.add_argument("--head-bits", type=int, choices=[4, 8, 16], default=HEAD_BITS)
+    parser.add_argument("--embedding-bits", type=int, choices=[8, 16], default=16,
+                        help="int8 per vocabulary row, dequantized after gather; default fp16")
     parser.add_argument("--slots", type=int, default=qg.IMAGE_SLOTS)
     parser.add_argument("--images", type=int, default=qg.MAX_IMAGES)
     parser.add_argument("--layers", type=int, help="debug: keep only the first N decoder layers")
@@ -497,7 +505,7 @@ def main() -> None:
     cfg = json.loads((args.snapshot / "config.json").read_text())
     names = Bundle(qg.PINS)
     if args.sample_manifest:
-        print(json.dumps(sample_manifest(args.platform, cfg), indent=2))
+        print(json.dumps(sample_manifest(args.platform, cfg, args.weight_bits, args.head_bits, args.embedding_bits), indent=2))
         return
     if args.output is None:
         parser.error("--output is required")
@@ -512,7 +520,7 @@ def main() -> None:
     log = Log(args.output / "forge-log.jsonl")
     torch.manual_seed(0)
     torch.set_grad_enabled(False)
-    prec = precision(args.weight_bits, args.head_bits)
+    prec = precision(args.weight_bits, args.head_bits, args.embedding_bits)
     report = {
         "schema": 1, "id": names.id, "command": sys.argv, "pins": args.pins.name,
         "exportedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "creationDate": args.creation_date,
@@ -526,6 +534,7 @@ def main() -> None:
         "source": {"repository": qg.REPO, "revision": qg.REVISION, "snapshot": str(args.snapshot.resolve()),
                    "verified": {}},
         "graphs": sorted(graphs), "precision": prec, "weightBits": args.weight_bits, "headBits": args.head_bits,
+        "embeddingBits": args.embedding_bits,
         "patchCapacity": qg.PATCH_CAPACITY, "callTokens": qg.CALL_TOKENS, "scanPiece": qg.SCAN_PIECE,
         "contextMax": qg.CONTEXT_MAX, "imageSlots": args.slots, "maxImages": args.images,
         "compute": COMPUTE, "conversion": {}, "stages": {}, "quantized": {},
@@ -591,6 +600,8 @@ def main() -> None:
         decoder = qg.Decoder(model, slots=args.slots, images=args.images, dtype=qg_dtype(DECODER_COMPUTE),
                              attention=qg_dtype(DECODER_ATTENTION), storage=torch.float16, before_layer=before,
                              after_layer=after).eval()
+        if args.embedding_bits == 8:
+            decoder.quantize_embedding()
         head_counts: dict = {}
         holder = nn.Module()
         holder.head = decoder.head
@@ -624,8 +635,8 @@ def main() -> None:
         shutil.copyfile(args.snapshot / name, args.output / "tokenizer" / name)
     shutil.copyfile(args.snapshot / "chat_template.jinja", args.output / "tokenizer/chat_template.jinja")
     shutil.copyfile(args.snapshot / "LICENSE", args.output / "LICENSE")
-    (args.output / "NOTICE").write_text(notice(args.weight_bits))
-    (args.output / "README.md").write_text(readme(cfg, args.weight_bits))
+    (args.output / "NOTICE").write_text(notice(args.weight_bits, args.embedding_bits))
+    (args.output / "README.md").write_text(readme(cfg, args.weight_bits, args.embedding_bits))
     files = {str(p.relative_to(args.output)): {"bytes": p.stat().st_size, "sha256": qg.sha256_file(p)}
              for p in tree_files(args.output) if str(p.relative_to(args.output)) not in NOT_BUNDLE}
     report["bundleBytes"] = sum(f["bytes"] for f in files.values())
