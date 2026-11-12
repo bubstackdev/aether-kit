@@ -153,6 +153,9 @@ For a host still on `0.0.7` or a `0.0.7-atelier.N` maintenance tag. Read 0.1.0's
     tokens (`DecoderEngine.Options.prefillWidth`, default `DecoderEngine.reshapeSafePrefillWidth`; the manifest's
     chunk restores the old schedule). The growth fell to 1,139 MiB. Prefill is about twice as slow (one picture 0.51 s
     instead of 0.24 s); the owner accepted that trade (2026-11-10). Applies to `decoder-lm@1` exports too.
+    The 3k→4k chunked-prefill gate (`EngineGateTests.chunkedPrefillMatchesTokenByTokenAt3k`) now pins
+    `prefillWidth = 512`, the schedule its lab reference was recorded with: at the 32-token default its 1,024-token
+    continuation left the reference at token 115, on every run (0.1.0 passes, 3/3; 2026-11-12).
   - **Reload budget (docs/VLM.md, V6).** What the narrow calls still retain is released by reloading the decoder's
     graphs once the model retains more than `DecoderEngine.Options.reloadBudgetBytes` (default
     `DecoderEngine.defaultReloadBudgetBytes`, 2 GiB, as 0.0.x's) past its level after the first request. The
