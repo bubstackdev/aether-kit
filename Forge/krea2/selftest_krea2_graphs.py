@@ -168,6 +168,13 @@ def check_vae(checkpoint: kg.Checkpoint, convert_dir: Path | None) -> dict:
             if half and convert_dir is not None:
                 convert_and_run(graph, (packed.reshape(rows, columns, -1).half(),), ["latents"], ["image"],
                                 convert_dir / "vae.aimodel", got, dynamic=kg.VAEDecoderGraph.example()[1], run=False)
+        half_compute = kg.VAEDecoderGraph(vae, compute=torch.float16).eval()
+        got = half_compute(packed.reshape(rows, columns, -1).half())
+        assert got.dtype == torch.float32 and torch.isfinite(got).all()
+        result["float16Compute"] = metrics(upstream, got)
+        if convert_dir is not None:
+            convert_and_run(half_compute, (packed.reshape(rows, columns, -1).half(),), ["latents"], ["image"],
+                            convert_dir / "vae-fp16.aimodel", got, dynamic=kg.VAEDecoderGraph.example()[1], run=False)
     return result
 
 
@@ -341,7 +348,8 @@ def main() -> None:
               "vae": check_vae(checkpoint, convert_dir), "references": check_references(checkpoint, convert_dir), "vaeEncoder": check_vae_encoder(checkpoint, convert_dir)}
     gated = [*report["denoiser"].values(), report["text"], report["vae"]["float32"], report["vaeEncoder"]["float32"],
              report["references"]["vision"], report["references"]["deepstack"], report["references"]["text"]]
-    report["passed"] = all(v["cosine"] >= BAR for v in gated) and report["references"]["ropeExact"]
+    report["passed"] = (all(v["cosine"] >= BAR for v in gated) and report["references"]["ropeExact"]
+                        and report["vae"]["float16Compute"]["cosine"] >= 0.999)
     print(json.dumps(report, indent=1))
     if not report["passed"]:
         raise SystemExit("graph self-test failed")

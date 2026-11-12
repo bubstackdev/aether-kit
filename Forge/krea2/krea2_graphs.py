@@ -27,7 +27,7 @@ Precision: text encoder and denoiser matmuls and attention run in fp16 with fp16
 float32 from its fp16 weights, `FLOAT32_BLOCKS`); residual streams, RMSNorms,
 modulation, rotary products and the small edge projections (timestep MLP, modulation projection, text/image
 in-projections, final layer) run in float32 (edge weights stored fp16, widened). The VAE decoder stores fp16 weights
-and computes in float32.
+and computes in float32 by default; the opt-in fp16 decoder keeps float32 denormalization and output RGB.
 
 Text rows: the text encoder runs unpadded (the 0.0.x prompt rule: render, keep at most 546 tokens with the final five,
 drop the 34-token system prefix), which gives exactly the real rows of Diffusers' padded `[prefix | prompt | PAD |
@@ -962,9 +962,9 @@ def prompt_ids(tokenizer, prompt: str) -> list[int]:
 
 class Conv2dFromCausal3d(nn.Module):
     """A QwenImageCausalConv3d applied to one frame with no cache: the causal front padding is zeros, so only the
-    kernel's last temporal slice touches the frame. Weight stored fp16, computed float32."""
+    kernel's last temporal slice touches the frame. Weights may be stored fp16; compute defaults to float32."""
 
-    def __init__(self, conv: nn.Conv3d, half: bool) -> None:
+    def __init__(self, conv: nn.Conv3d, half: bool, compute: torch.dtype = torch.float32) -> None:
         super().__init__()
         kt = conv.kernel_size[0]
         if conv._padding[4] != kt - 1 or conv.stride[0] != 1 or conv.dilation != (1, 1, 1) or conv.groups != 1:
@@ -974,34 +974,39 @@ class Conv2dFromCausal3d(nn.Module):
         self.register_buffer("bias", None if conv.bias is None else conv.bias.detach().float().contiguous())
         self.stride = tuple(conv.stride[1:])
         self.padding = (conv._padding[2], conv._padding[0])         # (h, w)
+        self.compute = compute
 
     def forward(self, x, cache_x=None):
-        out = F.conv2d(x[:, :, 0], self.weight.float(), self.bias, self.stride, self.padding)
+        out = F.conv2d(x[:, :, 0].to(self.compute), self.weight.to(self.compute),
+                       None if self.bias is None else self.bias.to(self.compute), self.stride, self.padding)
         return out[:, :, None]
 
 
 class HalfConv2d(nn.Module):
-    def __init__(self, conv: nn.Conv2d, half: bool) -> None:
+    def __init__(self, conv: nn.Conv2d, half: bool, compute: torch.dtype = torch.float32) -> None:
         super().__init__()
         if conv.padding_mode != "zeros":
             raise SystemExit("only zero-padded convolutions are supported")
         self.register_buffer("weight", conv.weight.detach().to(torch.float16 if half else torch.float32).contiguous())
         self.register_buffer("bias", None if conv.bias is None else conv.bias.detach().float().contiguous())
         self.stride, self.padding, self.dilation, self.groups = conv.stride, conv.padding, conv.dilation, conv.groups
+        self.compute = compute
 
     def forward(self, x):
-        return F.conv2d(x, self.weight.float(), self.bias, self.stride, self.padding, self.dilation, self.groups)
+        return F.conv2d(x.to(self.compute), self.weight.to(self.compute),
+                        None if self.bias is None else self.bias.to(self.compute),
+                        self.stride, self.padding, self.dilation, self.groups)
 
 
-def single_frame(module: nn.Module, half: bool) -> nn.Module:
+def single_frame(module: nn.Module, half: bool, compute: torch.dtype = torch.float32) -> nn.Module:
     from diffusers.models.autoencoders.autoencoder_kl_qwenimage import QwenImageCausalConv3d
     for name, child in list(module.named_children()):
         if isinstance(child, QwenImageCausalConv3d):
-            setattr(module, name, Conv2dFromCausal3d(child, half))
+            setattr(module, name, Conv2dFromCausal3d(child, half, compute))
         elif isinstance(child, nn.Conv2d):
-            setattr(module, name, HalfConv2d(child, half))
+            setattr(module, name, HalfConv2d(child, half, compute))
         else:
-            single_frame(child, half)
+            single_frame(child, half, compute)
     return module
 
 
@@ -1015,14 +1020,19 @@ def load_vae(checkpoint: Checkpoint):
 class VAEDecoderGraph(nn.Module):
     """Pipeline tail: unpack 2x2 patches, `latents * std + mean`, post-quant conv, the single-frame decoder, clamp."""
 
-    def __init__(self, vae, half_storage: bool = True) -> None:
+    def __init__(self, vae, half_storage: bool = True, compute: torch.dtype = torch.float32) -> None:
         super().__init__()
+        if compute not in (torch.float16, torch.float32):
+            raise ValueError("VAE decoder compute must be float16 or float32")
         cfg = vae.config
         self.channels = cfg.z_dim
         self.register_buffer("mean", torch.tensor(cfg.latents_mean, dtype=torch.float32).view(-1, 1, 1))
         self.register_buffer("std", torch.tensor(cfg.latents_std, dtype=torch.float32).view(-1, 1, 1))
-        self.post_quant_conv = single_frame(nn.ModuleList([copy.deepcopy(vae.post_quant_conv)]), half_storage)[0]
-        self.decoder = single_frame(copy.deepcopy(vae.decoder), half_storage)
+        self.post_quant_conv = single_frame(nn.ModuleList([copy.deepcopy(vae.post_quant_conv)]), half_storage, compute)[0]
+        self.decoder = single_frame(copy.deepcopy(vae.decoder), half_storage, compute)
+        if compute == torch.float16:
+            self.post_quant_conv.half()
+            self.decoder.half()
 
     def forward(self, latents):
         # Krea2Pipeline._unpack_latents: packed channel c * 4 + 2 * dy + dx -> (c, 2 * row + dy, 2 * column + dx).
@@ -1030,7 +1040,7 @@ class VAEDecoderGraph(nn.Module):
         x = x * self.std + self.mean
         x = self.post_quant_conv(x[None, :, None])
         out = self.decoder(x)
-        return torch.clamp(out, -1.0, 1.0)[0, :, 0]
+        return torch.clamp(out, -1.0, 1.0)[0, :, 0].float()
 
     @staticmethod
     def example(rows: int = 4, columns: int = 6):
