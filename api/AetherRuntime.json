@@ -5476,6 +5476,79 @@
           "children": [
            {
             "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvg",
+          "moduleName": "AetherRuntime",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Bool",
+            "printedName": "Swift.Bool",
+            "usr": "s:Sb"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvs",
+          "moduleName": "AetherRuntime",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvs"
+         }
+        ],
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvp",
+        "moduleName": "AetherRuntime",
+        "name": "canaryAtLoad",
+        "printedName": "canaryAtLoad",
+        "usr": "s:13AetherRuntime13DecoderEngineC7OptionsV12canaryAtLoadSbvp"
+       },
+       {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "kind": "TypeNominal",
             "name": "Int",
             "printedName": "Swift.Int",
             "usr": "s:Si"
@@ -11384,12 +11457,12 @@
       "declKind": "Func",
       "funcSelfKind": "NonMutating",
       "kind": "Function",
-      "mangledName": "$s13AetherRuntime13DecoderEngineC11beginGreedy5first5limitys5Int32V_Sit0A4Core0A5ErrorOYKF",
+      "mangledName": "$s13AetherRuntime13DecoderEngineC11beginGreedy5first5limitys5Int32V_SitYa0A4Core0A5ErrorOYKF",
       "moduleName": "AetherRuntime",
       "name": "beginGreedy",
       "printedName": "beginGreedy(first:limit:)",
       "throwing": true,
-      "usr": "s:13AetherRuntime13DecoderEngineC11beginGreedy5first5limitys5Int32V_Sit0A4Core0A5ErrorOYKF"
+      "usr": "s:13AetherRuntime13DecoderEngineC11beginGreedy5first5limitys5Int32V_SitYa0A4Core0A5ErrorOYKF"
      },
      {
       "children": [

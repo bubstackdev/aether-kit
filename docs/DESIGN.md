@@ -227,8 +227,10 @@ final class Graph {                               // non-Sendable; owned by one 
   - **No per-step sync.** Tokens reach the host only in the argmax completion handler, which also releases a
     depth-sized gate.
   - **The ordering is observed behaviour, not a documented contract.** A delayed-argmax canary (about 64 steps)
-    runs at engine load and falls back to depth 1 if it fails. CI runs it at capacity ≥ 4096 for every bundle class.
-    We also want Core AI to document the guarantee or add an explicit fence on `ComputeStream`.
+    runs before the engine's first greedy decode (between that prompt's prefill and its decode, the state kept by a
+    snapshot; at load with `Options.canaryAtLoad`) and falls back to depth 1 if it fails. Nothing decodes deeper than
+    depth 1 before it has passed on that engine; a client that never takes the pipelined path never pays it. CI runs
+    it at capacity ≥ 4096 for every bundle class. We also want Core AI to document the guarantee or add an explicit fence on `ComputeStream`.
   - **Depth 1** (encode + GPU argmax, one step in flight) covers CPU or non-greedy sampling, per-token inputs, and
     anything that needs the token on the host before the next `encode`.
   - **Measured on an M5 Max:** qwen3-0.6b `run()` ≈ 270, depth 1 ≈ 370, depth 3 ≈ 500–505 tok/s against the
@@ -816,7 +818,7 @@ ready to promote when:
 ## 15. Risks and unknowns (each should become a lab question)
 
 - **Deep pipelining relies on undocumented ordering.** It's solved in lab (§6.1), but correctness depends on
-  Core AI ordering its read of a suballocated buffer after a same-queue kernel. Mitigation: the load-time canary
+  Core AI ordering its read of a suballocated buffer after a same-queue kernel. Mitigation: the canary before the first pipelined decode
   with fallback to depth 1. There's also a remaining 6–10 % qwen3 gap to the fork, which is GPU-bound (2.65 against
   2.40 ms per token); the next step there is a Metal System Trace of both engines. The hybrid is bounded by about
   4.1 ms of host-side `encode` per step, which is a Core AI question.
