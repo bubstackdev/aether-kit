@@ -29,8 +29,11 @@ extension GateTests {
         DecoderEngine.Options(capacity: capacity, initialCapacity: capacity, execution: .run)
     }
 
+    /// Pipelined, with the canary at load (so ``DecoderEngine/decodeMode`` is final before the first decode).
     static func pipelinedOptions(capacity: Int) -> DecoderEngine.Options {
-        DecoderEngine.Options(capacity: capacity, initialCapacity: capacity)
+        var options = DecoderEngine.Options(capacity: capacity, initialCapacity: capacity)
+        options.canaryAtLoad = true
+        return options
     }
 
     /// Greedy: prefill, the first token from the prompt's last row, then `count - 1` more in the engine's mode.
@@ -222,10 +225,57 @@ extension GateTests {
 
     @Test(arguments: ["qwen3-0.6b", "qwen3.5-0.8b", "lfm2.5-1.2b"])
     func canaryPassesAtCapacity4096(_ id: String) async throws {
-        let engine = try await Self.engine(id, DecoderEngine.Options(capacity: 4096))
+        var options = DecoderEngine.Options(capacity: 4096)
+        options.canaryAtLoad = true
+        let engine = try await Self.engine(id, options)
         let report = try #require(await engine.canary)
         print("GATE canary \(id): \(report)")
         #expect(report.passed && report.capacity >= 4096 && report.steps >= 60)
+    }
+
+    /// The default canary runs before the first greedy decode, between the prompt's prefill and its decode, and keeps
+    /// the state: the decode after it, and the logits after that, are bit for bit those of an engine whose canary ran
+    /// at load. Before it, nothing decodes deeper than depth 1.
+    @Test(arguments: ["qwen3-0.6b", "qwen3.5-0.8b"])
+    func lazyCanaryKeepsTheState(_ id: String) async throws {
+        let ref = try Self.labJSON(RunFile.self, id == "qwen3-0.6b" ? "parity/qwen3-0.6b-spike.json" : "parity/qwen3.5-0.8b-spike.json")
+        let prompt = ref.promptTokens
+        let count = 48
+
+        /// Prefill, a pipelined greedy decode, then one host step after it: its tokens and that step's logits.
+        func run(_ engine: DecoderEngine) async throws -> (tokens: [Int32], after: [Float]) {
+            try await engine.reset()
+            let first = try Logits.argmax(try #require(try await engine.prefill(prompt, logits: .last)).last)
+            try await engine.beginGreedy(first: first, limit: count - 1)
+            var tokens = [first]
+            while let t = try await engine.nextGreedy() { tokens.append(t) }
+            try await engine.endGreedy()
+            let after = try await engine.step(tokens.last!)
+            return (tokens, Array(after.last))
+        }
+
+        let eager = try await Self.engine(id, Self.pipelinedOptions(capacity: 4096))
+        let reference = try await run(eager)
+        #expect(await eager.decodeMode == .gpu(depth: 3))
+
+        let lazy = try await Self.engine(id, DecoderEngine.Options(capacity: 4096))
+        #expect(await lazy.canary == nil)
+        #expect(await lazy.decodeMode == .gpu(depth: 1))
+        // Host steps and prefills don't run it.
+        _ = try await lazy.prefill(prompt, logits: .last)
+        _ = try await lazy.step(prompt[0])
+        #expect(await lazy.canary == nil)
+        let first = try await run(lazy)
+        let report = try #require(await lazy.canary)
+        #expect(report.passed && report.capacity >= 4096)
+        #expect(await lazy.decodeMode == .gpu(depth: 3))
+        let second = try await run(lazy)
+        print("GATE lazy canary \(id): \(report); first decode \(first.tokens == reference.tokens ? "equals" : "DIFFERS from") "
+              + "the load-time canary engine's, logits after it \(first.after == reference.after ? "bit-identical" : "DIFFER"); "
+              + "second decode \(second.tokens == reference.tokens && second.after == reference.after ? "bit-identical" : "DIFFERS")")
+        #expect(first.tokens == reference.tokens)
+        #expect(first.after == reference.after)
+        #expect(second.tokens == reference.tokens && second.after == reference.after)
     }
 
     /// Reported, not asserted (DESIGN §14 target: ≥ 480 tok/s on an M5 Max).
@@ -299,6 +349,7 @@ extension GateTests {
     /// unordered read would. The canary must fail and the engine must fall back to depth 1.
     @Test func canaryCatchesAStaleHandOff() async throws {
         var options = DecoderEngine.Options(capacity: 4096)
+        options.canaryAtLoad = true
         options.staleTokenHandoff = true
         let engine = try await Self.engine("qwen3-0.6b", options)
         let report = try #require(await engine.canary)
@@ -307,10 +358,34 @@ extension GateTests {
         #expect(await engine.decodeMode == .gpu(depth: 1))
     }
 
+    /// The negative control with the canary deferred: the first greedy decode runs it, it fails, and that decode
+    /// already runs at depth 1, exactly as on an engine whose canary failed at load (the diagnostic's stale slot
+    /// breaks depth 1 too, so the tokens are compared with that engine's, not with `run()`).
+    @Test func aDeferredCanaryCatchesAStaleHandOffBeforeItsFirstDecode() async throws {
+        let ref = try Self.labJSON(RunFile.self, "parity/qwen3-0.6b-spike.json")
+        var options = DecoderEngine.Options(capacity: 4096)
+        options.staleTokenHandoff = true
+        let lazy = try await Self.engine("qwen3-0.6b", options)
+        #expect(await lazy.decodeMode == .gpu(depth: 1))
+        options.canaryAtLoad = true
+        let eager = try await Self.engine("qwen3-0.6b", options)
+        #expect(await eager.canary?.passed == false)
+        #expect(await eager.decodeMode == .gpu(depth: 1))
+        let (expected, _) = try await Self.greedy(eager, prompt: ref.promptTokens, count: 48)
+        let (tokens, _) = try await Self.greedy(lazy, prompt: ref.promptTokens, count: 48)
+        let report = try #require(await lazy.canary)
+        print("GATE deferred canary negative control qwen3-0.6b: \(report), mode \(await lazy.decodeMode), "
+              + "first decode \(tokens == expected ? "equals" : "DIFFERS from") the load-time canary engine's")
+        #expect(!report.passed)
+        #expect(await lazy.decodeMode == .gpu(depth: 1))
+        #expect(tokens == expected)
+    }
+
     /// The lab's racing hand-off (a view into the page-aligned token history, `--handoff offset`), which still races
     /// in the lab spike on macOS 27.2 26B123. Reported, not asserted: through Aether's engine it has not raced so far.
     @Test func canaryOnTheLabsRacingHandOff() async throws {
         var options = DecoderEngine.Options(capacity: 4096)
+        options.canaryAtLoad = true
         options.racingTokenHandoff = true
         let engine = try await Self.engine("qwen3-0.6b", options)
         let report = try #require(await engine.canary)

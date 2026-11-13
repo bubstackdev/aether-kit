@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **The pipelined-decode canary runs before the first greedy decode, not at load** (`DecoderEngine`; public API:
+  `Options.canaryAtLoad` added, `beginGreedy(first:limit:)` now `async`). The delayed-argmax canary (DESIGN.md §6.1)
+  only qualifies the depth-3 greedy path, but every load paid for it: about 7 s of a 27B's 11–14 s warm load, also
+  for clients that never decode on that path (a repetition penalty, a constraint, sampling: Atelier's chat and
+  describer). It now runs inside the first `beginGreedy`, between that prompt's prefill and its decode: the state is
+  snapshotted before it and restored after it, so the decode continues the prompt, and nothing else can run on the
+  engine meanwhile. Until it has passed, `decodeMode` is depth 1, so no greedy decode runs deeper unqualified, as
+  before; a failing canary still falls back to depth 1. `Options.canaryAtLoad = true` runs it during load as before
+  (the engine gates do, to read `canary` and `decodeMode` right after load). `canary` is nil until it has run. The
+  Generator reports the decode mode after `beginGreedy`. Measured on the Qwen3.6-27B export (M5 Max), warm load
+  11.1 s → 4.8 s; the first request's prefill is about 0.5 s longer, since the weights' memory now arrives with it.
+  `EngineGateTests.lazyCanaryKeepsTheState` checks, on qwen3-0.6b and the qwen3.5-0.8b hybrid, that the first decode
+  after a deferred canary and the logits after it are bit-identical to those of an engine whose canary ran at load;
+  `aDeferredCanaryCatchesAStaleHandOffBeforeItsFirstDecode` that a failing deferred canary leaves that first decode
+  at depth 1, as a failure at load does.
+
 ## 0.2.2 — 2026-11-13
 
 A patch release over 0.2.1 (#200): a prefill drains each chunk before encoding the next, so a chained prefill no

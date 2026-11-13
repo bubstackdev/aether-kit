@@ -31,8 +31,15 @@ public actor DecoderEngine: LanguageEngine {
         public var execution: Execution
         /// Greedy steps in flight once the canary passes (DESIGN.md §6.1: 3).
         public var pipelineDepth: Int
-        /// Run the delayed-argmax canary at load. Without it (or if it fails) greedy decoding uses depth 1.
+        /// Qualify ``pipelineDepth`` with the delayed-argmax canary (DESIGN.md §6.1) before greedy decoding first
+        /// uses it: before the first ``beginGreedy(first:limit:)``, or at load with ``canaryAtLoad``. Without it (or if
+        /// it fails) greedy decoding uses depth 1.
         public var canary: Bool
+        /// Run the canary during load instead of before the first greedy decode. Off by default: the canary costs a
+        /// load about 7 s on a 27B, and a client that never decodes greedily on the pipelined path (a repetition
+        /// penalty, a constraint, sampling) never needs it. Either way no greedy decode runs deeper than depth 1 before
+        /// the canary has passed on this engine.
+        public var canaryAtLoad = false
         /// Host snapshots at full capacity that the memory budget keeps room for, on a model with recurrent state
         /// (where prefix reuse goes through ``snapshot()`` and ``restore(_:)``; attention-only models are charged
         /// none). The default, 3, is the Generator's most (`Generator.maxSnapshots`): the two it keeps, plus the one it
@@ -232,7 +239,11 @@ public actor DecoderEngine: LanguageEngine {
     public nonisolated var vocab: Int { description.vocab }
     public nonisolated var maxCapacity: Int { description.maxCapacity }
     public nonisolated var hasRecurrentState: Bool { description.hasRecurrentState }
+    /// The canary's report: nil until it has run (at load with ``Options/canaryAtLoad``, else before the first greedy
+    /// decode), and nil without ``Options/canary``.
     public private(set) var canary: CanaryReport?
+    /// The canary still to run before the first greedy decode (its depth, length, delay and capacity).
+    private var pendingCanary: (depth: Int, steps: Int, delay: UInt32, capacity: Int)?
     /// The bundle's reader lease, held until the engine is released.
     private var bundleLease: BundleReadLease?
     private let probe: GPUMemoryProbe
@@ -240,6 +251,7 @@ public actor DecoderEngine: LanguageEngine {
     private var lastLevel: Int64
     private var peakLevel: Int64
     private var peakModel: Int64 = 0
+    /// The greedy mode: depth 1 until the canary has passed, then ``Options/pipelineDepth``.
     public private(set) var decodeMode: DecodeMode
     /// Reloads since load (``reloadIfRetainedPastBudget()``).
     public private(set) var reloads = Reloads()
@@ -478,17 +490,25 @@ public actor DecoderEngine: LanguageEngine {
             throw .generation(.invalidParameters("the canary needs steps > 0 and capacity > 0"))
         }
         if core.isEncoding, options.pipelineDepth > 1, options.canary {
-            let report = try await core.runCanary(
-                depth: options.pipelineDepth, steps: options.canarySteps, delay: options.canaryDelay,
-                capacity: options.canaryCapacity)
-            canary = report
-            if report.passed { decodeMode = .gpu(depth: options.pipelineDepth) }
+            pendingCanary = (options.pipelineDepth, options.canarySteps, options.canaryDelay, options.canaryCapacity)
+            if options.canaryAtLoad { try await runPendingCanary() }
         } else if core.isEncoding, options.pipelineDepth > 1, options.uncheckedPipelineDepth {
             // Without the canary, depth one unless a diagnostic asks otherwise.
             decodeMode = .gpu(depth: options.pipelineDepth)
         }
-        // After load and the canary: the decoder has run once, so its weights' memory has arrived.
+        // After load (and the canary, when it ran at load).
         sampleMemory()
+    }
+
+    /// Runs the pending canary, keeping the state: the position, every state and the bound images are as they were
+    /// after it. Sets ``canary`` and, when it passes, ``decodeMode``. A canary that throws stays pending.
+    private func runPendingCanary() async throws(AetherError) {
+        guard let pending = pendingCanary else { return }
+        let report = try await core.runCanary(
+            depth: pending.depth, steps: pending.steps, delay: pending.delay, capacity: pending.capacity)
+        pendingCanary = nil
+        canary = report
+        if report.passed { decodeMode = .gpu(depth: pending.depth) }
     }
 
     /// The widest dynamic call a Core AI decoder specialized with `expectFrequentReshapes` is fed by default
@@ -731,8 +751,13 @@ public actor DecoderEngine: LanguageEngine {
 
     /// Starts greedy decoding after `first` (the caller's pick from the prompt's logits, not yet fed), for at most
     /// `limit` more tokens, in ``decodeMode``. Then call ``nextGreedy()`` until it returns nil or the caller stops,
-    /// and always ``endGreedy()``.
-    public func beginGreedy(first: Int32, limit: Int) throws(AetherError) {
+    /// and always ``endGreedy()``. The first call on an engine whose canary is pending runs it first (``canary``),
+    /// keeping the state, so the decode continues the prompt in the mode the canary qualified.
+    public func beginGreedy(first: Int32, limit: Int) async throws(AetherError) {
+        if pendingCanary != nil {
+            defer { sampleMemory() }
+            try await runPendingCanary()
+        }
         let depth = switch decodeMode {
         case .host: 0
         case .gpu(let depth): depth

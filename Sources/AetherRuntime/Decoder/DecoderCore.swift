@@ -514,6 +514,11 @@ final class DecoderCore {
 
     func reset() throws(AetherError) {
         try requireIdle("reset")
+        try zeroStates()
+    }
+
+    /// ``reset()`` itself; the caller holds `operation` or has checked it is idle.
+    private func zeroStates() throws(AetherError) {
         try states.zero()
         position = 0
         stateAhead = false
@@ -538,6 +543,11 @@ final class DecoderCore {
     /// engine as it was.
     func restore(_ snapshot: DecoderEngine.Snapshot) throws(AetherError) {
         try requireIdle("restore")
+        try restoreStates(snapshot)
+    }
+
+    /// ``restore(_:)`` itself; the caller holds `operation` or has checked it is idle.
+    private func restoreStates(_ snapshot: DecoderEngine.Snapshot) throws(AetherError) {
         // The allocation it carries: up to the token limit, or the static axis itself.
         let allocation = staticCapacity ? capacity : maxCapacity
         guard snapshot.position <= maxCapacity, snapshot.capacity <= allocation else {
@@ -584,6 +594,12 @@ final class DecoderCore {
     /// `depth` steps stay in flight on the GPU (encode mode); `0` decodes on the host (`run` + CPU argmax).
     func beginGreedy(first: Int32, limit: Int, depth: Int, delay: UInt32 = 0, sentinels: [Int32]? = nil) throws(AetherError) {
         try requireIdle("greedy decode")
+        try startGreedy(first: first, limit: limit, depth: depth, delay: delay, sentinels: sentinels)
+    }
+
+    /// ``beginGreedy(first:limit:depth:delay:sentinels:)`` itself; the caller holds `operation` or has checked it is idle.
+    private func startGreedy(first: Int32, limit: Int, depth: Int, delay: UInt32, sentinels: [Int32]?) throws(AetherError) {
+        guard session == nil else { throw .unsupportedOperation("greedy decode during a greedy decode; end it first") }
         try requireLoaded("greedy decode")
         try requireImageStateConsistent("greedy decode")
         guard !stateAhead else { throw .unsupportedOperation("the recurrent state ran past its position; restore or reset") }
@@ -610,10 +626,15 @@ final class DecoderCore {
     /// row) in token order; the token is not counted, and ``endGreedy()`` still ends the decode.
     func nextGreedy() async throws(AetherError) -> Int32? {
         if let operation { throw .unsupportedOperation("nextGreedy while \(operation) is in progress") }
-        guard let s = session else { throw .unsupportedOperation("nextGreedy without beginGreedy") }
-        guard s.received < s.limit else { return nil }
         operation = "a greedy step"
         defer { operation = nil }
+        return try await nextGreedyToken()
+    }
+
+    /// ``nextGreedy()`` itself; the caller holds `operation`.
+    private func nextGreedyToken() async throws(AetherError) -> Int32? {
+        guard let s = session else { throw .unsupportedOperation("nextGreedy without beginGreedy") }
+        guard s.received < s.limit else { return nil }
         guard kernels != nil, s.depth > 0 else {
             // Host path: run the step and take the argmax of its one row. The session stays in place.
             guard !Task.isCancelled else { return nil }
@@ -715,9 +736,15 @@ final class DecoderCore {
     @discardableResult
     func endGreedy() async throws(AetherError) -> GreedyEnd {
         if let operation { throw .unsupportedOperation("endGreedy while \(operation) is in progress") }
-        guard let s = session else { return GreedyEnd(fed: 0, overshoot: 0) }
         operation = "the end of a greedy decode"
         defer { operation = nil }
+        return try await finishGreedy()
+    }
+
+    /// ``endGreedy()`` itself; the caller holds `operation`.
+    @discardableResult
+    private func finishGreedy() async throws(AetherError) -> GreedyEnd {
+        guard let s = session else { return GreedyEnd(fed: 0, overshoot: 0) }
         if let kernels, s.depth > 0 {
             let failure = await kernels.drain()
             arena.endRun()
@@ -782,39 +809,66 @@ final class DecoderCore {
 
     // MARK: - Canary
 
-    /// The load-time delayed-argmax canary (DESIGN.md §6.1). Decodes `steps` tokens at depth 1, then again at
-    /// `depth` with each argmax delayed past the next `encode` and a wrong token pre-written into every slot, so a
-    /// step that reads its token before the argmax wrote it diverges for certain. Leaves the engine reset.
+    /// The delayed-argmax canary (DESIGN.md §6.1). Decodes `steps` tokens at depth 1, then again at `depth` with each
+    /// argmax delayed past the next `encode` and a wrong token pre-written into every slot, so a step that reads its
+    /// token before the argmax wrote it diverges for certain. Keeps the state: a snapshot before it is restored after
+    /// it (an empty state is reset), so it can run at load or between a prompt's prefill and its greedy decode. Holds
+    /// `operation` throughout, so nothing else runs at its awaits. Refused where a snapshot is (a state that ran ahead,
+    /// a stale image state).
     func runCanary(depth: Int, steps: Int, delay: UInt32, capacity canaryCapacity: Int) async throws(AetherError) -> DecoderEngine.CanaryReport {
+        try requireIdle("the pipeline canary")
+        try requireLoaded("the pipeline canary")
+        let saved = position > 0 || stateAhead || imageStateStaleFrom != nil ? try snapshot() : nil
+        let restoreCapacity = capacity
+        operation = "the pipeline canary"
+        defer { operation = nil }
+        func putBack() throws(AetherError) {
+            if let saved {
+                try restoreStates(saved)
+            } else {
+                try zeroStates()
+                try reallocateStates(capacity: restoreCapacity)
+            }
+        }
+        do {
+            let report = try await canary(depth: depth, steps: steps, delay: delay, capacity: canaryCapacity)
+            try putBack()
+            return report
+        } catch {
+            _ = try? await finishGreedy()
+            if (try? putBack()) == nil { try? zeroStates() }
+            throw error
+        }
+    }
+
+    /// ``runCanary(depth:steps:delay:capacity:)``'s decodes; the caller holds `operation` and restores the state.
+    private func canary(depth: Int, steps: Int, delay: UInt32, capacity canaryCapacity: Int) async throws(AetherError) -> DecoderEngine.CanaryReport {
         let clock = ContinuousClock()
         let began = clock.now
-        let restoreCapacity = capacity
-        try reset()
+        try zeroStates()
         try reallocateStates(capacity: min(max(canaryCapacity, capacity), maxCapacity))
         let tested = capacity
         let prompt = (0..<16).map { Int32(($0 * 7919 + 101) % vocab) }
         let steps = min(steps, tested - prompt.count - 1)
 
         func decode(depth: Int, delay: UInt32, sentinels: [Int32]?) async throws(AetherError) -> [Int32] {
-            try reset()
-            let first = try Logits.argmax(try await feed(prompt, select: .last)!.last)
-            try beginGreedy(first: first, limit: steps, depth: depth, delay: delay, sentinels: sentinels)
+            try zeroStates()
+            let first = try Logits.argmax(try await feedTokens(prompt, select: .last)!.last)
+            try startGreedy(first: first, limit: steps, depth: depth, delay: delay, sentinels: sentinels)
             var out = [first]
             do {
-                while let t = try await nextGreedy() { out.append(t) }
+                while let t = try await nextGreedyToken() { out.append(t) }
             } catch {
-                _ = try? await endGreedy()
+                _ = try? await finishGreedy()
                 throw error
             }
-            try await endGreedy()
+            try await finishGreedy()
             return out
         }
         let reference = try await decode(depth: 1, delay: 0, sentinels: nil)
         let pipelined = try await decode(depth: depth, delay: delay, sentinels: reference)
         let mismatch = zip(reference, pipelined).enumerated().first { $0.element.0 != $0.element.1 }?.offset
             ?? (reference.count == pipelined.count ? nil : min(reference.count, pipelined.count))
-        try reset()
-        try reallocateStates(capacity: restoreCapacity)
         let seconds = (clock.now - began) / .seconds(1)
         return DecoderEngine.CanaryReport(
             passed: mismatch == nil, depth: depth, capacity: tested, steps: reference.count - 1,

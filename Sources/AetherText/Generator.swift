@@ -456,6 +456,8 @@ public actor Generator {
                 mode = await engine.decodeModeDescription
                 if !stop {
                     try await engine.beginGreedy(first: token, limit: state.maxTokens - 1)
+                    // The first greedy decode may have qualified a deeper pipeline (the engine's canary).
+                    mode = await engine.decodeModeDescription
                     do {
                         while !stop, !Task.isCancelled, let next = try await engine.nextGreedy() { stop = state.accept(next) }
                     } catch {

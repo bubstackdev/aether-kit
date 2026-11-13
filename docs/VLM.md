@@ -200,7 +200,7 @@ across load is near zero and the charge used to be the graph files' size: 8.28 G
 9.4–13.6 GiB of Metal measured. The engine now measures and accepts a declared figure, for `decoder-lm@1` and
 `vlm-static-inject@1` alike:
 - `DecoderEngine.memory` (`DecoderEngine.Memory`) reads the probe (`GPUMemoryProbe.system`, Metal included) at the
-  call: the level before load, now and at its highest (read after load and the canary, and after each prefill, step,
+  call: the level before load, now and at its highest (read after load and the canary (when it runs), and after each prefill, step,
   greedy decode and image bind), the engine's own buffers (KV, logits, statics, the tower's buffers), the charge, and
   `measuredModelBytes`: the most the level stood above the baseline less the engine's buffers at that read, and
   `liveResidentBytes`: the level now above the baseline.
