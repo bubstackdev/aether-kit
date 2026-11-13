@@ -363,13 +363,14 @@ final class DecoderCore {
         if select == .all { rows.reserveCapacity(n * vocab) }
         var scratch: [Float] = []
         let start = position
-        // Encode mode: the arena is lent once, before the first chunk, and the loan ends only after the stream has
-        // drained, on every exit path. Rows are read between drains (the loan is suspended while nothing is in flight).
+        // Encode mode: each chunk is encoded and drained before the next one is encoded, and the arena is lent only
+        // while a chunk is in flight. Chunks used to chain on the stream with no host sync between them, but Core AI
+        // does not order one call's in-place state writes (KV rows, a hybrid's conv and recurrent states) before the
+        // next call's reads: on the Qwen3.6-27B export 2 of 8 identical 938-token prefills came out different (the
+        // top logit 24.2 or 26.4 instead of 28.1), and the Generator's history-then-generation-prompt prefill lost
+        // a short user turn ("I'm ready to help, which character?"). Drained chunks matched calls fed one at a time
+        // bit for bit, 8 of 8. The drain per chunk costs little next to a chunk's GPU time.
         var lent = false
-        func lend() throws(AetherError) {
-            try arena.beginRun("decoder.prefill")
-            lent = true
-        }
         /// Drains and ends the loan; returns the GPU's failure, if the drain saw one.
         func settle() async -> AetherError? {
             guard lent, let kernels else { return nil }
@@ -379,37 +380,34 @@ final class DecoderCore {
             return failure
         }
         do throws(AetherError) {
-            if isEncoding { try lend() }
             for (i, call) in plan.calls.enumerated() {
                 // A long prompt is many chunks: stop between them when the caller is cancelled. The position stays at
                 // `start` (it advances only once every chunk has run), so the engine stays consistent.
                 if i > 0, Task.isCancelled { throw AetherError.runtime(underlying: CancellationError()) }
                 let phase = call.phase == .prefill ? prefillPhase! : step
                 let at = start + call.start
+                if isEncoding {
+                    try arena.beginRun("decoder.prefill")
+                    lent = true
+                }
                 var b = try bindings(phase, at: at, fed: call.fed, tokens: nil, logits: phase.logits)
                 let isLast = i == plan.calls.count - 1
-                let needsRead = select == .all || (select == .last && isLast)
                 if let kernels {
-                    // Chunks chain on the stream with no host sync; wait only where rows are read.
                     try (phase.graph as! Graph).encode(b, to: kernels.stream)
-                    if needsRead, let failure = await settle() { throw failure }
+                    if let failure = await settle() { throw failure }
                 } else {
                     try await phase.graph.run(&b)
                 }
-                if needsRead {
-                    if select == .all {
-                        for r in 0..<call.count {
-                            try readRow(phase, fed: call.fed, row: r, into: &scratch)
-                            rows += scratch
-                        }
-                    } else {
-                        try readRow(phase, fed: call.fed, row: call.count - 1, into: &scratch)
-                        rows = scratch
+                if select == .all {
+                    for r in 0..<call.count {
+                        try readRow(phase, fed: call.fed, row: r, into: &scratch)
+                        rows += scratch
                     }
-                    if isEncoding, !isLast { try lend() }
+                } else if select == .last, isLast {
+                    try readRow(phase, fed: call.fed, row: call.count - 1, into: &scratch)
+                    rows = scratch
                 }
             }
-            if let failure = await settle() { throw failure }
         } catch {
             _ = await settle()
             throw error

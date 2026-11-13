@@ -234,7 +234,9 @@ final class Graph {                               // non-Sendable; owned by one 
   - **Measured on an M5 Max:** qwen3-0.6b `run()` ≈ 270, depth 1 ≈ 370, depth 3 ≈ 500–505 tok/s against the
     fork's ≈ 535 (0.90–0.94×). The hybrid's depth 3 runs at ≈ 234 against the fork's ≈ 238 (parity; host `encode`
     cost bounds it). Prefill goes through `encode` and reads only the logits rows it needs: converting every row to
-    `[Float]` made `run()` prefill 8× slower.
+    `[Float]` made `run()` prefill 8× slower. Each prefill call is drained before the next is encoded:
+    chained calls with no host sync raced on the in-place states (the Qwen3.6-27B export: 2 of 8 identical
+    938-token prefills came out different; drained, 8 of 8 matched one-token calls bit for bit).
 
 ### 6.2 DecoderEngine (the owned LLM engine)
 
@@ -638,8 +640,8 @@ runtime pieces:
   - **Text stream:** stop strings apply to response text only (not thinking or tool calls), with grapheme-safe
     hold-back. Reasoning framing drops the newlines around the tags. Special tokens contribute no text, except the
     manifest's tags.
-  - **Tools:** a `ToolDialect` per manifest `toolDialect`; only `hermes-json` is implemented. A body may hold
-    several calls. Arguments are kept byte for byte, so the next turn renders exactly what the model wrote. A body
+  - **Tools:** a `ToolDialect` per manifest `toolDialect`; `hermes-json` and `qwen-xml` are implemented. A body may
+    hold several calls. Hermes arguments are kept byte for byte (qwen-xml values as JSON strings, in order), so the next turn renders exactly what the model wrote. A body
     that doesn't parse is surfaced as text.
 - **`ChatSession`** (actor) holds the history, configuration and a Generator, and nothing more.
 - **AetherFoundationModels:**

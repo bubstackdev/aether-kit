@@ -348,7 +348,8 @@ def manifest(files: dict[str, dict], report: dict, platform_name: str, prec: dic
             "stop": [stop[k] for k in sorted(stop, key=int, reverse=True)],
             "thinking": {"open": "<think>", "close": "</think>", "toggle": {"templateVar": "enable_thinking"},
                          "defaultOn": False},
-            "toolDialect": "hermes-json",
+            # The chat template teaches (and renders) the XML form: <tool_call><function=…><parameter=…>.
+            "toolDialect": "qwen-xml",
         },
         "preprocess": {
             "image": {

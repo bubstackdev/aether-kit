@@ -46,13 +46,17 @@ public protocol ToolDialect: Sendable {
 /// `hermes-json` (Qwen3, Granite): `<tool_call>\n{"name": "…", "arguments": {…}}\n</tool_call>`. A body may also
 /// hold several objects (one after another, or a JSON array), as small models sometimes write parallel calls.
 /// The arguments are kept as the model wrote them, byte for byte, so rendering the call back reproduces the
-/// generated tokens and the next turn reuses them.
+/// generated tokens and the next turn reuses them. A body written as a `qwen-xml` function call is parsed as one
+/// (``QwenXMLDialect``): older Qwen3.5/3.6 exports declare this dialect for a template that teaches XML.
 public struct HermesJSONDialect: ToolDialect {
     public var id: String { "hermes-json" }
 
     public init() {}
 
     public func parse(_ body: String) throws(AetherError) -> [ToolCall] {
+        // Qwen3.5 and Qwen3.6 bundles Forge exported before the qwen-xml dialect declare hermes-json, while their chat template
+        // teaches (and renders) qwen-xml: a body that is an XML function call is read as one.
+        if body.drop(while: \.isWhitespace).hasPrefix("<function=") { return try QwenXMLDialect().parse(body) }
         let bytes = Array(body.utf8)
         guard var values = JSONScan.values(bytes, 0..<bytes.count), !values.isEmpty else {
             throw .generation(.toolCall("a hermes-json call is a JSON object: \(body.prefix(200))"))
@@ -80,6 +84,56 @@ public struct HermesJSONDialect: ToolDialect {
             throw .generation(.toolCall("the arguments of '\(name)' are not a JSON object"))
         }
         return ToolCall(name: name, arguments: arguments)
+    }
+}
+
+/// `qwen-xml` (Qwen3.5, Qwen3.6, Qwen3-Coder): `<tool_call>\n<function=NAME>\n<parameter=KEY>\nvalue\n</parameter>\n…
+/// </function>\n</tool_call>`, as their chat templates teach and render it. A body may hold several functions. Each
+/// value is kept as the text the model wrote (the template's one newline on each side removed) and becomes a JSON
+/// string in ``ToolCall/arguments``, in the order written: the template renders a string verbatim, so the call renders
+/// back as it was generated. The XML carries no types; a tool that takes a number or a list reads it from that string.
+public struct QwenXMLDialect: ToolDialect {
+    public var id: String { "qwen-xml" }
+
+    public init() {}
+
+    public func parse(_ body: String) throws(AetherError) -> [ToolCall] {
+        var calls: [ToolCall] = []
+        var rest = Substring(body)
+        while let open = rest.range(of: "<function=") {
+            guard let nameEnd = rest[open.upperBound...].firstIndex(of: ">"),
+                  let close = rest[nameEnd...].range(of: "</function>") else {
+                throw .generation(.toolCall("a qwen-xml call is <function=NAME>…</function>: \(body.prefix(200))"))
+            }
+            let name = rest[open.upperBound..<nameEnd].trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty else { throw .generation(.toolCall("a qwen-xml call without a function name: \(body.prefix(200))")) }
+            var inner = rest[rest.index(after: nameEnd)..<close.lowerBound]
+            var members: [String] = []
+            while let p = inner.range(of: "<parameter=") {
+                guard let keyEnd = inner[p.upperBound...].firstIndex(of: ">"),
+                      let end = inner[keyEnd...].range(of: "</parameter>") else {
+                    throw .generation(.toolCall("a qwen-xml parameter of '\(name)' isn't closed: \(body.prefix(200))"))
+                }
+                let key = inner[p.upperBound..<keyEnd].trimmingCharacters(in: .whitespaces)
+                guard !key.isEmpty else { throw .generation(.toolCall("a qwen-xml parameter of '\(name)' without a name")) }
+                var value = inner[inner.index(after: keyEnd)..<end.lowerBound]
+                if value.first == "\n" { value = value.dropFirst() }
+                if value.last == "\n" { value = value.dropLast() }
+                members.append(Self.jsonString(key) + ": " + Self.jsonString(String(value)))
+                inner = inner[end.upperBound...]
+            }
+            calls.append(ToolCall(name: name, arguments: "{" + members.joined(separator: ", ") + "}"))
+            rest = rest[close.upperBound...]
+        }
+        guard !calls.isEmpty else {
+            throw .generation(.toolCall("a qwen-xml call is <function=NAME>…</function>: \(body.prefix(200))"))
+        }
+        return calls
+    }
+
+    static func jsonString(_ s: String) -> String {
+        let data = (try? JSONEncoder().encode(s)) ?? Data("\"\"".utf8)
+        return String(decoding: data, as: UTF8.self)
     }
 }
 
@@ -162,13 +216,14 @@ enum JSONScan {
 }
 
 public enum ToolDialects {
-    /// The dialect a manifest names. Only `hermes-json` is implemented; others (`qwen-xml`, `lfm3-xml`) are refused
-    /// until a gate covers them, and a model without a dialect takes no tools.
+    /// The dialect a manifest names: `hermes-json` or `qwen-xml`. Others (`lfm3-xml`) are refused until a gate covers
+    /// them, and a model without a dialect takes no tools.
     public static func make(_ id: String?) throws(AetherError) -> any ToolDialect {
         switch id {
         case "hermes-json"?: return HermesJSONDialect()
+        case "qwen-xml"?: return QwenXMLDialect()
         case nil: throw .unsupportedOperation("this model declares no tool dialect (tokenizer.toolDialect), so it takes no tools")
-        case let other?: throw .unsupportedOperation("tool dialect '\(other)' is not implemented; only hermes-json is")
+        case let other?: throw .unsupportedOperation("tool dialect '\(other)' is not implemented; only hermes-json and qwen-xml are")
         }
     }
 }

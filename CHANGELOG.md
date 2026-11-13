@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A prefill no longer chains its chunks on the GPU without a sync** (no public API change). `DecoderEngine`
+  encoded every chunk of one prefill call back to back and drained once at the end, but Core AI does not order one
+  call's in-place state writes (KV rows, a hybrid's conv and recurrent states) before the next call's reads. On the
+  Qwen3.6-27B export, 2 of 8 identical 938-token prefills came out different from the same prompt fed one chunk per
+  call (top logit 24.2 or 26.4 against 28.1), and a chat whose user turn was short lost it: Atelier's lab chat
+  answered "I'm ready to help… which character?" to "Make Lightning's sleeve on her left arm." 0/3 (with thinking on:
+  "There is no specific request yet"), and a request's reply depended on what the process had run before. Each chunk
+  is now drained before the next is encoded; drained, 8 of 8 matched bit for bit. `Qwen35ScheduleGateTests`
+  (opt-in, `AETHER_QWEN35_CHAT`) repeats the whole-prompt prefill, checks every call size against one-token calls,
+  and the pipelined decode and the Generator against host steps.
+
+### Added
+
+- **The `qwen-xml` tool dialect** (`QwenXMLDialect`, public API addition). Qwen3.5 and Qwen3.6 templates teach and
+  render tool calls as `<tool_call><function=NAME><parameter=KEY>value</parameter></function></tool_call>`; the kit
+  now parses those bodies into `ToolCall`s (values as JSON strings, in the order written) and FoundationModels
+  declares tool calling for them. `Forge/qwen3_5` writes `toolDialect: qwen-xml`. Bundles it exported before declare
+  `hermes-json`; for them `HermesJSONDialect` reads a body that is an XML function call as `qwen-xml`, so they need
+  no re-export.
+
 ## 0.2.1 — 2026-11-12
 
 A patch release over 0.2.0 with no public API changes: tiled Krea 2 pictures no longer reload every graph when the

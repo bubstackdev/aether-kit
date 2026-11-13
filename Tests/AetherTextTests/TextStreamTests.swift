@@ -241,5 +241,23 @@ struct PortReviewRegressionTests {
             #expect(throws: AetherError.self, "\(bad)") { try dialect.parse(bad) }
         }
     }
+
+    /// Qwen3.5/3.6's XML calls, as their template renders them: values as JSON strings in order, several functions,
+    /// and the same body through `hermes-json` (what their older exports declare).
+    @Test func qwenXMLCallsAndTheHermesFallback() throws {
+        let body = "\n<function=replace_phrase>\n<parameter=id>\natelier.seed.x\n</parameter>\n<parameter=new_phrase>\n"
+            + "a \"black\" sleeve\nover two lines\n</parameter>\n</function>\n"
+        for dialect in [QwenXMLDialect() as any ToolDialect, HermesJSONDialect()] {
+            let calls = try dialect.parse(body)
+            #expect(calls.map(\.name) == ["replace_phrase"])
+            #expect(calls[0].arguments == #"{"id": "atelier.seed.x", "new_phrase": "a \"black\" sleeve\nover two lines"}"#)
+        }
+        let two = try QwenXMLDialect().parse("<function=a>\n</function>\n<function=b>\n<parameter=x>\n1\n</parameter>\n</function>")
+        #expect(two.map(\.name) == ["a", "b"] && two[0].arguments == "{}" && two[1].arguments == #"{"x": "1"}"#)
+        for bad in ["", "{\"name\": \"f\"}", "<function=f>\n<parameter=x>\n1\n</function>", "<function=f>", "<function=>\n</function>"] {
+            #expect(throws: AetherError.self, "\(bad)") { try QwenXMLDialect().parse(bad) }
+        }
+        #expect(try ToolDialects.make("qwen-xml").id == "qwen-xml")
+    }
 }
 
