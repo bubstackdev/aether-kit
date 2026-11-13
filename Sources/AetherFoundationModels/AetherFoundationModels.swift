@@ -15,7 +15,8 @@ import Foundation
 /// - options map as below; the reply streams as response and reasoning deltas, then the exact usage;
 /// - guided generation (`@Generable`) is constrained by the JSON-schema constraint inside the decode loop, and a
 ///   schema outside its subset (a regex guide) is refused with `LanguageModelError.unsupportedGenerationGuide`;
-/// - tool calling, when the manifest declares a tool dialect this build implements (`hermes-json`: qwen3, granite);
+/// - tool calling, when the manifest declares a tool dialect this build implements (`hermes-json`: qwen3, granite;
+///   `qwen-xml`: qwen3.5, qwen3.6);
 ///   other dialects don't declare the capability, so FoundationModels refuses tools for them itself.
 /// Capabilities come from the manifest (DESIGN §7): tools if a dialect is implemented, reasoning if thinking tags
 /// are declared, and guided generation always.

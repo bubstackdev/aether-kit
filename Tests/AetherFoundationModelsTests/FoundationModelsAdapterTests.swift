@@ -171,9 +171,10 @@ struct FoundationModelsAdapterTests {
         let none = try await Self.model(profile: OutputProfile(tags: tags)) { _ in [] }
         let xml = try await Self.model(profile: OutputProfile(tags: tags, toolDialect: "qwen-xml")) { _ in [] }
         let plain = try await Self.model(profile: .plain) { _ in [] }
-        #expect(!none.capabilities.contains(.toolCalling) && !xml.capabilities.contains(.toolCalling))
+        #expect(!none.capabilities.contains(.toolCalling) && xml.capabilities.contains(.toolCalling))
         #expect(!plain.capabilities.contains(.reasoning) && plain.capabilities.contains(.guidedGeneration))
-        #expect(throws: AetherError.self) { try ToolDialects.make("qwen-xml") }
+        #expect(try ToolDialects.make("qwen-xml").id == "qwen-xml")
+        #expect(throws: AetherError.self) { try ToolDialects.make("lfm3-xml") }
         #expect(throws: AetherError.self) { try ToolDialects.make(nil) }
     }
 

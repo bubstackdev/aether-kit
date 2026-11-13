@@ -13,7 +13,7 @@ public struct GenerationParameters: Sendable {
     /// Each one's `accept` runs concurrently with the step whose logits it constrains.
     public var logitsProcessors: [any LogitsProcessor]
     /// Tools the model may call, rendered into the template. Needs a manifest `tokenizer.toolDialect` this build
-    /// implements (`hermes-json`); otherwise the request is refused.
+    /// implements (`hermes-json`, `qwen-xml`); otherwise the request is refused.
     public var tools: [ToolDefinition]
     /// The reply's GPU priority (absent: `.medium`). Keep the job to change it while the reply waits for the GPU.
     public var job: GPUJob?

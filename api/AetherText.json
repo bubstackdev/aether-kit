@@ -12737,6 +12737,142 @@
    {
     "children": [
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "String",
+          "printedName": "Swift.String",
+          "usr": "s:SS"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText14QwenXMLDialectV2idSSvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText14QwenXMLDialectV2idSSvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s10AetherText14QwenXMLDialectV2idSSvp",
+      "moduleName": "AetherText",
+      "name": "id",
+      "printedName": "id",
+      "usr": "s:10AetherText14QwenXMLDialectV2idSSvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "QwenXMLDialect",
+        "printedName": "AetherText.QwenXMLDialect",
+        "usr": "s:10AetherText14QwenXMLDialectV"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherText14QwenXMLDialectVACycfc",
+      "moduleName": "AetherText",
+      "name": "init",
+      "printedName": "init()",
+      "usr": "s:10AetherText14QwenXMLDialectVACycfc"
+     },
+     {
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ToolCall",
+          "printedName": "AetherText.ToolCall",
+          "usr": "s:10AetherText8ToolCallV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ToolCall]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText14QwenXMLDialectV5parseySayAA8ToolCallVGSS0A4Core0A5ErrorOYKF",
+      "moduleName": "AetherText",
+      "name": "parse",
+      "printedName": "parse(_:)",
+      "throwing": true,
+      "usr": "s:10AetherText14QwenXMLDialectV5parseySayAA8ToolCallVGSS0A4Core0A5ErrorOYKF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$s10AetherText11ToolDialectP",
+      "name": "ToolDialect",
+      "printedName": "ToolDialect",
+      "usr": "s:10AetherText11ToolDialectP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherText14QwenXMLDialectV",
+    "moduleName": "AetherText",
+    "name": "QwenXMLDialect",
+    "printedName": "QwenXMLDialect",
+    "usr": "s:10AetherText14QwenXMLDialectV"
+   },
+   {
+    "children": [
+     {
       "children": [
        {
         "kind": "TypeNominal",
