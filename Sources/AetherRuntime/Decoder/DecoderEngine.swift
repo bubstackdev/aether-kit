@@ -42,8 +42,8 @@ public actor DecoderEngine: LanguageEngine {
         public var canaryAtLoad = false
         /// Host snapshots at full capacity that the memory budget keeps room for, on a model with recurrent state
         /// (where prefix reuse goes through ``snapshot()`` and ``restore(_:)``; attention-only models are charged
-        /// none). The default, 3, is the Generator's most (`Generator.maxSnapshots`): the two it keeps, plus the one it
-        /// reuses while it takes their replacements. 0 for a client that never snapshots.
+        /// none). The default, 4, is the Generator's most (`Generator.maxSnapshots`): the system turn's, the last image
+        /// turn's and the last text prompt's two. 0 for a client that never snapshots.
         public var reservedSnapshots: Int
         /// Canary length, argmax delay (spin iterations) and the capacity it runs at (default ≥ 4096: the lab's
         /// race appeared at capacity ≥ 4096).
@@ -99,7 +99,7 @@ public actor DecoderEngine: LanguageEngine {
             capacity: Int? = nil, initialCapacity: Int? = nil, memoryBudget: MemoryBudget = .platformDefault,
             execution: Execution = .automatic, pipelineDepth: Int = 3, canary: Bool = true, canarySteps: Int = 64,
             canaryDelay: UInt32 = 200_000, canaryCapacity: Int = 4096, cachePolicy: GraphOptions.CachePolicy = .default,
-            cache: GraphOptions.Cache = .default, reservedSnapshots: Int = 3
+            cache: GraphOptions.Cache = .default, reservedSnapshots: Int = 4
         ) {
             self.reservedSnapshots = reservedSnapshots
             self.capacity = capacity
@@ -736,13 +736,17 @@ public actor DecoderEngine: LanguageEngine {
         return EngineSnapshot(position: snapshot.position, byteCount: snapshot.byteCount, payload: snapshot)
     }
 
-    /// Restores a snapshot of this engine's model, validated before any state is touched.
+    /// Restores a snapshot of this engine's model, validated before any state is touched. Every image that starts
+    /// before the snapshot's position must be bound as it was when the snapshot was taken (the same picture at the same
+    /// place and slots): the state up to there depends on those images alone, so the images bound after it may differ
+    /// (a prompt that shares the snapshot's prefix and goes on with other pictures binds them first).
     public func restore(_ snapshot: EngineSnapshot) throws(AetherError) {
         guard let state = snapshot.payload as? Snapshot else {
             throw .unsupportedOperation("restore of a snapshot another engine type took (\(type(of: snapshot.payload)))")
         }
-        guard state.images == boundImages else {
-            throw .unsupportedOperation("restore of a snapshot taken with other images bound; bind its images first")
+        let fed = { (images: [ImagePromptPlan.Image]) in images.filter { $0.start < state.position } }
+        guard fed(state.images) == fed(boundImages) else {
+            throw .unsupportedOperation("restore of a snapshot taken with other images bound before its position; bind its images first")
         }
         try core.restore(state)
     }

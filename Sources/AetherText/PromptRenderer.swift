@@ -94,11 +94,22 @@ public struct RenderOptions: Sendable, Hashable {
     public var addGenerationPrompt: Bool
     /// Tools the model may call, rendered into the template's `tools`.
     public var tools: [ToolDefinition]
+    /// Render every past assistant turn with its thinking block, as the generation prompt opened it, instead of
+    /// the template's default (Qwen3.6 drops the block from turns before the last user message): the template's
+    /// `preserve_thinking`. A template without it ignores it. With thinking off, a past turn then renders exactly as
+    /// it was fed (`<think>\n\n</think>\n\n` and the reply), so the next prompt extends the state the reply left
+    /// (``Generator`` sets it then).
+    public var preserveThinking: Bool
 
     public init(thinking: Bool? = nil, addGenerationPrompt: Bool = true, tools: [ToolDefinition] = []) {
+        self.init(thinking: thinking, addGenerationPrompt: addGenerationPrompt, tools: tools, preserveThinking: false)
+    }
+
+    public init(thinking: Bool?, addGenerationPrompt: Bool = true, tools: [ToolDefinition] = [], preserveThinking: Bool) {
         self.thinking = thinking
         self.addGenerationPrompt = addGenerationPrompt
         self.tools = tools
+        self.preserveThinking = preserveThinking
     }
 }
 
@@ -141,6 +152,7 @@ public struct JinjaChatTemplate: PromptRenderer {
     public func render(_ messages: [ChatMessage], options: RenderOptions) throws -> RenderedPrompt {
         var context: [String: any Sendable] = [:]
         if case .templateVar(let name)? = thinking?.toggle, let want = options.thinking { context[name] = want }
+        if options.preserveThinking { context["preserve_thinking"] = true }
         var ids = try tokenizer.applyChatTemplate(
             messages, template: template, context: context, addGenerationPrompt: options.addGenerationPrompt, tools: options.tools,
             toolArgumentsAsText: template.contains("arguments is string"))

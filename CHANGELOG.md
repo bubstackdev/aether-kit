@@ -19,6 +19,38 @@
   after a deferred canary and the logits after it are bit-identical to those of an engine whose canary ran at load;
   `aDeferredCanaryCatchesAStaleHandOffBeforeItsFirstDecode` that a failing deferred canary leaves that first decode
   at depth 1, as a failure at load does.
+- **Chat prefix reuse on hybrids** (`Generator`; public API: `RenderOptions.preserveThinking` and its initializer
+  added; `DecoderEngine.Options.reservedSnapshots` defaults to 4). Measured on the Qwen3.6-27B export with Atelier's
+  lab chat (tools, a repetition penalty, thinking off) and outfit describer, four ways a request re-prefilled what the
+  engine already held:
+  - *A request with a picture dropped every snapshot.* LabChat's look_at_picture is a one-picture side request between
+    chat steps; it cleared the text snapshots, so the next chat step prefilled the whole conversation again (27B: its
+    prefill 1.79 s; now 0.23 s). The text snapshots now outlive it, and a text prompt after one with images unbinds
+    them and restores the best one.
+  - *The live state never carried over to the next user turn.* With thinking off the generation prompt feeds an empty
+    `<think>\n\n</think>\n\n`, but Qwen3.6's template drops that block from assistant turns before the last user turn,
+    so the next turn's prompt diverged at the previous turn's first reply. With thinking off the Generator now renders
+    with the template's `preserve_thinking`, so past turns render as they were fed and the next turn extends the live
+    state (27B, the next user turn's prefill: 1.92 s → 0.16 s). This changes those prompts (past turns keep their
+    empty block, as Qwen3.6's own `preserve_thinking` renders them); a template without the variable is unaffected.
+  - *Every conversation prefilled its system prompt and tools* (27B, the first step's prefill: 1.19 s →
+    0.16–0.22 s). A hybrid now also snapshots the end of the system turn and keeps it across conversations, so a new
+    conversation with the same system prompt and tools starts there.
+  - *A request that repeated a picture encoded it and prefilled everything again.* Studio's outfit describer asks 8–13
+    questions about one picture in a row, each from scratch. Snapshots now record the pictures fed before their end
+    (by content digest and place), and a prompt with images binds them before a restore (the tower encodes only the
+    pictures the engine doesn't already hold at their slots), so a prompt that repeats the picture and the text before
+    it starts from the snapshot at the end of the turn holding its last image, when a later turn follows it: put the
+    picture and the shared instructions first and each question in a turn of its own after them. Qwen3.6-27B: the
+    tower ran once for four questions and each later prefill took 0.085 s instead of 1.49 s.
+    `DecoderEngine.restore` now checks only the images that start before the snapshot's position (the state up to
+    there depends on those alone), so a prompt can bind later pictures of its own first.
+  At most four snapshots at once (`Generator.maxSnapshots`, and `DecoderEngine.Options.reservedSnapshots` now
+  defaults to 4): the system turn's, the last image turn's and the last text prompt's two.
+  Every reuse is exact: `PrefixReuseTests` checks the state after each against a fresh prefill of the same tokens (the
+  next row's logits bit for bit) on the fakes; `Qwen35ReuseGateTests` (opt-in) checks every state of a tool chat with
+  a picture side request, a new conversation and four describer questions about one picture on a real export against
+  a fresh state fed the same calls (the same pictures bound), bit for bit (Qwen3.6-27B: 11 of 11).
 
 ## 0.2.2 — 2026-11-13
 
