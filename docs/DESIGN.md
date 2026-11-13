@@ -619,7 +619,15 @@ runtime pieces:
   id rather than through a catalog-id check.
 - **`Generator`** is the single decode loop shared by ChatSession, the FoundationModels executor, VLM and future audio-LLMs:
   - It keeps a token mirror of the engine state and reuses the common prefix through `rewind`/`restore`.
-  - It snapshots after each prompt on hybrid models.
+  - It snapshots after each prompt on hybrid models, at the end of its rendered history, and at the end of its system
+    turn (the system prompt and tools), which is kept across conversations; a prompt with images at the end of the
+    turn holding its last image. A snapshot records the images fed before its end (content digest and place) and is
+    reused only by a prompt with the same ones there; the prompt's images are bound before the restore, and the tower
+    encodes only those the engine doesn't hold, so repeated questions about one picture skip the tower and the shared
+    prefill. At most four are held (`Generator.maxSnapshots`, what `Options.reservedSnapshots` reserves).
+  - With thinking off it renders past assistant turns with the empty thinking block the generation prompt fed
+    (`RenderOptions.preserveThinking`, the template's `preserve_thinking`), so the next turn's prompt extends the
+    state the reply left instead of diverging at the previous turn's first reply.
   - It checks stop sequences, detokenizes incrementally and parses tags (`thinking`, `tool_call`), driven by
     `OutputProfile` from the manifest.
   - Constrained decoding (JSON Schema, `@Generable`) is a logits mask applied inside the same loop. It is available

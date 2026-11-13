@@ -276,7 +276,7 @@ struct DecoderOwnerReviewTests {
     @Test func engineSizingChargesSnapshotsAndThePrefillLogits() async throws {
         // Fake: keys and values float32 (8 B a position), rec one float32, a 64-row head.
         let (hybrid, _, _) = try await T.engine(FakeLM.Config(staticStep: true, recurrent: true))
-        #expect(hybrid.sizing.reservedSnapshots == 3)
+        #expect(hybrid.sizing.reservedSnapshots == 4)
         #expect(hybrid.sizing.snapshotBytesPerToken == 8 && hybrid.sizing.snapshotFixedBytes == 4 + 64 * 4)
         // Static step S=1: 1 step row + 8 ring rows, of 64 float32, plus the recurrent float.
         #expect(hybrid.sizing.fixedBytes == 9 * 64 * 4 + 4)

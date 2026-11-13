@@ -67,8 +67,16 @@ public struct GenerationSummary: Sendable, Equatable {
 /// multimodal front ends. It owns a `LanguageEngine` (``DecoderEngine`` for `decoder-lm@1`) and keeps a token mirror of
 /// the engine's state:
 /// - attention-only models reuse the longest common prefix by `rewind` (O(1));
-/// - models with recurrent state reuse the live state when the new prompt extends it, else the snapshot taken at
-///   the end of the previous prompt (with that prompt's last logits), else start over.
+/// - models with recurrent state reuse the live state when the new prompt extends it, else the longest snapshot the
+///   prompt starts with, its images included (each snapshot records the pictures fed before its end, by content):
+///   the last text prompt's, at the end of its rendered history and at its end (with its last logits); the last
+///   prompt with images', at the end of the turn holding its last image; or the one at the end of the system turn (the
+///   system prompt and tools), which outlives conversations; else start over. A prompt binds its images before a
+///   restore, and the tower encodes only those the engine doesn't already hold, so a request that repeats a picture
+///   and the text before it (an outfit describer asking several questions about one picture) skips the tower and
+///   that prefill.
+/// With thinking off, past assistant turns render with the empty thinking block the generation prompt fed
+/// (``RenderOptions/preserveThinking``), so the next turn's prompt extends the state the reply left.
 ///
 /// Plain greedy decoding with no logits processor runs on the engine's pipelined GPU path; anything else feeds one
 /// token at a time and samples on the CPU. Each request (prefill and decode of one reply) holds one GPU grant from
@@ -88,14 +96,27 @@ public actor Generator {
     private var mirror: [Int32] = []
     /// False once the engine's live state no longer matches `mirror` (an error, or recurrent state that ran ahead).
     private var liveValid = true
-    /// Hybrids: the snapshots of the last prompt, at the end of its rendered history (the prefix the next turn's
-    /// prompt shares) and at its end (with its last logits, for a regenerate). At most ``maxSnapshots`` at once.
-    private var snapshots: [(tokens: [Int32], state: EngineSnapshot, logits: Logits?)] = []
+    /// Hybrids: the snapshots of the last prompt without images, at the end of its rendered history (the prefix the
+    /// next turn's prompt shares) and at its end (with its last logits, for a regenerate).
+    private var snapshots: [Snapshot] = []
+    /// Hybrids: the snapshot of the last prompt with images at the end of the turn holding its last image (when a
+    /// later turn follows; else at the end of its system turn): the next prompt with the same pictures and text up to
+    /// there starts from it.
+    private var imageSnapshot: Snapshot?
+    /// Hybrids: the snapshot at the end of the system turn (the system prompt and tools, through the next turn's
+    /// opening) of the last prompt without images that fed past it: a new conversation with the same system turn starts
+    /// there (with or without images). Kept until such a prompt with another system turn replaces it.
+    private var systemSnapshot: Snapshot?
 
-    /// The most engine snapshots a Generator holds at once (hybrids only): the two of the last prompt, and while a
-    /// prompt takes their replacements, only the one it reused. What `DecoderEngine.Options.reservedSnapshots`
-    /// reserves room for by default; size another engine's memory the same way.
-    public static let maxSnapshots = 3
+    /// A snapshot, the prompt tokens it holds, its last logits when it ends a prompt, and the images fed before its
+    /// end (by content and place: a prompt reuses it only with the same ones there).
+    typealias Snapshot = (tokens: [Int32], state: EngineSnapshot, logits: Logits?, images: [ImagePromptPlan.Image])
+
+    /// The most engine snapshots a Generator holds at once (hybrids only): the system turn's, the last image turn's
+    /// and the two of the last prompt without images; a snapshot's replacement is taken only once it is released.
+    /// What `DecoderEngine.Options.reservedSnapshots` reserves room for by default; size another engine's memory the
+    /// same way.
+    public static let maxSnapshots = 4
     /// One request at a time, in arrival order (after the GPU grant).
     private nonisolated let gate = SerialGate()
     /// How many requests wait for the running one's turn to end (tests observe a request reaching the queue).
@@ -117,6 +138,11 @@ public actor Generator {
 
     /// The prompt tokens the engine currently holds (diagnostics and tests).
     public var mirroredTokens: [Int32] { mirror }
+    /// The engine snapshots held between requests, the system turn's included (tests).
+    var heldSnapshots: (count: Int, systemTokens: Int?, imageTokens: Int?) {
+        (snapshots.count + (systemSnapshot == nil ? 0 : 1) + (imageSnapshot == nil ? 0 : 1), systemSnapshot?.tokens.count,
+         imageSnapshot?.tokens.count)
+    }
 
     /// Renders `messages` and generates. Cancelling the consuming task stops the decode and leaves the engine
     /// consistent.
@@ -128,18 +154,61 @@ public actor Generator {
     {
         stream(job: parameters.job, images: messages.flatMap(\.images)) { generator, continuation, images in
             if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
-            let rendered = try generator.renderer.render(
-                messages, options: RenderOptions(thinking: parameters.thinking, tools: parameters.tools))
+            // Thinking off: past turns keep the empty block the generation prompt fed, so they render as they were fed.
+            let options = RenderOptions(thinking: parameters.thinking, tools: parameters.tools, preserveThinking: parameters.thinking == false)
+            let rendered = try generator.renderer.render(messages, options: options)
             // The history alone (no generation prompt): where the next turn's prompt will diverge from this one. Only a
             // recurrent model uses it (to snapshot there); an attention-only model reuses any common prefix.
-            var boundary: Int?
+            var boundaries = Boundaries()
             if generator.engine.hasRecurrentState {
-                let history = try generator.renderer.render(
-                    messages, options: RenderOptions(thinking: parameters.thinking, addGenerationPrompt: false, tools: parameters.tools)).tokens
-                boundary = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
+                var historyOptions = options
+                historyOptions.addGenerationPrompt = false
+                let history = try generator.renderer.render(messages, options: historyOptions).tokens
+                boundaries.history = rendered.tokens.starts(with: history) && history.count < rendered.tokens.count ? history.count : nil
+                boundaries.system = Self.systemBoundary(messages, rendered: rendered.tokens, renderer: generator.renderer, options: historyOptions)
+                // The end of the turn holding the last image, when a later turn follows it.
+                if let last = messages.lastIndex(where: { !$0.images.isEmpty }), last < messages.count - 1,
+                   let through = try? generator.renderer.render(Array(messages[...last]), options: historyOptions).tokens,
+                   rendered.tokens.starts(with: through), through.count < rendered.tokens.count {
+                    boundaries.images = through.count
+                }
             }
-            try await generator.run(rendered, parameters, continuation, boundary: boundary, images: images)
+            try await generator.run(rendered, parameters, continuation, boundaries: boundaries, images: images)
         }
+    }
+
+    /// Where a hybrid snapshots a prompt on the way (``prepare``): the end of its rendered history, of its system turn
+    /// and of the turn holding its last image. In rendered tokens (one placeholder per image) until ``inPlan(_:)``.
+    struct Boundaries {
+        var history: Int?
+        var system: Int?
+        var images: Int?
+
+        /// The same places in `plan`'s tokens, where each image's placeholder is its rows.
+        func inPlan(_ plan: ImagePromptPlan?) -> Boundaries {
+            guard let plan, !plan.images.isEmpty else { return self }
+            func map(_ i: Int?) -> Int? {
+                guard let i else { return nil }
+                var shift = 0
+                for image in plan.images where image.start - shift < i { shift += image.count - 1 }
+                return i + shift
+            }
+            return Boundaries(history: map(history), system: map(system), images: map(images))
+        }
+    }
+
+    /// The end of the system turn in `rendered`: the system messages and tools, through the opening of the first
+    /// other turn. Found as the common prefix with the system messages and an empty user turn, so it is the
+    /// template's own rendering; nil without a system turn, or when that render fails. Only a prefix the snapshot's
+    /// tokens match is ever restored, so a short or long guess costs reuse, never correctness.
+    static func systemBoundary(
+        _ messages: [ChatMessage], rendered: [Int32], renderer: any PromptRenderer, options: RenderOptions
+    ) -> Int? {
+        let system = messages.prefix { $0.role == .system }
+        guard !system.isEmpty || !options.tools.isEmpty, system.count < messages.count else { return nil }
+        guard let probe = try? renderer.render(Array(system) + [.user("")], options: options).tokens else { return nil }
+        let n = commonPrefix(probe, rendered)
+        return n > 0 && n < probe.count ? n : nil
     }
 
     /// Generates from prompt tokens already rendered.
@@ -242,106 +311,118 @@ public actor Generator {
     /// With an image plan, the reuse stops at the first image the engine doesn't hold where the plan places it, and
     /// the plan's images are bound before the prefill.
     private func prepare(
-        _ prompt: [Int32], boundary: Int?, images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine)? = nil
+        _ prompt: [Int32], boundaries: Boundaries, images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine)? = nil
     ) async throws -> (Logits, Int) {
-        let recurrent = engine.hasRecurrentState
-        if recurrent, let images {
-            let bound = await images.engine.boundImages
-            if !images.plan.images.isEmpty || !bound.isEmpty {
-                return try await prepareRecurrent(prompt, images: images, bound: bound)
+        if engine.hasRecurrentState { return try await prepareRecurrent(prompt, boundaries: boundaries, images: images) }
+        let lcp = liveValid ? Self.commonPrefix(mirror, prompt) : 0
+        var keep = min(lcp, prompt.count - 1)
+        if let images { keep = min(keep, images.plan.reusableLimit(bound: await images.engine.boundImages)) }
+        try await engine.rewind(to: keep)
+        mirror = Array(prompt.prefix(keep))
+        if let images {
+            do {
+                try await images.engine.bindImages(images.plan, prepared: images.prepared)
+            } catch {
+                // A failed bind leaves no image bound, and the engine refuses to feed on a state that holds
+                // images: start the next request from an empty state.
+                try? await engine.reset()
+                mirror = []
+                throw error
             }
         }
-        if !recurrent {
-            let lcp = liveValid ? Self.commonPrefix(mirror, prompt) : 0
-            var keep = min(lcp, prompt.count - 1)
-            if let images { keep = min(keep, images.plan.reusableLimit(bound: await images.engine.boundImages)) }
-            try await engine.rewind(to: keep)
-            mirror = Array(prompt.prefix(keep))
-            if let images {
-                do {
-                    try await images.engine.bindImages(images.plan, prepared: images.prepared)
-                } catch {
-                    // A failed bind leaves no image bound, and the engine refuses to feed on a state that holds
-                    // images: start the next request from an empty state.
-                    try? await engine.reset()
-                    mirror = []
-                    throw error
-                }
-            }
-            let logits = try await engine.prefill(Array(prompt[keep...]), logits: .last)!
-            mirror = prompt
-            return (logits, keep)
-        }
-        // The longest reusable state: the live one if the prompt extends it, else a snapshot that is a prefix.
-        var reused = 0
-        var stored: Logits?
+        let logits = try await engine.prefill(Array(prompt[keep...]), logits: .last)!
+        mirror = prompt
+        return (logits, keep)
+    }
+
+    /// ``prepare`` for a model with recurrent state, which can't be rewound: the live state when the prompt extends
+    /// what the engine fed (and every image the engine holds is still the plan's at the same place), else the longest
+    /// snapshot the prompt starts with whose images fed before its end are the plan's there, else an empty state. The
+    /// plan's images are bound first (the tower encodes only those the engine doesn't hold at their slots; a prompt
+    /// without images unbinds them), then the snapshot restored, then the rest fed, with snapshots taken on the way.
+    private func prepareRecurrent(
+        _ prompt: [Int32], boundaries: Boundaries, images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine)?
+    ) async throws -> (Logits, Int) {
+        let planImages = images?.plan.images ?? []
+        let bound = await images?.engine.boundImages ?? []
         let ahead = await engine.stateRanAhead
         let live = liveValid && !ahead && !mirror.isEmpty && mirror.count < prompt.count && prompt.starts(with: mirror)
-        let best = snapshots.filter { snap in
+            && (images.map { mirror.count <= $0.plan.reusableLimit(bound: bound) } ?? true)
+        func fed(_ images: [ImagePromptPlan.Image], before end: Int) -> [ImagePromptPlan.Image] { images.filter { $0.start < end } }
+        func usable(_ snap: Snapshot) -> Bool {
             snap.tokens.count <= prompt.count && prompt.starts(with: snap.tokens) && (snap.tokens.count < prompt.count || snap.logits != nil)
-        }.max { $0.tokens.count < $1.tokens.count }
-        // Only the snapshot reused here outlives the replacement (so a failed prefill can still fall back on it): the
-        // engine's memory budget reserves `maxSnapshots`, the two retained ones plus this one.
-        snapshots = best.map { [$0] } ?? []
+                && snap.images == fed(planImages, before: snap.tokens.count)
+        }
+        var best = (snapshots + [imageSnapshot, systemSnapshot].compactMap { $0 }).filter(usable).max { $0.tokens.count < $1.tokens.count }
+        func bind() async throws {
+            guard let images else { return }
+            do {
+                try await images.engine.bindImages(images.plan, prepared: images.prepared)
+            } catch {
+                // A failed bind leaves no image bound, and the engine refuses to feed on a state that held images:
+                // start the next request from an empty state.
+                try? await engine.reset()
+                mirror = []
+                throw error
+            }
+        }
+        var reused = 0
+        var stored: Logits?
         if live, mirror.count >= best?.tokens.count ?? 0 {
             reused = mirror.count
-        } else if let best {
-            try await engine.restore(best.state)
-            reused = best.tokens.count
-            stored = best.logits
+            if !planImages.isEmpty || !bound.isEmpty { try await bind() }
+        } else if let snap = best {
+            // Bind first: the restore checks the images fed before the snapshot's end are bound as they were.
+            if !planImages.isEmpty || !bound.isEmpty { try await bind() }
+            try await engine.restore(snap.state)
+            reused = snap.tokens.count
+            stored = snap.logits
         } else {
-            try await engine.reset()
+            try await engine.reset()  // also unbinds every image
+            if !planImages.isEmpty { try await bind() }
         }
-        var fresh: [(tokens: [Int32], state: EngineSnapshot, logits: Logits?)] = []
+        best = nil
+        mirror = Array(prompt.prefix(reused))
         let logits: Logits
         if reused == prompt.count, let stored {
             logits = stored
         } else {
-            if let boundary, boundary > reused, boundary < prompt.count {
-                _ = try await engine.prefill(Array(prompt[reused..<boundary]), logits: .none)
-                fresh.append((Array(prompt[..<boundary]), try await engine.snapshot(), nil))
-                logits = try await engine.prefill(Array(prompt[boundary...]), logits: .last)!
-            } else {
-                logits = try await engine.prefill(Array(prompt[reused...]), logits: .last)!
+            var at = reused
+            // On the way: a prompt without images snapshots the end of its system turn and of its history; one with
+            // images the end of the turn holding its last image, or without a later turn the end of its system turn
+            // (so its requests don't replace the text prompts' system turn). Each replaces the one it supersedes,
+            // released first.
+            let stops: [(Int?, Int)] = planImages.isEmpty
+                ? [(boundaries.system, 0), (boundaries.history, 2)]
+                : [(boundaries.images ?? boundaries.system, 1)]
+            for case let (end?, kind) in stops.sorted(by: { ($0.0 ?? 0) < ($1.0 ?? 0) }) where end > at && end < prompt.count {
+                _ = try await engine.prefill(Array(prompt[at..<end]), logits: .none)
+                at = end
+                mirror = Array(prompt.prefix(end))
+                let images = fed(planImages, before: end)
+                switch kind {
+                case 0:
+                    systemSnapshot = nil
+                    systemSnapshot = (mirror, try await engine.snapshot(), nil, images)
+                case 1:
+                    imageSnapshot = nil
+                    imageSnapshot = (mirror, try await engine.snapshot(), nil, images)
+                default:
+                    // It replaces the reused one, a shorter prefix of this prompt.
+                    snapshots = []
+                    snapshots = [(mirror, try await engine.snapshot(), nil, images)]
+                }
             }
+            logits = try await engine.prefill(Array(prompt[at...]), logits: .last)!
         }
         mirror = prompt
-        // DESIGN §6.2: a snapshot at the end of each prompt replaces partial rewind on hybrids.
-        fresh.append((prompt, try await engine.snapshot(), logits))
-        snapshots = fresh
-        return (logits, reused)
-    }
-
-    /// ``prepare`` for a model with recurrent state when images are involved (the prompt's, or ones still bound). A
-    /// recurrent state can't be rewound, and a snapshot holds the images bound when it was taken, so the only reuse is
-    /// the live state: when the prompt extends what the engine fed and every image the engine holds is still the
-    /// plan's at the same place, the plan's later images are bound and the rest of the prompt fed. Otherwise the engine
-    /// starts from an empty state (a reset also unbinds every image). No snapshots are kept: one taken with images bound
-    /// could only be restored with the same images bound.
-    private func prepareRecurrent(
-        _ prompt: [Int32], images: (plan: ImagePromptPlan, prepared: [PreparedPromptImage], engine: any ImageConditionedEngine),
-        bound: [ImagePromptPlan.Image]
-    ) async throws -> (Logits, Int) {
-        snapshots = []
-        let ahead = await engine.stateRanAhead
-        let live = liveValid && !ahead && !mirror.isEmpty && mirror.count < prompt.count && prompt.starts(with: mirror)
-            && mirror.count <= images.plan.reusableLimit(bound: bound)
-        let reused = live ? mirror.count : 0
-        if !live {
-            try await engine.reset()
-            mirror = []
+        // DESIGN §6.2: a snapshot at the end of each prompt without images replaces partial rewind on hybrids. The
+        // previous one goes unless this prompt's history ends there.
+        if planImages.isEmpty {
+            let history = boundaries.history.map { Array(prompt.prefix($0)) }
+            snapshots = snapshots.filter { $0.tokens == history }
+            snapshots.append((prompt, try await engine.snapshot(), logits, []))
         }
-        do {
-            try await images.engine.bindImages(images.plan, prepared: images.prepared)
-        } catch {
-            // A failed bind leaves no image bound, and the engine refuses to feed on a state that held images: start
-            // the next request from an empty state.
-            try? await engine.reset()
-            mirror = []
-            throw error
-        }
-        let logits = try await engine.prefill(Array(prompt[reused...]), logits: .last)!
-        mirror = prompt
         return (logits, reused)
     }
 
@@ -391,7 +472,7 @@ public actor Generator {
 
     private func run(
         _ rendered: RenderedPrompt, _ parameters: GenerationParameters,
-        _ continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation, boundary: Int? = nil,
+        _ continuation: AsyncThrowingStream<GenerationEvent, any Error>.Continuation, boundaries: Boundaries = Boundaries(),
         images prepared: [PreparedPromptImage] = []
     ) async throws {
         // A model that takes images plans every prompt (a text-only one restores the text-only statics); the prompt is
@@ -423,7 +504,7 @@ public actor Generator {
         var constraint = base
         do {
             async let first = Self.begin(processors, history, base: base)
-            (logits, reused) = try await prepare(prompt, boundary: boundary, images: imaging)
+            (logits, reused) = try await prepare(prompt, boundaries: boundaries.inPlan(imaging?.plan), images: imaging)
             constraint = try await first
         } catch {
             liveValid = false

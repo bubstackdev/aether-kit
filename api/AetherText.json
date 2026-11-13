@@ -6762,6 +6762,78 @@
       "usr": "s:10AetherText13RenderOptionsV5toolsSayAA14ToolDefinitionVGvp"
      },
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText13RenderOptionsV16preserveThinkingSbvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText13RenderOptionsV16preserveThinkingSbvg"
+       },
+       {
+        "accessorKind": "set",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Void",
+          "printedName": "()"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText13RenderOptionsV16preserveThinkingSbvs",
+        "moduleName": "AetherText",
+        "name": "Set",
+        "printedName": "Set()",
+        "usr": "s:10AetherText13RenderOptionsV16preserveThinkingSbvs"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText13RenderOptionsV16preserveThinkingSbvp",
+      "moduleName": "AetherText",
+      "name": "preserveThinking",
+      "printedName": "preserveThinking",
+      "usr": "s:10AetherText13RenderOptionsV16preserveThinkingSbvp"
+     },
+     {
       "children": [
        {
         "kind": "TypeNominal",
@@ -6815,6 +6887,66 @@
       "name": "init",
       "printedName": "init(thinking:addGenerationPrompt:tools:)",
       "usr": "s:10AetherText13RenderOptionsV8thinking19addGenerationPrompt5toolsACSbSg_SbSayAA14ToolDefinitionVGtcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "RenderOptions",
+        "printedName": "AetherText.RenderOptions",
+        "usr": "s:10AetherText13RenderOptionsV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Bool",
+          "printedName": "Swift.Bool",
+          "usr": "s:Sb"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "Swift.Bool?",
+        "usr": "s:Sq"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ToolDefinition",
+          "printedName": "AetherText.ToolDefinition",
+          "usr": "s:10AetherText14ToolDefinitionV"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ToolDefinition]",
+        "usr": "s:Sa"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Bool",
+        "printedName": "Swift.Bool",
+        "usr": "s:Sb"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s10AetherText13RenderOptionsV8thinking19addGenerationPrompt5tools16preserveThinkingACSbSg_SbSayAA14ToolDefinitionVGSbtcfc",
+      "moduleName": "AetherText",
+      "name": "init",
+      "printedName": "init(thinking:addGenerationPrompt:tools:preserveThinking:)",
+      "usr": "s:10AetherText13RenderOptionsV8thinking19addGenerationPrompt5tools16preserveThinkingACSbSg_SbSayAA14ToolDefinitionVGSbtcfc"
      },
      {
       "children": [
