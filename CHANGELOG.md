@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 — 2026-11-13
+
+A patch release over 0.2.1 (#200): a prefill drains each chunk before encoding the next, so a chained prefill no
+longer computes on half-written state (Atelier's lab chat lost short user turns), and the kit parses the `qwen-xml`
+tool calls that Qwen3.5/3.6 templates write, with `Forge/qwen3_5` declaring `toolDialect: qwen-xml`. One public API
+addition (`QwenXMLDialect`); nothing is removed or changed.
 
 ### Fixed
 
