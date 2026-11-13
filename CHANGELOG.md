@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.2.3 — 2026-11-13
+
+A patch release over 0.2.2 (#202, #203): a load no longer runs the pipelined-decode canary, which now runs inside the
+first greedy decode (a 27B's warm load 11.1 s → 4.8 s), and a hybrid's chat reuses more of what the engine already
+holds: text snapshots survive a picture request, past turns render with their empty thinking block so the next user
+turn extends the live state, the system prompt and tools are snapshotted across conversations, and a prompt that
+repeats a picture reuses the snapshot after it. Public API: `DecoderEngine.Options.canaryAtLoad`,
+`RenderOptions.preserveThinking` and its initializer added; `DecoderEngine.beginGreedy(first:limit:)` is now `async`
+(callers add `await`); `DecoderEngine.Options.reservedSnapshots` defaults to 4. All recorded in `api/`.
 
 ### Changed
 
