@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import AetherRuntime
 import AetherTestSupport
@@ -366,4 +367,20 @@ struct DecoderEngineTests {
         #expect((0..<5).map { _ in rng.next() } == (0..<5).map { _ in rng2.next() })
         #expect(try Logits.argmax([1, 3, 3, 2]) == 1, "ties go to the lowest index")
     }
+}
+
+/// `Options.canaryRecords` on disk: a recorded pass reads back for its depth only, and a missing or unreadable
+/// record is no pass.
+@Test func canaryRecordsReadBackOnlyAPassAtTheirDepth() throws {
+    let folder = FileManager.default.temporaryDirectory.appending(path: "aether-canary-unit-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let url = folder.appending(path: "k.json")
+    #expect(DecoderEngine.recordedCanary(at: url, depth: 3) == nil)
+    DecoderEngine.record(DecoderEngine.CanaryReport(passed: true, depth: 3, capacity: 4096, steps: 63, firstMismatch: nil, seconds: 6.1),
+                         at: url)
+    let back = try #require(DecoderEngine.recordedCanary(at: url, depth: 3))
+    #expect(back.passed && back.recorded && back.seconds == 0 && back.capacity == 4096 && back.steps == 63)
+    #expect(DecoderEngine.recordedCanary(at: url, depth: 2) == nil)
+    try Data("not json".utf8).write(to: url)
+    #expect(DecoderEngine.recordedCanary(at: url, depth: 3) == nil)
 }

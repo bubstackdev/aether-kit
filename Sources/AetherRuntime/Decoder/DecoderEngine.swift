@@ -1,4 +1,5 @@
-import Foundation
+import CryptoKit
+public import Foundation
 import CoreAI
 import Metal
 
@@ -40,6 +41,14 @@ public actor DecoderEngine: LanguageEngine {
         /// penalty, a constraint, sampling) never needs it. Either way no greedy decode runs deeper than depth 1 before
         /// the canary has passed on this engine.
         public var canaryAtLoad = false
+        /// A folder where a bundle-loaded engine records a canary that passed, and finds one recorded before
+        /// (``canaryRecordKey``: the decoder graph's hash, the depth and the canary's settings, the Mac's GPU and macOS
+        /// build, and the kit's greedy-path revision). With a record, the engine starts at ``pipelineDepth`` without
+        /// running the canary again (``canary`` reports it with `recorded` set). Nil (the default): the canary runs on
+        /// every load. Atelier's describers load in a new process for each conversation, so the 27B paid its canary
+        /// (about 6 s) on every first decode (lab #43). Only passes are recorded; a failed canary runs again next time.
+        /// Never read or written with a diagnostic hand-off.
+        public var canaryRecords: URL? = nil
         /// Host snapshots at full capacity that the memory budget keeps room for, on a model with recurrent state
         /// (where prefix reuse goes through ``snapshot()`` and ``restore(_:)``; attention-only models are charged
         /// none). The default, 4, is the Generator's most (`Generator.maxSnapshots`): the system turn's, the last image
@@ -139,6 +148,8 @@ public actor DecoderEngine: LanguageEngine {
         /// The first token index where the pipelined run differed from depth 1.
         public var firstMismatch: Int?
         public var seconds: Double
+        /// True when the pass came from ``Options/canaryRecords`` (nothing ran on this engine; `seconds` is 0).
+        public var recorded = false
     }
 
     /// Host time spent per greedy phase, summed (diagnostics).
@@ -244,6 +255,8 @@ public actor DecoderEngine: LanguageEngine {
     public private(set) var canary: CanaryReport?
     /// The canary still to run before the first greedy decode (its depth, length, delay and capacity).
     private var pendingCanary: (depth: Int, steps: Int, delay: UInt32, capacity: Int)?
+    /// Where a pass is recorded (``Options/canaryRecords``), when the engine has a key for its graph.
+    private var canaryRecord: URL?
     /// The bundle's reader lease, held until the engine is released.
     private var bundleLease: BundleReadLease?
     private let probe: GPUMemoryProbe
@@ -328,8 +341,12 @@ public actor DecoderEngine: LanguageEngine {
         }
         let pair = Backends(step: loaded[stepName]!, prefill: prefillName.flatMap { loaded[$0] }, tower: tower,
                             reloader: reloader)
+        let record = options.canaryRecords.flatMap { folder in
+            Self.canaryRecordKey(graph: url, options: options, gpu: metal).map { folder.appending(path: "\($0).json") }
+        }
         try await self.init(backends: pair, graph: graph, image: image, device: device, options: options, metal: metal,
-                            modelBytes: max(gpuTotal, diskBytes(url) + towerDisk), probe: probe, baseline: baseline)
+                            modelBytes: max(gpuTotal, diskBytes(url) + towerDisk), probe: probe, baseline: baseline,
+                            canaryRecord: record)
         loadedModelBytes = (gpu: gpuTotal, disk: diskBytes(url) + towerDisk)
         bundleLease = lease
     }
@@ -411,7 +428,7 @@ public actor DecoderEngine: LanguageEngine {
     private init(
         backends: sending Backends, graph: Manifest.Graph, image: ImageConfiguration?, device: Device, options: Options,
         metal: (any MTLDevice)?, modelBytes: Int64, probe: GPUMemoryProbe, baseline: Int64?,
-        levelProbe: @escaping @Sendable () -> Int64 = DecoderEngine.metalAllocatedBytes
+        levelProbe: @escaping @Sendable () -> Int64 = DecoderEngine.metalAllocatedBytes, canaryRecord: URL? = nil
     ) async throws(AetherError) {
         // The level before the graphs loaded: the bundle init reads it before its loads; otherwise it is now.
         let memoryBaseline = baseline ?? probe.allocatedBytes()
@@ -489,7 +506,13 @@ public actor DecoderEngine: LanguageEngine {
         guard options.canarySteps > 0, options.canaryCapacity > 0 else {
             throw .generation(.invalidParameters("the canary needs steps > 0 and capacity > 0"))
         }
-        if core.isEncoding, options.pipelineDepth > 1, options.canary {
+        let diagnostic = options.racingTokenHandoff || options.staleTokenHandoff || options.uncheckedPipelineDepth
+        self.canaryRecord = diagnostic ? nil : canaryRecord
+        if core.isEncoding, options.pipelineDepth > 1, options.canary,
+           let recorded = self.canaryRecord.flatMap({ Self.recordedCanary(at: $0, depth: options.pipelineDepth) }) {
+            canary = recorded
+            decodeMode = .gpu(depth: recorded.depth)
+        } else if core.isEncoding, options.pipelineDepth > 1, options.canary {
             pendingCanary = (options.pipelineDepth, options.canarySteps, options.canaryDelay, options.canaryCapacity)
             if options.canaryAtLoad { try await runPendingCanary() }
         } else if core.isEncoding, options.pipelineDepth > 1, options.uncheckedPipelineDepth {
@@ -508,7 +531,61 @@ public actor DecoderEngine: LanguageEngine {
             depth: pending.depth, steps: pending.steps, delay: pending.delay, capacity: pending.capacity)
         pendingCanary = nil
         canary = report
-        if report.passed { decodeMode = .gpu(depth: pending.depth) }
+        if report.passed {
+            decodeMode = .gpu(depth: pending.depth)
+            if let canaryRecord { Self.record(report, at: canaryRecord) }
+        }
+    }
+
+    // MARK: - Canary records (Options.canaryRecords)
+
+    /// Bumped whenever the greedy hand-off (token slots, the argmax kernels, their ordering) changes, so a pass
+    /// recorded by an earlier kit is never trusted.
+    static let greedyPathRevision = 1
+
+    /// The record's name for a decoder graph loaded with `options` on `gpu`: a SHA-256 over the graph's own hash file
+    /// (`main.hash` in the `.aimodel`, else its path, size and date), the pipeline depth and the canary's settings, the
+    /// GPU's name, the macOS build and ``greedyPathRevision``. Nil without a GPU.
+    static func canaryRecordKey(graph: URL, options: Options, gpu: (any MTLDevice)?) -> String? {
+        guard let gpu else { return nil }
+        var identity: Data
+        if let hash = try? Data(contentsOf: graph.appending(path: "main.hash")) {
+            identity = hash
+        } else {
+            let values = try? graph.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+            identity = Data("\(graph.standardizedFileURL.path)|\(values?.fileSize ?? 0)|\(values?.contentModificationDate?.timeIntervalSince1970 ?? 0)".utf8)
+        }
+        let settings = "|depth \(options.pipelineDepth)|steps \(options.canarySteps)|delay \(options.canaryDelay)"
+            + "|capacity \(options.canaryCapacity)|gpu \(gpu.name)|os \(ProcessInfo.processInfo.operatingSystemVersionString)"
+            + "|greedy \(greedyPathRevision)"
+        identity.append(Data(settings.utf8))
+        return SHA256.hash(data: identity).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// A pass recorded at `url` for `depth`, as this engine's report; nil when there is none (or it can't be read).
+    static func recordedCanary(at url: URL, depth: Int) -> CanaryReport? {
+        guard let data = try? Data(contentsOf: url), let saved = try? JSONDecoder().decode(CanaryRecord.self, from: data),
+              saved.passed, saved.depth == depth else { return nil }
+        return CanaryReport(passed: true, depth: saved.depth, capacity: saved.capacity, steps: saved.steps, firstMismatch: nil,
+                            seconds: 0, recorded: true)
+    }
+
+    /// Records a pass at `url` (atomically; a failure to write only means the canary runs again next time).
+    static func record(_ report: CanaryReport, at url: URL) {
+        let saved = CanaryRecord(passed: report.passed, depth: report.depth, capacity: report.capacity, steps: report.steps,
+                                 seconds: report.seconds, recordedAt: Date())
+        guard let data = try? JSONEncoder().encode(saved) else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: url, options: .atomic)
+    }
+
+    struct CanaryRecord: Codable {
+        var passed: Bool
+        var depth: Int
+        var capacity: Int
+        var steps: Int
+        var seconds: Double
+        var recordedAt: Date
     }
 
     /// The widest dynamic call a Core AI decoder specialized with `expectFrequentReshapes` is fed by default

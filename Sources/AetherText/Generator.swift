@@ -104,8 +104,9 @@ public actor Generator {
     /// there starts from it.
     private var imageSnapshot: Snapshot?
     /// Hybrids: the snapshot at the end of the system turn (the system prompt and tools, through the next turn's
-    /// opening) of the last prompt without images that fed past it: a new conversation with the same system turn starts
-    /// there (with or without images). Kept until such a prompt with another system turn replaces it.
+    /// opening) of the last prompt that fed past it without images, or with images only after it and a turn after
+    /// the last one (a question about a picture): a new conversation with the same system turn starts there (with or
+    /// without images). Kept until such a prompt with another system turn replaces it.
     private var systemSnapshot: Snapshot?
 
     /// A snapshot, the prompt tokens it holds, its last logits when it ends a prompt, and the images fed before its
@@ -390,10 +391,15 @@ public actor Generator {
             var at = reused
             // On the way: a prompt without images snapshots the end of its system turn and of its history; one with
             // images the end of the turn holding its last image, or without a later turn the end of its system turn
-            // (so its requests don't replace the text prompts' system turn). Each replaces the one it supersedes,
-            // released first.
+            // (so its requests don't replace the text prompts' system turn). A prompt with images and a later turn
+            // (a question about a picture) also snapshots the end of its system turn when no image comes before it:
+            // its image snapshot ends past the picture, so the next picture with the same instructions would prefill
+            // the whole system turn again (lab #43: ~900 tokens, ~2 s on the 27B, per outfit picture). Each replaces
+            // the one it supersedes, released first.
+            let systemFirst = boundaries.system.map { end in planImages.allSatisfy { $0.start >= end } } ?? false
             let stops: [(Int?, Int)] = planImages.isEmpty
                 ? [(boundaries.system, 0), (boundaries.history, 2)]
+                : boundaries.images != nil && systemFirst ? [(boundaries.system, 0), (boundaries.images, 1)]
                 : [(boundaries.images ?? boundaries.system, 1)]
             for case let (end?, kind) in stops.sorted(by: { ($0.0 ?? 0) < ($1.0 ?? 0) }) where end > at && end < prompt.count {
                 _ = try await engine.prefill(Array(prompt[at..<end]), logits: .none)

@@ -191,8 +191,9 @@ struct PrefixReuseTests {
 
     /// Studio's outfit describer: several questions about one picture, the picture and the shared instructions first,
     /// each question in a turn of its own after them. The second question restores the snapshot at the end of the
-    /// picture's turn: no tower call, no prefill of the shared part. Another picture starts over (or from a text
-    /// prompt's system turn); each state equals a fresh generator's bit for bit.
+    /// picture's turn: no tower call, no prefill of the shared part. Another picture starts from the system turn's
+    /// snapshot the first one left (lab #43: the instructions aren't prefilled again for each picture); each state
+    /// equals a fresh generator's bit for bit.
     @Test func aRepeatedPictureSkipsTheTowerAndItsPrefill() async throws {
         let log = CallLog()
         let generator = try await FakeVLM.generator(towerLog: log, recurrent: true)
@@ -208,6 +209,9 @@ struct PrefixReuseTests {
         let one = try await Self.vlmReply(generator, ask(1, "The footwear?"))
         #expect(one.reusedTokens == 0 && log.calls.count == 1)
         let imageTurn = try #require(await generator.heldSnapshots.imageTokens)
+        // The question after the picture's turn: the system turn before the picture is kept too.
+        let systemTurn = try #require(await generator.heldSnapshots.systemTokens)
+        #expect(systemTurn < imageTurn)
         // The picture's turn: the system turn, `<|im_start|>user\n`, the image's open, rows and close, the text.
         let rows = one.promptTokens - (try VLMByteRenderer().render(ask(1, "The footwear?"), options: RenderOptions())).tokens.count + 1
         #expect(rows > 1)
@@ -222,25 +226,24 @@ struct PrefixReuseTests {
         }
         #expect(await generator.heldSnapshots.count <= Generator.maxSnapshots)
 
-        // Another picture of the same size: it is encoded, and nothing is reused (the image turn's snapshot is the
-        // other picture's; no text prompt left a system turn).
+        // Another picture of the same size: it is encoded, and only the system turn is reused (the image turn's
+        // snapshot is the other picture's).
         let other = try await Self.vlmReply(generator, ask(2, "The belt?"))
         #expect(log.calls.count == 2)
-        #expect(other.reusedTokens == 0)
+        #expect(other.reusedTokens == systemTurn)
         let (reference, summary) = try await fresh(ask(2, "The belt?"))
         #expect(summary.tokens == other.tokens)
         try await Self.expectSameState(generator, reference, probe: probe)
         // Its own questions now reuse its turn.
         let again = try await Self.vlmReply(generator, ask(2, "The gloves?"))
         #expect(log.calls.count == 2 && again.reusedTokens == imageTurn)
-        // A text prompt after it (it leaves the system turn's snapshot), then the first picture once more: no longer
-        // held, so encoded again, from that system turn.
+        // A text prompt after it (from the same system turn), then the first picture once more: no longer held, so
+        // encoded again, from that system turn.
         let text: [ChatMessage] = [system, .user("No picture now.")]
         let t = try await Self.vlmReply(generator, text)
-        #expect(t.reusedTokens == 0)
+        #expect(t.reusedTokens == systemTurn)
         #expect(try await fresh(text).1.tokens == t.tokens)
-        let systemTurn = try #require(await generator.heldSnapshots.systemTokens)
-        #expect(systemTurn < imageTurn)
+        #expect(await generator.heldSnapshots.systemTokens == systemTurn)
         let back = try await Self.vlmReply(generator, ask(1, "The belt?"))
         #expect(log.calls.count == 3 && back.reusedTokens == systemTurn)
         let (ref2, s2) = try await fresh(ask(1, "The belt?"))

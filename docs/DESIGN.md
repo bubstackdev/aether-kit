@@ -228,7 +228,9 @@ final class Graph {                               // non-Sendable; owned by one 
     depth-sized gate.
   - **The ordering is observed behaviour, not a documented contract.** A delayed-argmax canary (about 64 steps)
     runs before the engine's first greedy decode (between that prompt's prefill and its decode, the state kept by a
-    snapshot; at load with `Options.canaryAtLoad`) and falls back to depth 1 if it fails. Nothing decodes deeper than
+    snapshot; at load with `Options.canaryAtLoad`) and falls back to depth 1 if it fails. With
+    `Options.canaryRecords` a pass is recorded (keyed by the graph's hash, the GPU, the macOS build and the kit's
+    greedy-path revision) and a later load of the same graph starts at depth 3 without it. Nothing decodes deeper than
     depth 1 before it has passed on that engine; a client that never takes the pipelined path never pays it. CI runs
     it at capacity ≥ 4096 for every bundle class. We also want Core AI to document the guarantee or add an explicit fence on `ComputeStream`.
   - **Depth 1** (encode + GPU argmax, one step in flight) covers CPU or non-greedy sampling, per-token inputs, and
