@@ -39,6 +39,15 @@ public final class ResidentAdmission {
         /// How long a release counts as pending, and its clock (``ReleaseLog``; tests pass a fake clock).
         public var releaseWindow: Duration
         public var releaseClock: ReleaseLog.Clock
+        /// Keeps graphs across a change of ``begin(profile:shape:)``'s profile. Nil (the default): a profile change
+        /// releases every graph. Otherwise the set names the phases whose graphs don't depend on the profile (Krea 2's
+        /// prompt phase: the text encoder runs at the prompt's length whatever the canvas): they stay resident across
+        /// every profile change, measured once under no profile (`""`) for all of them. The other phases' graphs stay
+        /// resident too while every graph resident fits with the new profile counted as one more specialization, as a
+        /// new shape is (a graph loaded without the reshape hint keeps one per shape it ran at, so a profile it ran at
+        /// before runs warm); when that doesn't fit, only they are released and reload for the new profile alone.
+        /// Only an all-resident plan keeps anything: per phase, a profile change releases every graph as before.
+        public var profileSharing: Set<Manifest.Residency>?
 
         public init(
             memory: MemoryBudget, coordinator: ResourceCoordinator?, ledger: FootprintLedger, probe: GPUMemoryProbe,
@@ -53,6 +62,7 @@ public final class ResidentAdmission {
             self.probe = probe
             self.unphasedPhase = unphasedPhase
             self.maximumShapes = max(1, maximumShapes)
+            profileSharing = nil
         }
     }
 
@@ -83,6 +93,18 @@ public final class ResidentAdmission {
     /// memory, say), and it counts anything else the process allocated since they loaded.
     public var liveResidentBytes: Int64 { residency?.liveResidentBytes ?? 0 }
     private var shapes: Set<Int> = []
+    /// With ``Settings/profileSharing``: the profiles and shapes the resident graphs of the phases that depend on the
+    /// profile have run at, each one specialization (``shapes`` then holds the shapes the shared phases ran at).
+    private var specs: Set<Spec> = []
+    /// The spec the last ``begin(profile:shape:)`` added, if it was new: dropped again at the next begin when nothing
+    /// outside the shared phases ran under it (an encode for a canvas that never generated, or a conditioning-only
+    /// profile), so a count never includes a specialization no graph holds.
+    private var unconfirmed: Spec?
+
+    private struct Spec: Hashable {
+        let profile: String
+        let shape: Int?
+    }
     /// The lowest phase baseline of graphs released since the next residency began: their memory returns seconds
     /// late, so the next phase is measured from here (an overestimate, the direction admission prefers).
     private var releasedFloor: Int64?
@@ -133,10 +155,28 @@ public final class ResidentAdmission {
     }
 
     /// The plan's inputs for `profile` with `specializations` shapes resident.
+    /// With ``Settings/profileSharing``, the shared phases are planned under no profile, at the shapes they hold now.
     public func inputs(profile: String, specializations: Int) -> ResidencyPlan.Inputs {
-        ResidencyPlan.inputs(
-            manifest: manifest, ledger: settings.ledger, model: modelKey, profile: profile,
-            specializations: specializations, unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes)
+        guard settings.profileSharing != nil else {
+            return ResidencyPlan.inputs(
+                manifest: manifest, ledger: settings.ledger, model: modelKey, profile: profile,
+                specializations: specializations, unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes)
+        }
+        return inputs(profile: profile, specializations: specializations, sharedSpecializations: max(1, shapes.count))
+    }
+
+    /// The plan's inputs with ``Settings/profileSharing``: the shared phases under no profile at `sharedSpecializations`,
+    /// the others under `profile` at `specializations`, each unmeasured one counting its files once per specialization.
+    private func inputs(profile: String, specializations: Int, sharedSpecializations: Int) -> ResidencyPlan.Inputs {
+        let shared = settings.profileSharing ?? []
+        return ResidencyPlan.inputs(
+            manifest: manifest, ledger: settings.ledger, unphasedPhase: settings.unphasedPhase, fileBytes: fileBytes,
+            copiesFiles: true
+        ) { phase in
+            shared.contains(phase)
+                ? .init(model: modelKey, profile: "", phase: phase, specializations: sharedSpecializations)
+                : .init(model: modelKey, profile: profile, phase: phase, specializations: specializations)
+        }
     }
 
     /// The budget a plan must fit now.
@@ -159,6 +199,7 @@ public final class ResidentAdmission {
     /// with this shape alone (they reload from the specialization cache); only that plan failing refuses.
     public func begin(profile: String, shape: Int? = nil) throws(AetherError) -> GraphResidency {
         if lease == nil, let bundle { lease = try bundle.readLease() }
+        if let shared = settings.profileSharing { return try begin(profile: profile, shape: shape, sharing: shared) }
         if let shape, !shapes.contains(shape), shapes.count >= settings.maximumShapes { release() }
         let current = residency.map { $0.profile == profile } ?? false ? shapes : []
         var count = max(1, current.count + (shape.map { current.contains($0) ? 0 : 1 } ?? 0))
@@ -206,12 +247,101 @@ public final class ResidentAdmission {
         return fresh
     }
 
+    /// ``begin(profile:shape:)`` with ``Settings/profileSharing``. An all-resident residency is kept across profiles:
+    /// 1. with every graph, when the new profile and shape, counted as one more specialization, fit all resident;
+    /// 2. else with the shared phases' graphs alone, the others released, when the new profile's alone fits beside them;
+    /// 3. else everything is released and planned afresh, as without sharing (all resident or per phase).
+    /// More than ``Settings/maximumShapes`` specializations (or shapes of the shared phases) release first, as a new shape
+    /// does without sharing.
+    private func begin(profile: String, shape: Int?, sharing shared: Set<Manifest.Residency>) throws(AetherError) -> GraphResidency {
+        let spec = Spec(profile: profile, shape: shape)
+        if let last = unconfirmed, residency?.ranUnsharedPhase != true { specs.remove(last) }
+        unconfirmed = nil
+        if let shape, !shapes.contains(shape), shapes.count >= settings.maximumShapes { release() }
+        if !specs.contains(spec), specs.count >= settings.maximumShapes { releaseUnshared(shared) }
+        let kept = residency.flatMap { $0.mode == .allResident ? $0 : nil }
+        let sharedCount = max(1, shapes.count + (shape.map { shapes.contains($0) ? 0 : 1 } ?? 0))
+        var count = max(1, specs.count + (specs.contains(spec) ? 0 : 1))
+        var plan: ResidencyPlan
+        do {
+            let all = kept != nil && count > 1
+                ? try? choose(profile: profile, specializations: count, sharedSpecializations: sharedCount) : nil
+            if let all, all.mode == .allResident {
+                plan = all
+            } else {
+                if count > 1 {
+                    // The new profile's specialization doesn't fit beside the others: keep only the shared phases.
+                    releaseUnshared(shared)
+                    count = 1
+                }
+                plan = try choose(profile: profile, specializations: 1, sharedSpecializations: sharedCount)
+            }
+            try reserve(plan.peakBytes)
+        } catch {
+            release()
+            throw error
+        }
+        Self.trace("begin profile=\(profile) shape=\(shape.map(String.init) ?? "-") sharing specs=\(specs.count) count=\(count) shared=\(sharedCount) budget=\(budget()) residentBytes=\(residentBytes) plan=\(plan.mode) peak=\(plan.peakBytes) measured=\(plan.isMeasured) phases=\(inputs(profile: profile, specializations: count, sharedSpecializations: sharedCount).phases.map { "\($0.key):\($0.value.peakBytes)/\($0.value.heldBytes)" }.sorted()) currentMode=\(residency.map { "\($0.mode)/\($0.profile)" } ?? "none") resident=\(residentRoles)")
+        let overlap = ResidencyPlan.overlap(inputs(profile: profile, specializations: count, sharedSpecializations: sharedCount).phases)
+        if let residency, residency.mode == plan.mode, plan.mode == .allResident || residency.profile == profile {
+            if residency.profile != profile { residency.retarget(profile: profile) }
+            if specs.insert(spec).inserted { unconfirmed = spec }
+            if let shape { shapes.insert(shape) }
+            residency.overlapAllowance = overlap
+            residency.specializations = count
+            residency.sharedSpecializations = sharedCount
+            residency.markWindow()
+            return residency
+        }
+        if let old = residency {
+            note(old.floor)
+            old.releaseAll()
+        }
+        specs = [spec]
+        unconfirmed = spec
+        shapes = shape.map { [$0] } ?? []
+        let fresh = GraphResidency(
+            manifest: manifest, mode: plan.mode, ledger: settings.ledger, model: modelKey, profile: profile, probe: settings.probe,
+            releasedBaseline: releasedFloor, releases: releases, load: load)
+        fresh.sharedPhases = shared
+        fresh.overlapAllowance = overlap
+        fresh.specializations = 1
+        fresh.sharedSpecializations = 1
+        releasedFloor = nil
+        residency = fresh
+        return fresh
+    }
+
+    /// Releases the resident graphs of every phase not in `shared` and forgets their specializations; the shared
+    /// phases' graphs, and the reservation, stay (the next plan resizes it).
+    private func releaseUnshared(_ shared: Set<Manifest.Residency>) {
+        guard let residency else {
+            specs = []
+            return
+        }
+        Self.trace("releaseUnshared roles=\(residentRoles)")
+        if let floor = residency.floor { note(floor) }
+        for phase in Manifest.Residency.allCases where !shared.contains(phase) { residency.releasePhase(phase) }
+        specs = []
+        unconfirmed = nil
+        residency.specializations = 1
+    }
+
+    private func choose(profile: String, specializations: Int, sharedSpecializations: Int) throws(AetherError) -> ResidencyPlan {
+        let inputs = inputs(profile: profile, specializations: specializations, sharedSpecializations: sharedSpecializations)
+        return try choose(profile: profile, specializations: specializations, inputs: inputs)
+    }
+
     /// ``ResidencyPlan/choose(_:budget:)`` on the ledger's phases, except that when they don't fit all resident but a
     /// generation with every graph resident at this profile and count was measured to fit, the graphs stay resident
     /// (or, from a per-phase residency, return to it) at that measured peak.
     private func choose(profile: String, specializations: Int) throws(AetherError) -> ResidencyPlan {
+        try choose(profile: profile, specializations: specializations,
+                   inputs: inputs(profile: profile, specializations: specializations))
+    }
+
+    private func choose(profile: String, specializations: Int, inputs: ResidencyPlan.Inputs) throws(AetherError) -> ResidencyPlan {
         let budget = budget()
-        let inputs = inputs(profile: profile, specializations: specializations)
         let phased: ResidencyPlan
         do {
             phased = try ResidencyPlan.choose(inputs, budget: budget)
@@ -324,6 +454,8 @@ public final class ResidentAdmission {
         reservedBytes = 0
         residentBytes = 0
         shapes = []
+        specs = []
+        unconfirmed = nil
     }
 
     /// Releases every graph and the reservation, and drops the bundle's reader lease: the store may remove the bundle

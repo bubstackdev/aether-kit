@@ -382,6 +382,12 @@ below every task module that needs it, beside the sampler and `MemoryBudget`, ra
   - Graphs whose shape follows the request (Krea's unpadded text rows, in segments that load without the reshape hint)
     keep one specialization per shape; past `maximumShapes` (4) distinct shapes they are released before the next
     generation, so memory stays near what was measured.
+  - A profile change releases every graph, unless the pipeline shares its graphs across profiles
+    (`ResidentAdmission.Settings.profileSharing`, Krea 2 since 0.2.4). Then the phases it names (Krea 2's prompt
+    phase, whose shapes follow the prompt and the pictures, never the canvas) stay resident and are measured once
+    under no profile; the others stay too while every graph fits all resident with the new profile counted as one more
+    specialization (each canvas a full copy until measured), and otherwise only they are released and reload for the
+    new profile alone. A profile kept this way runs warm when it comes back.
 - **Measured, G0 gate (qwen3-0.6b, M5 Max):**
   - A graph load allocates almost nothing (+0.4 MiB for 320 MiB of files).
   - Memory arrives with the first run: +1.33 GiB peak, held while loaded, about 4× the files. So load deltas measure

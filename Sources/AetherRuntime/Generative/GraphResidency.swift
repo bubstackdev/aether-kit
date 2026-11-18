@@ -236,9 +236,19 @@ public struct ResidencyPlan: Sendable, Hashable {
         manifest: Manifest, ledger: FootprintLedger, model: String? = nil, profile: String, specializations: Int,
         unphasedPhase: Manifest.Residency = .perStep, fileBytes: (String) -> Int64
     ) -> Inputs {
-        func key(_ phase: Manifest.Residency) -> FootprintLedger.Key {
+        inputs(manifest: manifest, ledger: ledger, unphasedPhase: unphasedPhase, fileBytes: fileBytes) { phase in
             .init(model: model ?? manifest.id, profile: profile, phase: phase, specializations: specializations)
         }
+    }
+
+    /// The inputs with each phase's ledger key given by `key` (``ResidentAdmission`` keys the phases it shares across
+    /// profiles under no profile). With `copiesFiles`, a phase not measured at all counts its files once per
+    /// specialization in its key, as the ledger's estimate counts a full copy for each (graphs loaded without the
+    /// reshape hint); otherwise once.
+    package static func inputs(
+        manifest: Manifest, ledger: FootprintLedger, unphasedPhase: Manifest.Residency = .perStep,
+        fileBytes: (String) -> Int64, copiesFiles: Bool = false, key: (Manifest.Residency) -> FootprintLedger.Key
+    ) -> Inputs {
         var phases: [Manifest.Residency: PhaseFootprint] = [:]
         var measured = true
         for phase in Manifest.Residency.allCases {
@@ -248,7 +258,7 @@ public struct ResidencyPlan: Sendable, Hashable {
                 phases[phase] = footprint
                 if !exact { measured = false }
             } else {
-                let files = roles.reduce(Int64(0)) { $0 + fileBytes($1) }
+                let files = roles.reduce(Int64(0)) { $0 + fileBytes($1) } * (copiesFiles ? Int64(key(phase).specializations) : 1)
                 phases[phase] = PhaseFootprint(peakBytes: files, heldBytes: files)
                 measured = false
             }
@@ -357,7 +367,9 @@ public final class GraphResidency {
     public let mode: ResidencyPlan.Mode
     public let ledger: FootprintLedger
     public let model: String
-    public let profile: String
+    /// The profile the graphs run at now. Only an admission that keeps graphs across profiles changes it
+    /// (``retarget(profile:)``).
+    public private(set) var profile: String
     private let residency: [String: Manifest.Residency?]
     private let probe: GPUMemoryProbe
     private let samplingInterval: Duration?
@@ -372,7 +384,20 @@ public final class GraphResidency {
     /// set by whoever plans it (``ResidentAdmission``). All resident, each phase's footprint is recorded under it;
     /// per phase, graphs are released at every phase's end, so they're recorded as one.
     public var specializations: Int = 1
-    private var recordedSpecializations: Int { mode == .allResident ? max(1, specializations) : 1 }
+    /// Phases whose graphs and footprints don't depend on the profile (``ResidentAdmission/Settings/profileSharing``):
+    /// they are measured under no profile (`""`), at ``sharedSpecializations``, so one measurement serves every
+    /// profile. Empty (the default): every phase is measured under ``profile``.
+    package var sharedPhases: Set<Manifest.Residency> = []
+    /// How many shape specializations the ``sharedPhases``' graphs hold (their shapes don't vary with the profile).
+    package var sharedSpecializations: Int = 1
+    private func recordedSpecializations(_ phase: Manifest.Residency) -> Int {
+        mode == .allResident ? max(1, sharedPhases.contains(phase) ? sharedSpecializations : specializations) : 1
+    }
+    /// The ledger key `phase` is measured and planned under.
+    private func key(_ phase: Manifest.Residency, specializations count: Int? = nil) -> FootprintLedger.Key {
+        .init(model: model, profile: sharedPhases.contains(phase) ? "" : profile, phase: phase,
+              specializations: count ?? recordedSpecializations(phase))
+    }
     private let phaseOrder: [Manifest.Residency]
     private var loaded: [String: any GraphBackend] = [:]
     private var open: (phase: Manifest.Residency, baseline: Int64, observed: Int64, meter: PeakMeter)?
@@ -395,6 +420,8 @@ public final class GraphResidency {
     package private(set) var windowPeak: Int64?
     /// The roles resident at any point since ``markWindow()``: what a generation's ``windowPeak`` was reached with.
     package private(set) var windowRoles: Set<String> = []
+    /// Whether a phase outside ``sharedPhases`` has begun since ``markWindow()`` (an encode alone runs only the prompt's).
+    package private(set) var ranUnsharedPhase = false
 
     /// `samplingInterval` nil samples only at loads, ``sample()`` and the phase's end (tests). `releasedBaseline` is
     /// the baseline of graphs another residency of the model released just before (a profile change), whose memory
@@ -477,6 +504,7 @@ public final class GraphResidency {
     package func markWindow() {
         windowPeak = nil
         windowRoles = Set(loaded.keys)
+        ranUnsharedPhase = false
     }
 
     /// Releases the resident graphs of `phase` alone, between phases, keeping every other phase's (a Krea 2 reference
@@ -530,6 +558,7 @@ public final class GraphResidency {
         let meter = PeakMeter(baseline, level: observed)
         if let samplingInterval { meter.start(probe: probe, every: samplingInterval) }
         loadedInPhase = false
+        if !sharedPhases.contains(phase) { ranUnsharedPhase = true }
         open = (phase, baseline, observed, meter)
     }
 
@@ -538,7 +567,7 @@ public final class GraphResidency {
         if let allowance = overlapAllowance[phase] { return allowance }
         guard phaseOrder.count > 1, let i = phaseOrder.firstIndex(of: phase) else { return 0 }
         let previous = phaseOrder[(i + phaseOrder.count - 1) % phaseOrder.count]
-        return ledger.estimate(.init(model: model, profile: profile, phase: previous, specializations: recordedSpecializations))?
+        return ledger.estimate(key(previous))?
             .footprint.heldBytes ?? 0
     }
 
@@ -568,7 +597,7 @@ public final class GraphResidency {
             }
             let prior = mode == .allResident ? heldSoFar[phase] ?? 0 : 0
             var held: Int64, peak: Int64
-            if mode == .allResident, !loadedInPhase, specializationsAtLastRun[phase] == recordedSpecializations {
+            if mode == .allResident, !loadedInPhase, specializationsAtLastRun[phase] == recordedSpecializations(phase) {
                 // Nothing loaded and no new specialization: the same graphs ran again. What the level grew by is the
                 // run's working memory (a decoder's activations at the canvas size, say), which a later phase may
                 // give back and this one take again: a transient, never more held bytes.
@@ -585,7 +614,7 @@ public final class GraphResidency {
                 held = prior + (level - from)
                 peak = prior + max(current.meter.peak - current.baseline, current.meter.rise, level - from)
             }
-            if mode == .allResident { specializationsAtLastRun[phase] = recordedSpecializations }
+            if mode == .allResident { specializationsAtLastRun[phase] = recordedSpecializations(phase) }
             if mode == .allResident, let unloadedLevel {
                 // The sum of occurrences' growth assumes each began with the phase's resident memory counted.
                 // `phys_footprint` doesn't promise that: between requests part of it can drop out and come back when
@@ -602,8 +631,7 @@ public final class GraphResidency {
             }
             measuredHeld = held
             if mode == .allResident { heldSoFar[phase] = held }
-            ledger.record(.init(model: model, profile: profile, phase: phase, specializations: recordedSpecializations),
-                          PhaseFootprint(peakBytes: peak, heldBytes: held))
+            ledger.record(key(phase), PhaseFootprint(peakBytes: peak, heldBytes: held))
             open = nil
         }
         if mode == .perPhase {
@@ -611,7 +639,7 @@ public final class GraphResidency {
             for role in released { loaded[role] = nil }
             if !released.isEmpty {
                 releases.record(measuredHeld
-                    ?? ledger.footprint(.init(model: model, profile: profile, phase: phase))?.heldBytes ?? 0)
+                    ?? ledger.footprint(key(phase, specializations: 1))?.heldBytes ?? 0)
             }
             // The next phase measures from where this one started, not from a level that may still hold these graphs.
             if !released.isEmpty, let start = started ?? floor { releasedBaseline = min(releasedBaseline ?? start, start) }
@@ -627,6 +655,15 @@ public final class GraphResidency {
         current.meter.stop()
         open = nil
         return mode == .allResident && !loadedInPhase
+    }
+
+    /// Runs the resident graphs at `profile` from the next phase on: an admission keeping graphs across a profile
+    /// change (``ResidentAdmission/Settings/profileSharing``), after releasing whatever it doesn't keep
+    /// (``releasePhase(_:)``) and setting ``specializations``. Nothing is released or measured here; no phase may be
+    /// open.
+    package func retarget(profile: String) {
+        precondition(open == nil, "retarget(profile:) with a phase open")
+        self.profile = profile
     }
 
     /// Releases every graph (the driver unloads). An open phase is discarded unrecorded. What the graphs held goes in
