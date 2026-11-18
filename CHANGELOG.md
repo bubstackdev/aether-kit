@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`DecoderEngine.Options.canaryRecords`: a passed pipelined-decode canary is recorded, and the next load of the
+  same graph trusts it** (public API: `Options.canaryRecords`, `CanaryReport.recorded`; recorded in `api/`). The
+  canary qualifies depth 3 by decoding 64 tokens twice; since 0.2.3 it runs inside an engine's first greedy decode,
+  which a host that loads the model in a new process for each conversation pays every time. Atelier's describer
+  helper does: its 27B outfit read spent about 6 s of each picture's decode on it (lab #43: 191 tokens 15.5 s →
+  9.3 s, 12.3 → 20.6 tok/s; a whole read 23.8 → 18.4 s). The record is a file in the folder the host names, keyed by a
+  SHA-256 of the decoder graph's `main.hash`, the depth and canary settings, the GPU's name, the macOS build and the
+  kit's greedy-path revision, so a new macOS, GPU, export or greedy hand-off runs the canary again. Only passes are
+  recorded; the diagnostic hand-offs never read or write one. Nil (the default) keeps 0.2.4's behaviour.
+
+### Fixed
+
+- **A hybrid's picture question keeps its system turn for the next picture** (`Generator`). A prompt with a picture
+  and a later turn (the outfit describer's single pass: instructions, the picture, then the question) snapshotted only
+  the end of the picture's turn, so the next picture with the same instructions prefilled the whole system turn again.
+  It now also snapshots the end of its system turn when no image comes before it (the slot text prompts already use;
+  no new memory). Lab #43, the 27B on a warm describer: 987 of ~1,200 prompt tokens reused, prefill 2.6–3.4 s →
+  0.6–1.4 s per later picture, replies bit-identical.
+
 ## 0.2.4 — 2026-11-18
 
 A patch release over 0.2.3 (#205): a Krea 2 canvas change keeps the prompt phase's graphs (the text encoder) resident,
