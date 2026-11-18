@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.5 — 2026-11-18
+
+A patch release over 0.2.4 (#207): `DecoderEngine.Options.canaryRecords` records a passed pipelined-decode canary so
+the next load of the same graph skips it (Atelier's lab: a 27B outfit read 24.0 → 17.8 s in a new process each time),
+and a hybrid's picture question keeps its system turn for the next picture (prefill 2.6–3.4 → 0.6–1.4 s). Public API:
+`Options.canaryRecords` and `CanaryReport.recorded` added, recorded in `api/`.
 
 ### Added
 
