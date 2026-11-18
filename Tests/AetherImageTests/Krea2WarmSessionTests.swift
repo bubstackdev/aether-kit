@@ -57,30 +57,33 @@ struct Krea2WarmSessionTests {
         #expect(loads.log.count == loaded && loads.log.filter { $0 == "textEncoder" }.count == 1)
     }
 
-    /// The unchanged ``Krea2Pipeline/encode(prompt:job:)``: before any generation it plans a conditioning-only profile,
-    /// whose text encoder the first generation's canvas releases (and the second picture's encode loads again).
-    @Test func anEncodeWithoutTheCanvasStillPlansAConditioningProfile() async throws {
+    /// The unchanged ``Krea2Pipeline/encode(prompt:job:)``: before any generation it plans a conditioning-only profile.
+    /// Before 0.2.4 the first generation's canvas released its text encoder (and the second picture's encode loaded it
+    /// again); the prompt phase is now shared across profiles, so it stays.
+    @Test func anEncodeWithoutTheCanvasKeepsTheTextEncoderForTheFirstCanvas() async throws {
         let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls())
         let first = try await pipeline.encode(prompt: "a cat")
         _ = try await pipeline.generate(Self.request(), reusing: first)
-        #expect(await !pipeline.residentRoles.contains("textEncoder"))
+        #expect(await pipeline.residentRoles.contains("textEncoder"))
         let second = try await pipeline.encode(prompt: "a dog")
-        _ = try await pipeline.generate(Self.request("a dog"), reusing: second)
-        #expect(loads.log.filter { $0 == "textEncoder" }.count == 2)
+        #expect(try await pipeline.generate(Self.request("a dog"), reusing: second).metrics.loadedRoles.isEmpty)
+        #expect(loads.log.filter { $0 == "textEncoder" }.count == 1)
         #expect(await pipeline.residentRoles == Self.roles)
     }
 
-    @Test func anEncodeForAnotherCanvasStillKeepsWhatThatCanvasLoads() async throws {
+    /// A canvas change keeps every graph while they fit (app #35: Atelier's 512² phone pictures between 768×1344
+    /// portraits reloaded the text encoder, the denoisers and the decoder each way, about 15 s). Before 0.2.4 the encode
+    /// for the new canvas released all of them and the generation loaded its denoisers and decoder again.
+    @Test func anEncodeForAnotherCanvasKeepsEveryGraph() async throws {
         let (pipeline, loads) = try Krea2Tests.pipeline(calls: Calls())
         _ = try await pipeline.generate(Self.request())
         let conditioning = try await pipeline.encode(prompt: "a dog", width: 32, height: 32)
         let small = ImageRequest(prompt: "a dog", seed: 7, steps: 2, width: 32, height: 32)
-        // The canvas changed at the encode: the 48x32 graphs went then; the 32x32 generation loads only its denoisers and
-        // decoder, and the text encoder the encode loaded stays.
-        #expect(try await pipeline.generate(small, reusing: conditioning).metrics.loadedRoles
-            == ["denoiser0", "denoiser1", "denoiser2", "denoiser3", "vaeDecoder"])
+        #expect(try await pipeline.generate(small, reusing: conditioning).metrics.loadedRoles.isEmpty)
+        // And back to the first canvas: still nothing loads.
+        _ = try await pipeline.generate(Self.request("a bird"))
         #expect(await pipeline.residentRoles == Self.roles)
-        #expect(loads.log.filter { $0 == "textEncoder" }.count == 2)
+        #expect(loads.log.count == Self.roles.count)
     }
 
     @Test func aCanvasTheExportCantRenderIsRefusedBeforeAnythingLoads() async throws {

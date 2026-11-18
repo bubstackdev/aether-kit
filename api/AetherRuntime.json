@@ -26430,11 +26430,11 @@
       ],
       "declAttributes": [
        "Final",
+       "SetterAccess",
        "HasStorage"
       ],
       "declKind": "Var",
       "hasStorage": true,
-      "isLet": true,
       "kind": "Var",
       "mangledName": "$s13AetherRuntime14GraphResidencyC7profileSSvp",
       "moduleName": "AetherRuntime",

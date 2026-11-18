@@ -151,7 +151,11 @@ public actor Krea2Pipeline {
         self.encodePrompt = encodePrompt
         self.load = load
         export = manifest.contentDigest
-        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes)
+        // The prompt phase (text encoder, vision tower, VAE encoder) runs at the prompt's and the pictures' own shapes,
+        // never the canvas's: it stays resident across canvas changes, and the denoisers and decoder keep each canvas's
+        // specialization while they fit (ResidentAdmission.Settings.profileSharing).
+        admission = try options.admission(manifest: manifest, device: device, bundle: bundle, load: load, fileBytes: fileBytes,
+                                          profileSharing: [.perPrompt])
     }
 
     /// Krea is qualified for macOS only in 0.1.0 (docs/INTEGRATION.md).

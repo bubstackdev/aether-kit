@@ -189,10 +189,15 @@ extension PipelineOptions {
     /// An image pipeline's admission (absent `memory`: ``MemoryBudget/imageGeneration``).
     func admission(
         manifest: Manifest, device: Device, bundle: InstalledBundle?, load: @escaping GraphResidency.Loader,
-        fileBytes: @escaping (String) -> Int64, maximumShapes: Int = 4
+        fileBytes: @escaping (String) -> Int64, maximumShapes: Int = 4,
+        profileSharing: Set<Manifest.Residency>? = nil
     ) throws(AetherError) -> ResidentAdmission {
-        try admission(manifest: manifest, device: device, defaultMemory: .imageGeneration, maximumShapes: maximumShapes,
-                      bundle: bundle, load: load, fileBytes: fileBytes)
+        var settings = ResidentAdmission.Settings(
+            memory: memory ?? .imageGeneration, coordinator: coordinator, ledger: ledger, probe: probe,
+            maximumShapes: maximumShapes)
+        settings.profileSharing = profileSharing
+        return try ResidentAdmission(manifest: manifest, device: device, settings: settings, bundle: bundle, load: load,
+                                     fileBytes: fileBytes)
     }
 }
 

@@ -8935,6 +8935,127 @@
         "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV12releaseClock0A7Runtime10ReleaseLogC0G0Vvp"
        },
        {
+        "accessors": [
+         {
+          "accessorKind": "get",
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Residency",
+                "printedName": "AetherCore.Manifest.Residency",
+                "usr": "s:10AetherCore8ManifestV9ResidencyO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Set",
+              "printedName": "Swift.Set<AetherCore.Manifest.Residency>",
+              "usr": "s:Sh"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Set<AetherCore.Manifest.Residency>?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvg",
+          "moduleName": "AetherHost",
+          "name": "Get",
+          "printedName": "Get()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvg"
+         },
+         {
+          "accessorKind": "set",
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "Void",
+            "printedName": "()"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "kind": "TypeNominal",
+                "name": "Residency",
+                "printedName": "AetherCore.Manifest.Residency",
+                "usr": "s:10AetherCore8ManifestV9ResidencyO"
+               }
+              ],
+              "kind": "TypeNominal",
+              "name": "Set",
+              "printedName": "Swift.Set<AetherCore.Manifest.Residency>",
+              "usr": "s:Sh"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Optional",
+            "printedName": "Swift.Set<AetherCore.Manifest.Residency>?",
+            "usr": "s:Sq"
+           }
+          ],
+          "declAttributes": [
+           "Transparent"
+          ],
+          "declKind": "Accessor",
+          "implicit": true,
+          "kind": "Accessor",
+          "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvs",
+          "moduleName": "AetherHost",
+          "name": "Set",
+          "printedName": "Set()",
+          "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvs"
+         }
+        ],
+        "children": [
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "kind": "TypeNominal",
+              "name": "Residency",
+              "printedName": "AetherCore.Manifest.Residency",
+              "usr": "s:10AetherCore8ManifestV9ResidencyO"
+             }
+            ],
+            "kind": "TypeNominal",
+            "name": "Set",
+            "printedName": "Swift.Set<AetherCore.Manifest.Residency>",
+            "usr": "s:Sh"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "Optional",
+          "printedName": "Swift.Set<AetherCore.Manifest.Residency>?",
+          "usr": "s:Sq"
+         }
+        ],
+        "declAttributes": [
+         "HasInitialValue",
+         "HasStorage"
+        ],
+        "declKind": "Var",
+        "hasStorage": true,
+        "kind": "Var",
+        "mangledName": "$s10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvp",
+        "moduleName": "AetherHost",
+        "name": "profileSharing",
+        "printedName": "profileSharing",
+        "usr": "s:10AetherHost17ResidentAdmissionC8SettingsV14profileSharingShy0A4Core8ManifestV9ResidencyOGSgvp"
+       },
+       {
         "children": [
          {
           "kind": "TypeNominal",

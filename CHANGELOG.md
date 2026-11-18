@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A Krea 2 canvas change keeps the graphs that don't depend on the canvas, and the other canvas's while they fit**
+  (`Krea2Pipeline`, `ResidentAdmission`; public API: `ResidentAdmission.Settings.profileSharing` added,
+  `GraphResidency.profile` is now `private(set) var`). Admission plans each generation under a profile (the canvas,
+  plus the tile policy), and a profile change released every graph, so a host alternating sizes reloaded the text
+  encoder, the denoisers and the decoder each way and paid the denoisers' first-step specialization again. Atelier
+  (app #35, Sick Ollie int8, M5 Max) interleaves 512² phone pictures with 768×1344 portraits: about 15 s each way
+  (text encoder 5–6 s, denoisers and decoder 2–3 s, first step 12–13 s instead of 3.8 s). A step-count change looked
+  like a cause too, but only because the generation after a size change reused its conditioning, so the text encoder
+  it had released loaded at the next encode. Krea 2 now shares its prompt phase across profiles (the text encoder,
+  vision tower and VAE encoder run at the prompt's and the pictures' shapes, never the canvas's): it stays resident
+  and is measured once, under no profile. The denoisers and decoder stay resident too while every graph fits all
+  resident with the new canvas counted as one more specialization (as a new text shape already was; a canvas not yet
+  measured counts as a full copy of its graphs), so a canvas they ran at before runs warm; when that doesn't fit, only
+  they are released and load again for the new canvas alone. Per phase, or past `maximumShapes` specializations,
+  nothing changes. Other pipelines keep the old rule (`profileSharing` nil). Measured with Atelier's lab renderer
+  (Sick Ollie int8 with its 512-row short-text twin, tiled decode, 768×1344×10 and 512²×10 alternating, same prompts
+  and seeds, 2026-11-18): a switch to 768×1344 cost +14.5–17 s and now +0.2–0.5 s; the first switch to 512² +16–20 s
+  and now +9.6 s (only that canvas's first-step specialization), every later one +0.2 s. Live resident memory with
+  both canvases held is 43.4 GB (40.4 GiB) against 26.5–28.3 GB for one: Core AI keeps a full copy of the denoisers
+  per canvas (+15.7 GB), and the plan's measured peak, 44.2–46.9 GB, is within the default image budget (75% of RAM,
+  51.5 GB). A third canvas doesn't fit beside them there, so it keeps the text encoder only. Steps at 768×1344 ran
+  3.41–3.44 s with both held against 3.29–3.34 s with one.
+
 ## 0.2.3 — 2026-11-13
 
 A patch release over 0.2.2 (#202, #203): a load no longer runs the pipelined-decode canary, which now runs inside the
