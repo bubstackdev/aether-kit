@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.4 — 2026-11-18
+
+A patch release over 0.2.3 (#205): a Krea 2 canvas change keeps the prompt phase's graphs (the text encoder) resident,
+and the other canvas's denoisers and decoder while every graph fits all resident, so alternating sizes no longer reload
+everything each way (Atelier's lab: a switch +15–20 s → +0.2–0.5 s once both canvases are held; the first visit to a
+canvas still pays its first-step specialization). Public API: `ResidentAdmission.Settings.profileSharing` added;
+`GraphResidency.profile` is now `private(set) var`. Both recorded in `api/`.
 
 ### Fixed
 
