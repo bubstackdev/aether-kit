@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.6 — 2026-11-24
+
+A patch release for hosts that need to cancel text generation and wait for native cleanup before releasing the GPU, or reuse prepared vision inputs across requests. The new public APIs are recorded in `api/`.
 
 ### Added
 
