@@ -6412,6 +6412,49 @@
       "children": [
        {
         "kind": "TypeNominal",
+        "name": "Krea2PreparedReferences",
+        "printedName": "AetherImage.Krea2PreparedReferences",
+        "usr": "s:11AetherImage23Krea2PreparedReferencesV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "String",
+        "printedName": "Swift.String",
+        "usr": "s:SS"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Krea2ReferenceImage",
+          "printedName": "AetherImage.Krea2ReferenceImage",
+          "usr": "s:11AetherImage014Krea2ReferenceB0V"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherImage.Krea2ReferenceImage]",
+        "usr": "s:Sa"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC17prepareReferences6prompt10referencesAA0c8PreparedF0VSS_SayAA0c9ReferenceB0VGtKF",
+      "moduleName": "AetherImage",
+      "name": "prepareReferences",
+      "printedName": "prepareReferences(prompt:references:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC17prepareReferences6prompt10referencesAA0c8PreparedF0VSS_SayAA0c9ReferenceB0VGtKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
         "name": "Krea2Conditioning",
         "printedName": "AetherImage.Krea2Conditioning",
         "usr": "s:11AetherImage17Krea2ConditioningV"
@@ -6529,6 +6572,59 @@
       "printedName": "encode(prompt:references:width:height:job:)",
       "throwing": true,
       "usr": "s:11AetherImage13Krea2PipelineC6encode6prompt10references5width6height3jobAA0C12ConditioningVSS_SayAA0c9ReferenceB0VGS2i0A4Host6GPUJobCSgtYaKF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2Conditioning",
+        "printedName": "AetherImage.Krea2Conditioning",
+        "usr": "s:11AetherImage17Krea2ConditioningV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2PreparedReferences",
+        "printedName": "AetherImage.Krea2PreparedReferences",
+        "usr": "s:11AetherImage23Krea2PreparedReferencesV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GPUJob",
+          "printedName": "AetherHost.GPUJob",
+          "usr": "s:10AetherHost6GPUJobC"
+         }
+        ],
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Optional",
+        "printedName": "AetherHost.GPUJob?",
+        "usr": "s:Sq"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "isFromExtension": true,
+      "kind": "Function",
+      "mangledName": "$s11AetherImage13Krea2PipelineC6encode18preparedReferences5width6height3jobAA0C12ConditioningVAA0c8PreparedG0V_S2i0A4Host6GPUJobCSgtYaKF",
+      "moduleName": "AetherImage",
+      "name": "encode",
+      "printedName": "encode(preparedReferences:width:height:job:)",
+      "throwing": true,
+      "usr": "s:11AetherImage13Krea2PipelineC6encode18preparedReferences5width6height3jobAA0C12ConditioningVAA0c8PreparedG0V_S2i0A4Host6GPUJobCSgtYaKF"
      }
     ],
     "conformances": [
@@ -8475,6 +8571,93 @@
     "name": "Krea2ReferenceImage",
     "printedName": "Krea2ReferenceImage",
     "usr": "s:11AetherImage014Krea2ReferenceB0V"
+   },
+   {
+    "children": [
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Krea2PreparedPrompt",
+          "printedName": "AetherImage.Krea2PreparedPrompt",
+          "usr": "s:11AetherImage19Krea2PreparedPromptV"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s11AetherImage23Krea2PreparedReferencesV11preparationAA0cD6PromptVvg",
+        "moduleName": "AetherImage",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:11AetherImage23Krea2PreparedReferencesV11preparationAA0cD6PromptVvg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Krea2PreparedPrompt",
+        "printedName": "AetherImage.Krea2PreparedPrompt",
+        "usr": "s:11AetherImage19Krea2PreparedPromptV"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s11AetherImage23Krea2PreparedReferencesV11preparationAA0cD6PromptVvp",
+      "moduleName": "AetherImage",
+      "name": "preparation",
+      "printedName": "preparation",
+      "usr": "s:11AetherImage23Krea2PreparedReferencesV11preparationAA0cD6PromptVvp"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s11AetherImage23Krea2PreparedReferencesV",
+    "moduleName": "AetherImage",
+    "name": "Krea2PreparedReferences",
+    "printedName": "Krea2PreparedReferences",
+    "usr": "s:11AetherImage23Krea2PreparedReferencesV"
    },
    {
     "children": [

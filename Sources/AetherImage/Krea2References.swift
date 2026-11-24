@@ -367,6 +367,17 @@ struct Krea2ReferencePrompt: Sendable, Hashable {
     }
 }
 
+/// CPU-prepared reference conditioning input for the export that created it.
+public struct Krea2PreparedReferences: Sendable {
+    public let preparation: Krea2PreparedPrompt
+    let text: String
+    let referenceDigests: [String]
+    let export: String
+    let prompt: Krea2ReferencePrompt
+    let patches: [Krea2ReferencePatches]
+    let rules: Manifest.Krea2.References
+}
+
 extension Krea2Pipeline {
     /// Whether the export takes reference images (a `krea2.references` block, its `vision` graph and the text
     /// encoder's references function).
@@ -378,11 +389,19 @@ extension Krea2Pipeline {
     /// the text is ever cut (``Krea2PreparedPrompt/truncated``). Throws `unsupportedOperation` for an export without
     /// references, and what ``encode(prompt:references:job:)`` would refuse.
     public nonisolated func prepare(prompt: String, references: [Krea2ReferenceImage]) throws -> Krea2PreparedPrompt {
+        try prepareReferences(prompt: prompt, references: references).preparation
+    }
+
+    /// Prepares the prompt and reference patches once for ``encode(preparedReferences:width:height:job:)``.
+    /// This runs entirely on the CPU. The eventual encode still consults the pipeline's content filter.
+    public nonisolated func prepareReferences(prompt: String, references: [Krea2ReferenceImage]) throws -> Krea2PreparedReferences {
         let built = try referencePrompt(prompt, references: references)
-        return Krea2PreparedPrompt(
+        let preparation = Krea2PreparedPrompt(
             tokenIDs: built.prompt.ids, renderedTokenCount: built.prompt.renderedTokenCount,
             conditioningRows: built.prompt.conditioningRows, truncated: built.prompt.truncated,
             maximumTokens: krea2.prompt.maxTokens)
+        return Krea2PreparedReferences(preparation: preparation, text: prompt, referenceDigests: references.map(\.digest),
+                                       export: export, prompt: built.prompt, patches: built.patches, rules: built.rules)
     }
 
     nonisolated func referencePrompt(
@@ -392,7 +411,10 @@ extension Krea2Pipeline {
             throw AetherError.unsupportedOperation("this Krea 2 export takes no reference images")
         }
         var patches: [Krea2ReferencePatches] = []
-        for image in images { patches.append(try Krea2ReferencePreprocessing.prepare(image, rule: rules.preprocess)) }
+        for image in images {
+            try Task.checkCancellation()
+            patches.append(try Krea2ReferencePreprocessing.prepare(image, rule: rules.preprocess))
+        }
         let parts = (0..<images.count).map { rules.label($0 + 1) + "<|vision_start|><|image_pad|><|vision_end|>" }.joined()
         let rendered = try encodePrompt(parts + text)
         let prompt = try Krea2ReferencePrompt(
@@ -408,7 +430,7 @@ extension Krea2Pipeline {
     /// The conditioning carries the images' digests in order (``Krea2Conditioning/referenceDigests``), so a host can
     /// key its cache by them. GPU, turn, admission, retention, pressure and cancellation are ``encode(prompt:job:)``'s.
     public func encode(prompt text: String, references: [Krea2ReferenceImage], job: GPUJob? = nil) async throws -> Krea2Conditioning {
-        try await encode(prompt: text, references: references, canvas: nil, job: job)
+        try await encode(preparedReferences: prepareReferences(prompt: text, references: references), canvas: nil, job: job)
     }
 
     /// ``encode(prompt:references:job:)`` for the generation that follows at `width` × `height`, as
@@ -419,16 +441,28 @@ extension Krea2Pipeline {
         prompt text: String, references: [Krea2ReferenceImage], width: Int, height: Int, job: GPUJob? = nil
     ) async throws -> Krea2Conditioning {
         _ = try latent.tokenGrid(width: width, height: height)
-        return try await encode(prompt: text, references: references, canvas: (width, height), job: job)
+        return try await encode(preparedReferences: prepareReferences(prompt: text, references: references),
+                                canvas: (width, height), job: job)
+    }
+
+    /// Canvas-aware reference encode reusing the exact prompt and patches prepared by this export.
+    public func encode(
+        preparedReferences prepared: Krea2PreparedReferences, width: Int, height: Int, job: GPUJob? = nil
+    ) async throws -> Krea2Conditioning {
+        _ = try latent.tokenGrid(width: width, height: height)
+        return try await encode(preparedReferences: prepared, canvas: (width, height), job: job)
     }
 
     private func encode(
-        prompt text: String, references: [Krea2ReferenceImage], canvas: (width: Int, height: Int)?, job: GPUJob?
+        preparedReferences prepared: Krea2PreparedReferences, canvas: (width: Int, height: Int)?, job: GPUJob?
     ) async throws -> Krea2Conditioning {
+        guard prepared.export == export else {
+            throw AetherError.invalidInput("the prepared references belong to another Krea 2 export")
+        }
         pending += 1
         defer { pending -= 1 }
         try Task.checkCancellation()
-        let (prompt, patches, rules) = try referencePrompt(text, references: references)
+        let (text, prompt, patches, rules) = (prepared.text, prepared.prompt, prepared.patches, prepared.rules)
         try await filter.requireAllowed(prompt: text)
         try Task.checkCancellation()
         let grant = try await options.gpu.admit(job: job)
@@ -454,7 +488,7 @@ extension Krea2Pipeline {
                 residency.sample()
                 let conditioning = Krea2Conditioning(
                     prompt: text, rows: prompt.conditioningRows, columns: krea2.conditioning.columns,
-                    truncated: prompt.truncated, referenceDigests: references.map(\.digest), export: export,
+                    truncated: prompt.truncated, referenceDigests: prepared.referenceDigests, export: export,
                     scalarType: rows.scalarType, bytes: try rows.readBytes())
                 residency.endPhase(.perPrompt)
                 residency.releasePhase(.perPrompt)

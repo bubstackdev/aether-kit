@@ -217,6 +217,21 @@ struct Krea2ReferenceTests {
         #expect(calls.log.filter { $0 == "text" }.isEmpty)
     }
 
+    @Test func preparedReferenceEncodeMatchesTheLegacyEntryPointAndRefusesAnotherExport() async throws {
+        let photos = [Self.square, Self.wide]
+        let (pipeline, _) = try Self.pipeline(calls: Calls())
+        let prepared = try pipeline.prepareReferences(prompt: "a cat", references: photos)
+        let legacy = try await pipeline.encode(prompt: "a cat", references: photos, width: 32, height: 32)
+        let reused = try await pipeline.encode(preparedReferences: prepared, width: 32, height: 32)
+        #expect(legacy == reused)
+        #expect(prepared.preparation.conditioningRows == reused.rows)
+        let (plain, loads) = try Self.pipeline(calls: Calls(), manifest: try Self.manifest(references: false))
+        await #expect(throws: AetherError.self) {
+            _ = try await plain.encode(preparedReferences: prepared, width: 32, height: 32)
+        }
+        #expect(loads.log.isEmpty)
+    }
+
     @Test func requestsOutsideTheContractAreRefusedBeforeAnyGraph() async throws {
         let (pipeline, loads) = try Self.pipeline(calls: Calls())
         await #expect(throws: AetherError.self) { _ = try await pipeline.encode(prompt: "a cat", references: []) }

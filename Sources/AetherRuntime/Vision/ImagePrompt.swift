@@ -90,6 +90,9 @@ public struct PreparedPromptImage: Sendable, Hashable {
         digest = hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
+    /// Bytes owned by the prepared patch rows.
+    public var byteCount: Int { values.count * MemoryLayout<Float>.stride }
+
     /// The image's tokens: one per merge × merge block.
     public var tokens: Int { (gridHeight / merge) * (gridWidth / merge) }
 

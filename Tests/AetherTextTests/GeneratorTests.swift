@@ -87,6 +87,20 @@ struct GeneratorTests {
         #expect(admission.snapshot.running == 0 && admission.snapshot.queued == 0)
     }
 
+    @Test(.timeLimit(.minutes(1))) func anOwnedRequestCancelsAndJoinsWhileWaitingForGPUAdmission() async throws {
+        let admission = try GPUAdmission()
+        let held = try await admission.admit(owner: "other")
+        defer { held.release() }
+        let generator = try await FakeChat.generator(gpu: admission.owner("request"))
+        let request = generator.startGeneration([.user("hello")])
+        try await waitUntil { admission.snapshot.queued == 1 }
+        request.cancel()
+        await request.waitForCompletion()
+        #expect(admission.snapshot.queued == 0)
+        #expect(await generator.engine.position == 0)
+        await #expect(throws: CancellationError.self) { _ = try await FakeChat.collect(request.events) }
+    }
+
     /// Regenerating the same prompt on a hybrid restores the end-of-prompt snapshot (with its logits).
     @Test func hybridRegenerateRestoresTheSnapshot() async throws {
         let generator = try await FakeChat.generator(recurrent: true)
