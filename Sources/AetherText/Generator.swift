@@ -42,6 +42,18 @@ public enum GenerationEvent: Sendable, Equatable {
     case finished(GenerationSummary)
 }
 
+/// An owned generation. Await completion before releasing resources that the producer may still use.
+public struct GenerationRequest: Sendable {
+    public let events: AsyncThrowingStream<GenerationEvent, any Error>
+    fileprivate let producer: Task<Void, Never>
+
+    /// Signals cancellation of the producer. A native call may still need to return.
+    public func cancel() { producer.cancel() }
+
+    /// Waits for the producer to finish native cleanup and release its admission grant.
+    public func waitForCompletion() async { await producer.value }
+}
+
 public struct GenerationSummary: Sendable, Equatable {
     public enum StopReason: Sendable, Equatable {
         case stopToken(Int32)
@@ -153,6 +165,14 @@ public actor Generator {
     public nonisolated func generate(_ messages: [ChatMessage], parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
+        startGeneration(messages, parameters: parameters).events
+    }
+
+    /// Renders and generates as ``generate(_:parameters:)``, with an explicit producer lifetime for hosts that
+    /// must cancel and join native work before releasing a cross-process lease.
+    public nonisolated func startGeneration(
+        _ messages: [ChatMessage], parameters: GenerationParameters = GenerationParameters()
+    ) -> GenerationRequest {
         stream(job: parameters.job, images: messages.flatMap(\.images)) { generator, continuation, images in
             if !parameters.tools.isEmpty { _ = try ToolDialects.make(generator.profile.toolDialect) }
             // Thinking off: past turns keep the empty block the generation prompt fed, so they render as they were fed.
@@ -216,7 +236,9 @@ public actor Generator {
     public nonisolated func generate(prompt: RenderedPrompt, parameters: GenerationParameters = GenerationParameters())
         -> AsyncThrowingStream<GenerationEvent, any Error>
     {
-        stream(job: parameters.job, images: []) { generator, continuation, _ in try await generator.run(prompt, parameters, continuation) }
+        stream(job: parameters.job, images: []) { generator, continuation, _ in
+            try await generator.run(prompt, parameters, continuation)
+        }.events
     }
 
     /// Generates from prompt tokens already rendered with one image placeholder per image (the chat template's
@@ -227,7 +249,7 @@ public actor Generator {
     ) -> AsyncThrowingStream<GenerationEvent, any Error> {
         stream(job: parameters.job, images: images) { generator, continuation, prepared in
             try await generator.run(prompt, parameters, continuation, images: prepared)
-        }
+        }.events
     }
 
     /// The image contract of the engine, nil when it takes no images.
@@ -259,7 +281,7 @@ public actor Generator {
         job: GPUJob?, images: [ChatImage],
         _ body: @escaping @Sendable (isolated Generator, AsyncThrowingStream<GenerationEvent, any Error>.Continuation,
                                      [PreparedPromptImage]) async throws -> Void
-    ) -> AsyncThrowingStream<GenerationEvent, any Error> {
+    ) -> GenerationRequest {
         let (stream, continuation) = AsyncThrowingStream.makeStream(of: GenerationEvent.self)
         let spec = imageInput
         let task = Task {
@@ -303,7 +325,7 @@ public actor Generator {
             }
         }
         continuation.onTermination = { _ in task.cancel() }
-        return stream
+        return GenerationRequest(events: stream, producer: task)
     }
 
     // MARK: - Prefix reuse

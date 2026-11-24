@@ -2077,6 +2077,158 @@
    {
     "children": [
      {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "children": [
+           {
+            "kind": "TypeNominal",
+            "name": "GenerationEvent",
+            "printedName": "AetherText.GenerationEvent",
+            "usr": "s:10AetherText15GenerationEventO"
+           },
+           {
+            "kind": "TypeNominal",
+            "name": "Error",
+            "printedName": "any Swift.Error",
+            "usr": "s:s5ErrorP"
+           }
+          ],
+          "kind": "TypeNominal",
+          "name": "AsyncThrowingStream",
+          "printedName": "_Concurrency.AsyncThrowingStream<AetherText.GenerationEvent, any Swift.Error>",
+          "usr": "s:Scs"
+         }
+        ],
+        "declAttributes": [
+         "Transparent"
+        ],
+        "declKind": "Accessor",
+        "implicit": true,
+        "kind": "Accessor",
+        "mangledName": "$s10AetherText17GenerationRequestV6eventsScsyAA0C5EventOs5Error_pGvg",
+        "moduleName": "AetherText",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:10AetherText17GenerationRequestV6eventsScsyAA0C5EventOs5Error_pGvg"
+       }
+      ],
+      "children": [
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "GenerationEvent",
+          "printedName": "AetherText.GenerationEvent",
+          "usr": "s:10AetherText15GenerationEventO"
+         },
+         {
+          "kind": "TypeNominal",
+          "name": "Error",
+          "printedName": "any Swift.Error",
+          "usr": "s:s5ErrorP"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "AsyncThrowingStream",
+        "printedName": "_Concurrency.AsyncThrowingStream<AetherText.GenerationEvent, any Swift.Error>",
+        "usr": "s:Scs"
+       }
+      ],
+      "declAttributes": [
+       "HasStorage"
+      ],
+      "declKind": "Var",
+      "hasStorage": true,
+      "isLet": true,
+      "kind": "Var",
+      "mangledName": "$s10AetherText17GenerationRequestV6eventsScsyAA0C5EventOs5Error_pGvp",
+      "moduleName": "AetherText",
+      "name": "events",
+      "printedName": "events",
+      "usr": "s:10AetherText17GenerationRequestV6eventsScsyAA0C5EventOs5Error_pGvp"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText17GenerationRequestV6cancelyyF",
+      "moduleName": "AetherText",
+      "name": "cancel",
+      "printedName": "cancel()",
+      "usr": "s:10AetherText17GenerationRequestV6cancelyyF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Void",
+        "printedName": "()"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText17GenerationRequestV17waitForCompletionyyYaF",
+      "moduleName": "AetherText",
+      "name": "waitForCompletion",
+      "printedName": "waitForCompletion()",
+      "usr": "s:10AetherText17GenerationRequestV17waitForCompletionyyYaF"
+     }
+    ],
+    "conformances": [
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8CopyableP",
+      "name": "Copyable",
+      "printedName": "Copyable",
+      "usr": "s:s8CopyableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss9EscapableP",
+      "name": "Escapable",
+      "printedName": "Escapable",
+      "usr": "s:s9EscapableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss8SendableP",
+      "name": "Sendable",
+      "printedName": "Sendable",
+      "usr": "s:s8SendableP"
+     },
+     {
+      "kind": "Conformance",
+      "mangledName": "$ss16SendableMetatypeP",
+      "name": "SendableMetatype",
+      "printedName": "SendableMetatype",
+      "usr": "s:s16SendableMetatypeP"
+     }
+    ],
+    "declKind": "Struct",
+    "kind": "TypeDecl",
+    "mangledName": "$s10AetherText17GenerationRequestV",
+    "moduleName": "AetherText",
+    "name": "GenerationRequest",
+    "printedName": "GenerationRequest",
+    "usr": "s:10AetherText17GenerationRequestV"
+   },
+   {
+    "children": [
+     {
       "children": [
        {
         "children": [
@@ -3550,6 +3702,48 @@
       "name": "generate",
       "printedName": "generate(_:parameters:)",
       "usr": "s:10AetherText9GeneratorC8generate_10parametersScsyAA15GenerationEventOs5Error_pGSayAA11ChatMessageVG_AA0F10ParametersVtF"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "GenerationRequest",
+        "printedName": "AetherText.GenerationRequest",
+        "usr": "s:10AetherText17GenerationRequestV"
+       },
+       {
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "ChatMessage",
+          "printedName": "AetherText.ChatMessage",
+          "usr": "s:10AetherText11ChatMessageV"
+         }
+        ],
+        "kind": "TypeNominal",
+        "name": "Array",
+        "printedName": "[AetherText.ChatMessage]",
+        "usr": "s:Sa"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "GenerationParameters",
+        "printedName": "AetherText.GenerationParameters",
+        "usr": "s:10AetherText20GenerationParametersV"
+       }
+      ],
+      "declAttributes": [
+       "Nonisolated"
+      ],
+      "declKind": "Func",
+      "funcSelfKind": "NonMutating",
+      "kind": "Function",
+      "mangledName": "$s10AetherText9GeneratorC15startGeneration_10parametersAA0E7RequestVSayAA11ChatMessageVG_AA0E10ParametersVtF",
+      "moduleName": "AetherText",
+      "name": "startGeneration",
+      "printedName": "startGeneration(_:parameters:)",
+      "usr": "s:10AetherText9GeneratorC15startGeneration_10parametersAA0E7RequestVSayAA11ChatMessageVG_AA0E10ParametersVtF"
      },
      {
       "children": [

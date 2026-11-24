@@ -26,6 +26,7 @@ public struct ImageInput: @unchecked Sendable {
     enum Source {
         case image(CGImage)
         case file(URL)
+        case encoded(Data)
     }
 
     let source: Source
@@ -59,6 +60,13 @@ public struct ImageInput: @unchecked Sendable {
         self.maximumPixels = maximumPixels
     }
 
+    /// Immutable encoded image bytes, decoded using the same color and orientation rules as a file.
+    public init(encoded: Data, alpha: AlphaPolicy = .dropAlpha, maximumPixels: Int = ImageInput.defaultMaximumPixels) {
+        source = .encoded(encoded)
+        self.alpha = alpha
+        self.maximumPixels = maximumPixels
+    }
+
     /// Refuses a `width` × `height` image past ``maximumPixels``.
     func checkPixels(width: Int, height: Int, name: String) throws(AetherError) {
         let (pixels, overflow) = width.multipliedReportingOverflow(by: height)
@@ -74,24 +82,29 @@ public struct ImageInput: @unchecked Sendable {
             try checkPixels(width: image.width, height: image.height, name: "the image")
             return try RGB8Image(cgImage: image, alpha: alpha, colorSpace: colorSpace)
         case .file(let url):
-            guard let file = CGImageSourceCreateWithURL(url as CFURL, nil) else {
-                throw .invalidInput("'\(url.lastPathComponent)' is not an image ImageIO can decode")
-            }
-            // The size from the file's header, before anything is decoded.
-            let properties = CGImageSourceCopyPropertiesAtIndex(file, 0, nil) as? [CFString: Any]
-            if let width = properties?[kCGImagePropertyPixelWidth] as? Int, let height = properties?[kCGImagePropertyPixelHeight] as? Int {
-                try checkPixels(width: width, height: height, name: "'\(url.lastPathComponent)'")
-            }
-            guard let image = CGImageSourceCreateImageAtIndex(file, 0, nil) else {
-                throw .invalidInput("'\(url.lastPathComponent)' is not an image ImageIO can decode")
-            }
-            try checkPixels(width: image.width, height: image.height, name: "'\(url.lastPathComponent)'")
-            let orientation = properties?[kCGImagePropertyOrientation] as? Int ?? 1
-            let stored = try RGB8Image(cgImage: image, alpha: alpha, colorSpace: colorSpace)
-            // Oriented after the full-size decode: ImageIO's oriented thumbnails are premultiplied, which would lose
-            // transparent pixels' stored colours.
-            return (2...8).contains(orientation) ? stored.oriented(orientation) : stored
+            return try decode(CGImageSourceCreateWithURL(url as CFURL, nil), named: "'\(url.lastPathComponent)'", colorSpace: colorSpace)
+        case .encoded(let bytes):
+            return try decode(CGImageSourceCreateWithData(bytes as CFData, nil), named: "the encoded image", colorSpace: colorSpace)
         }
+    }
+
+    private func decode(_ source: CGImageSource?, named name: String,
+                        colorSpace: Manifest.ImagePreprocess.ColorSpace) throws(AetherError) -> RGB8Image {
+        guard let source else { throw .invalidInput("\(name) is not an image ImageIO can decode") }
+        // Check the header before decoding pixels.
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        if let width = properties?[kCGImagePropertyPixelWidth] as? Int, let height = properties?[kCGImagePropertyPixelHeight] as? Int {
+            try checkPixels(width: width, height: height, name: name)
+        }
+        guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw .invalidInput("\(name) is not an image ImageIO can decode")
+        }
+        try checkPixels(width: image.width, height: image.height, name: name)
+        let orientation = properties?[kCGImagePropertyOrientation] as? Int ?? 1
+        let stored = try RGB8Image(cgImage: image, alpha: alpha, colorSpace: colorSpace)
+        // Oriented after the full-size decode: ImageIO's oriented thumbnails are premultiplied, which would lose
+        // transparent pixels' stored colours.
+        return (2...8).contains(orientation) ? stored.oriented(orientation) : stored
     }
 }
 

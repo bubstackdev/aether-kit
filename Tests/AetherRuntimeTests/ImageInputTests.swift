@@ -179,6 +179,8 @@ struct ImageInputTests {
         let url = try Self.write(rgba, width: width, height: height, space: Self.sRGB, properties: [kCGImagePropertyOrientation: orientation])
         defer { Self.remove(url) }
         let image = try Self.decode(url)
+        let encoded = try ImageInput(encoded: Data(contentsOf: url)).decode(colorSpace: .deviceRGB)
+        #expect(image == encoded)
         let swapped = orientation >= 5
         #expect(image.width == (swapped ? height : width) && image.height == (swapped ? width : height))
         var mismatches = 0

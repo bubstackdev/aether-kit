@@ -35293,6 +35293,44 @@
       "name": "init",
       "printedName": "init(contentsOf:alpha:maximumPixels:)",
       "usr": "s:13AetherRuntime10ImageInputV10contentsOf5alpha13maximumPixelsAC10Foundation3URLV_AC11AlphaPolicyOSitcfc"
+     },
+     {
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "ImageInput",
+        "printedName": "AetherRuntime.ImageInput",
+        "usr": "s:13AetherRuntime10ImageInputV"
+       },
+       {
+        "kind": "TypeNominal",
+        "name": "Data",
+        "printedName": "Foundation.Data",
+        "usr": "s:10Foundation4DataV"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "AlphaPolicy",
+        "printedName": "AetherRuntime.ImageInput.AlphaPolicy",
+        "usr": "s:13AetherRuntime10ImageInputV11AlphaPolicyO"
+       },
+       {
+        "hasDefaultArg": true,
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Constructor",
+      "init_kind": "Designated",
+      "kind": "Constructor",
+      "mangledName": "$s13AetherRuntime10ImageInputV7encoded5alpha13maximumPixelsAC10Foundation4DataV_AC11AlphaPolicyOSitcfc",
+      "moduleName": "AetherRuntime",
+      "name": "init",
+      "printedName": "init(encoded:alpha:maximumPixels:)",
+      "usr": "s:13AetherRuntime10ImageInputV7encoded5alpha13maximumPixelsAC10Foundation4DataV_AC11AlphaPolicyOSitcfc"
      }
     ],
     "conformances": [
@@ -37140,6 +37178,43 @@
       "name": "digest",
       "printedName": "digest",
       "usr": "s:13AetherRuntime19PreparedPromptImageV6digestSSvp"
+     },
+     {
+      "accessors": [
+       {
+        "accessorKind": "get",
+        "children": [
+         {
+          "kind": "TypeNominal",
+          "name": "Int",
+          "printedName": "Swift.Int",
+          "usr": "s:Si"
+         }
+        ],
+        "declKind": "Accessor",
+        "kind": "Accessor",
+        "mangledName": "$s13AetherRuntime19PreparedPromptImageV9byteCountSivg",
+        "moduleName": "AetherRuntime",
+        "name": "Get",
+        "printedName": "Get()",
+        "usr": "s:13AetherRuntime19PreparedPromptImageV9byteCountSivg"
+       }
+      ],
+      "children": [
+       {
+        "kind": "TypeNominal",
+        "name": "Int",
+        "printedName": "Swift.Int",
+        "usr": "s:Si"
+       }
+      ],
+      "declKind": "Var",
+      "kind": "Var",
+      "mangledName": "$s13AetherRuntime19PreparedPromptImageV9byteCountSivp",
+      "moduleName": "AetherRuntime",
+      "name": "byteCount",
+      "printedName": "byteCount",
+      "usr": "s:13AetherRuntime19PreparedPromptImageV9byteCountSivp"
      },
      {
       "accessors": [

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6 — 2026-11-24
+
+A patch release for hosts that need to cancel text generation and wait for native cleanup before releasing the GPU, or reuse prepared vision inputs across requests. The new public APIs are recorded in `api/`.
+
+### Added
+
+- `Generator.startGeneration` exposes an owned generation request. A host can cancel it and await native cleanup and release of the admission grant.
+- `Krea2Pipeline.prepareReferences` retains the exact CPU prompt and patches for its canvas-aware encode. The encode checks the export identity and applies the existing content filter.
+- `ImageInput(encoded:)` reads immutable image bytes with the same orientation and color rules as the file initializer. `PreparedPromptImage.byteCount` lets hosts bound image caches.
+
 ## 0.2.5 — 2026-11-18
 
 A patch release over 0.2.4 (#207): `DecoderEngine.Options.canaryRecords` records a passed pipelined-decode canary so
