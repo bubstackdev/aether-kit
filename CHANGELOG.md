@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.2.7 — 2026-11-27
+
+A patch release: the shared GPU lease's waiter mark, stale reclaim and wrapper probe give their flock locks back
+at once even while the host is spawning a process. No API change.
 
 ### Fixed
 
