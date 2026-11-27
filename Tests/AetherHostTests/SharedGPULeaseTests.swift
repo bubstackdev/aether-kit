@@ -173,7 +173,7 @@ private func clearsStaleSoon(_ directory: URL) -> Bool {
     #expect(!SharedGPULease.clearStale(directory))
     #expect { try SharedGPULease.tryAcquire(leaseConfiguration(directory)) } throws: { isHeld($0) }
     #expect(pidText(directory) == dead)
-    close(other)
+    unlockAndClose(other)
     #expect(clearsStaleSoon(directory))
     #expect(try leaseSiblings(directory).isEmpty)
 }
@@ -224,7 +224,7 @@ private func clearsStaleSoon(_ directory: URL) -> Bool {
     #expect(!SharedGPULease.clearStale(directory))
     #expect(pidText(directory) == dead)
     #expect(try mode() & 0o777 == 0o600)
-    close(other)
+    unlockAndClose(other)
     try FileManager.default.setAttributes([.posixPermissions: 0o666], ofItemAtPath: reclaim.path)
     #expect(clearsStaleSoon(directory))
     #expect(try leaseSiblings(directory).isEmpty)
