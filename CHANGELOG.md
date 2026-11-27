@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A released flock lock is gone at once, even while a process is being spawned.** `WaiterMark`, the stale
+  reclaim's serial lock and `hasWaiters`'s wrapper probe gave their locks back with `close` alone. A process being
+  spawned at that moment holds a copy of every descriptor until its program loads (`O_CLOEXEC` ones included), and a
+  flock lock goes only with the last copy, so a holder's probe could see a waiter that had gone, or a second reclaimer
+  a reclaim that had ended. Each now unlocks before closing (Atelier lab #160, where the same pattern made four
+  Native tests flaky). New `LeaseReleaseWhileSpawningTests` fail on the old release and pass. No API change.
+
 ## 0.2.6 — 2026-11-24
 
 A patch release for hosts that need to cancel text generation and wait for native cleanup before releasing the GPU, or reuse prepared vision inputs across requests. The new public APIs are recorded in `api/`.

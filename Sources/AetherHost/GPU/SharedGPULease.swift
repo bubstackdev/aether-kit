@@ -186,7 +186,7 @@ public final class SharedGPULease: Sendable {
     public static func hasWaiters(directory: URL, legacyWrapper: URL?) -> Bool {
         if let legacyWrapper {
             let descriptor = open(legacyWrapper.path, O_RDONLY | O_SHLOCK | O_NONBLOCK | O_CLOEXEC)
-            if descriptor >= 0 { close(descriptor) } else if errno == EWOULDBLOCK { return true }
+            if descriptor >= 0 { unlockAndClose(descriptor) } else if errno == EWOULDBLOCK { return true }
         }
         guard let waiters = privateSibling(directory, suffix: ".waiters", create: false) else { return false }
         defer { close(waiters) }
@@ -350,7 +350,7 @@ public final class SharedGPULease: Sendable {
     static func clearStale(_ directory: URL, beforeMove: () -> Void = {}) -> Bool {
         let parent = directory.deletingLastPathComponent()
         guard let serial = privateSibling(directory, suffix: ".reclaim", create: true) else { return false }
-        defer { close(serial) }
+        defer { unlockAndClose(serial) }
         // Another reclaimer is mid-reclaim; report the lease as held rather than wait.
         guard flock(serial, LOCK_EX | LOCK_NB) == 0 else { return false }
         guard let dead = readHolder(directory), isDead(dead) else { return false }
@@ -452,5 +452,14 @@ final class WaiterMark: Sendable {
         descriptor = nil
     }
 
-    deinit { if let descriptor { close(descriptor) } }
+    deinit { if let descriptor { unlockAndClose(descriptor) } }
+}
+
+/// Gives back a flock lock held through `descriptor`, then closes it. `close` alone isn't enough: a process being
+/// spawned at that moment (any `Process.run` or `posix_spawn` in this process) holds a copy of every descriptor until
+/// its program loads, `O_CLOEXEC` ones included, and the lock goes only with the last copy, so a holder's probe could
+/// still see a waiter, or a reclaimer a reclaim in progress. Unlocking ends the lock for every copy (Atelier lab #160).
+func unlockAndClose(_ descriptor: Int32) {
+    flock(descriptor, LOCK_UN)
+    close(descriptor)
 }
